@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<ConfigClass xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <BotToken>ODA3MTgyODMwNzUyNjI4NzY2.YB0Rlw.J7y6box03qTrIfmOal7FdhBGOFQ</BotToken>
+  <CheckResultsTimeInterval>60000</CheckResultsTimeInterval>
+  <MinimumStars>0</MinimumStars>
+</ConfigClass>

@@ -32,7 +32,7 @@ namespace HLTVDiscordBridge.Modules
                 {
                     File.AppendAllText("./cache/news.txt", JObject.Parse(jToken.ToString()).GetValue("link").ToString() + "\n");
                 }
-                return JObject.Parse(jArr[0].ToString());
+                return null;
             }
             string news = File.ReadAllText("./cache/news.txt");
 

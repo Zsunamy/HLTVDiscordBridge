@@ -37,7 +37,7 @@ namespace HLTVDiscordBridge.Modules
                 {
                     File.AppendAllText("./cache/matchIDs.txt", JObject.Parse(jToken.ToString()).GetValue("matchId").ToString() + "\n");
                 }
-                return JObject.Parse(jArr[0].ToString());
+                return null;
             }
             string matchIDs = File.ReadAllText("./cache/matchIDs.txt"); 
 
@@ -195,17 +195,18 @@ namespace HLTVDiscordBridge.Modules
             string httpResult = await httpResponse.Content.ReadAsStringAsync();
             JArray jArr = JArray.Parse(httpResult);
             JArray myJArr = new JArray();
+            Directory.CreateDirectory("./cache");
             if (!File.Exists("./cache/upcoming.json"))
             {
+                FileStream fs = File.Create("./cache/upcoming.json");
+                fs.Close();
                 foreach (JToken jToken in jArr)
                 {
                     string link = "{link: \"" + JObject.Parse(jToken.ToString()).GetValue("link").ToString() + "\",\n";
                     string stars = "stars: " + JObject.Parse(jToken.ToString()).GetValue("stars").ToString() + "}";
                     JToken tok = JToken.FromObject(JObject.Parse(link + stars));
                     myJArr.Add(tok);
-                }
-                FileStream fs = File.Create("./cache/upcoming.json");
-                fs.Close();
+                }                
                 File.WriteAllText("./cache/upcoming.json", myJArr.ToString());
                 return myJArr;
             }

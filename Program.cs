@@ -68,8 +68,8 @@ namespace HLTVDiscordBridge
 
             while (true)
             {
-                //await _hltv.aktHLTV(can);                    
-                //await _hltvNews.aktHLTVNews(can);
+                await _hltv.aktHLTV(can);                    
+                await _hltvNews.aktHLTVNews(can);
                 //await _hltv.aktHLTV(channel);
                 //await _hltvNews.aktHLTVNews(channel);
                 _cl.Cleaner();
