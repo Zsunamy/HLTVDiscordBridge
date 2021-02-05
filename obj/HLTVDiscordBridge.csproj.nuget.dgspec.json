@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Projekte\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge.csproj": {}
+    "C:\\Projekte\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge.csproj": {}
   },
   "projects": {
-    "C:\\Projekte\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge.csproj": {
+    "C:\\Projekte\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Projekte\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge.csproj",
+        "projectUniqueName": "C:\\Projekte\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge.csproj",
         "projectName": "HLTVDiscordBridge",
-        "projectPath": "C:\\Projekte\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge.csproj",
+        "projectPath": "C:\\Projekte\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge.csproj",
         "packagesPath": "C:\\Users\\marco\\.nuget\\packages\\",
-        "outputPath": "C:\\Projekte\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge\\obj\\",
+        "outputPath": "C:\\Projekte\\HLTVDiscordBridge\\HLTVDiscordBridge\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Microsoft\\Xamarin\\NuGet\\"
@@ -22,15 +22,15 @@
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "netcoreapp3.1"
+          "net5.0"
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "netcoreapp3.1": {
-            "targetAlias": "netcoreapp3.1",
+          "net5.0": {
+            "targetAlias": "net5.0",
             "projectReferences": {}
           }
         },
@@ -41,8 +41,18 @@
         }
       },
       "frameworks": {
-        "netcoreapp3.1": {
-          "targetAlias": "netcoreapp3.1",
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "dependencies": {
+            "Discord.Net": {
+              "target": "Package",
+              "version": "[2.3.0, )"
+            },
+            "Microsoft.Extensions.DependencyInjection": {
+              "target": "Package",
+              "version": "[5.0.1, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
