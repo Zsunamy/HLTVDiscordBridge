@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "hDc+jSAPekFczLfQ8wz4zTxPLke2rcU0TmwzOYGzUXwXdV3nlAw1JbLD77hGZU5Yh4haKzXQAEQjmg8KnJNRaw==",
+  "dgSpecHash": "VscUSIinr4tp9JmbjfNI9pT9Leel2qrNbj6fA9SmgJE0vM5iD1TthO5EQk5T9VD+EOzktHvD0kXH53ljOuxKKQ==",
   "success": true,
   "projectFilePath": "C:\\Projekte\\HLTVDiscordBridge\\HLTVDiscordBridge\\HLTVDiscordBridge.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\marco\\.nuget\\packages\\csfml\\2.5.0\\csfml.2.5.0.nupkg.sha512",
     "C:\\Users\\marco\\.nuget\\packages\\discord.net\\2.3.0\\discord.net.2.3.0.nupkg.sha512",
     "C:\\Users\\marco\\.nuget\\packages\\discord.net.commands\\2.3.0\\discord.net.commands.2.3.0.nupkg.sha512",
     "C:\\Users\\marco\\.nuget\\packages\\discord.net.core\\2.3.0\\discord.net.core.2.3.0.nupkg.sha512",
@@ -15,6 +16,11 @@
     "C:\\Users\\marco\\.nuget\\packages\\microsoft.netcore.platforms\\1.1.0\\microsoft.netcore.platforms.1.1.0.nupkg.sha512",
     "C:\\Users\\marco\\.nuget\\packages\\microsoft.netcore.targets\\1.1.0\\microsoft.netcore.targets.1.1.0.nupkg.sha512",
     "C:\\Users\\marco\\.nuget\\packages\\newtonsoft.json\\12.0.2\\newtonsoft.json.12.0.2.nupkg.sha512",
+    "C:\\Users\\marco\\.nuget\\packages\\sfml.audio\\2.5.0\\sfml.audio.2.5.0.nupkg.sha512",
+    "C:\\Users\\marco\\.nuget\\packages\\sfml.graphics\\2.5.0\\sfml.graphics.2.5.0.nupkg.sha512",
+    "C:\\Users\\marco\\.nuget\\packages\\sfml.net\\2.5.0\\sfml.net.2.5.0.nupkg.sha512",
+    "C:\\Users\\marco\\.nuget\\packages\\sfml.system\\2.5.0\\sfml.system.2.5.0.nupkg.sha512",
+    "C:\\Users\\marco\\.nuget\\packages\\sfml.window\\2.5.0\\sfml.window.2.5.0.nupkg.sha512",
     "C:\\Users\\marco\\.nuget\\packages\\system.collections\\4.3.0\\system.collections.4.3.0.nupkg.sha512",
     "C:\\Users\\marco\\.nuget\\packages\\system.collections.immutable\\1.3.1\\system.collections.immutable.1.3.1.nupkg.sha512",
     "C:\\Users\\marco\\.nuget\\packages\\system.diagnostics.debug\\4.3.0\\system.diagnostics.debug.4.3.0.nupkg.sha512",
