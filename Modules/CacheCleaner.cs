@@ -1,4 +1,5 @@
 ﻿using Discord.Commands;
+using Discord.WebSocket;
 using System;
 using System.IO;
 
@@ -6,7 +7,7 @@ namespace HLTVDiscordBridge.Modules
 {
     public class CacheCleaner : ModuleBase<SocketCommandContext>
     {             
-        public void Cleaner()
+        public void Cleaner(DiscordSocketClient client)
         {
             //matches
             string matches = File.ReadAllText("./cache/matchIDs.txt");
@@ -20,11 +21,30 @@ namespace HLTVDiscordBridge.Modules
             {
                 File.WriteAllText("./cache/news.txt", news.Substring(news.Split("\n")[0].Length + 1));
             }
+            //upcoming.json
             string stars = File.ReadAllText("./cache/upcoming.json");
             if (stars.Split("}").Length - 1 > 126)
             {
                 File.WriteAllText("./cache/upcoming.json", "[\n" + stars.Substring(stars.Split("}")[0].Length + 4));
             }
+            //ServerConfigs
+            bool todelete = true;
+            Directory.CreateDirectory("./cache/serverconfig");
+            foreach(string file in Directory.GetFiles("./cache/serverconfig"))
+            {
+                foreach(SocketGuild guild in client.Guilds)
+                {
+                    if (file.Contains(guild.Id.ToString()))
+                    {
+                        todelete = false;
+                        break;
+                    }
+                }
+                if (todelete)
+                {
+                    File.Delete(file);
+                }
+            }                
         }
     }
 }

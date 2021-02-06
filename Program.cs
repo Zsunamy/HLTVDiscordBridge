@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using HLTVDiscordBridge.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -32,7 +33,7 @@ namespace HLTVDiscordBridge
             _cfg = new Config();
             _cl = new CacheCleaner();
 
-            _cfg.LoadConfig();
+            
             //_cfg.CreateXML();
 
             await _hltv.UpdateUpcomingMatches();
@@ -47,6 +48,7 @@ namespace HLTVDiscordBridge
             _client.Log += Log;
             _client.UserJoined += AnnounceUserJoined;
             _client.ReactionAdded += ReactionAdd;
+            _client.JoinedGuild += GuildJoined;
 
             await RegisterCommandsAsync();
 
@@ -60,19 +62,19 @@ namespace HLTVDiscordBridge
             await Task.Delay(-1);
         }
 
+        private async Task GuildJoined(SocketGuild guild)
+        {
+            await _cfg.GuildJoined(guild);
+        }
+
         private async Task BGTask(DiscordSocketClient client)
         {
             await Task.Delay(3000);
-            ITextChannel can = (ITextChannel)client.GetChannel(793120730933755965);
-            ITextChannel channel = (ITextChannel)client.GetChannel(792139588743331844);
-
             while (true)
             {
-                await _hltv.aktHLTV(can);                    
-                await _hltvNews.aktHLTVNews(can);
-                //await _hltv.aktHLTV(channel);
-                //await _hltvNews.aktHLTVNews(channel);
-                _cl.Cleaner();
+                await _hltv.AktHLTV(_cfg.GetChannels(_client));                    
+                await _hltvNews.aktHLTVNews(_cfg.GetChannels(_client));
+                _cl.Cleaner(client);
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");
                 await Task.Delay(_cfg.LoadConfig().CheckResultsTimeInterval);
             }

@@ -1,7 +1,9 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -66,18 +68,17 @@ namespace HLTVDiscordBridge.Modules
             return builder.Build();
         }
 
-        public async Task HLTVNews(int num, ITextChannel channel)
+        public async Task aktHLTVNews(List<SocketTextChannel> channels)
         {
             var msg = await GetMessage();
             if (msg != null)
             {
-                await channel.SendMessageAsync("", false, GetNews(msg));
-            }               
-        }
-
-        public async Task aktHLTVNews(ITextChannel channel)
-        {
-            await HLTVNews(0, channel);
+                Embed embed = GetNews(msg);
+                foreach(SocketTextChannel channel in channels)
+                {
+                    await channel.SendMessageAsync("", false, embed);
+                }                
+            }
         }
     }
 }

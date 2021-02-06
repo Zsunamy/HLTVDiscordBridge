@@ -1,7 +1,9 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -14,6 +16,10 @@ namespace HLTVDiscordBridge.Modules
         private string httpResPLStats = null;
         private Config _cfg;
 
+        /// <summary>
+        /// Gets the latest Match, if it isn't already tracked and has more than the required stars (s. Config)
+        /// </summary>
+        /// <returns>The latest match as JObject</returns>
         public async Task<JObject> GetResults()
         {
             _cfg = new Config();
@@ -47,23 +53,7 @@ namespace HLTVDiscordBridge.Modules
                 if (!matchIDs.Contains(MatchID))
                 {
                     File.AppendAllText("./cache/matchIDs.txt", JObject.Parse(jToken.ToString()).GetValue("matchId").ToString() + "\n");
-                    //ToDo: Stern Filter
-                    JArray upcoming = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
-
-                    foreach(JToken jTok in upcoming)
-                    {
-                        JObject link = JObject.Parse(jTok.ToString());
-                        if(MatchID.Contains(link.GetValue("link").ToString()))
-                        {
-                            if(int.Parse(link.GetValue("stars").ToString()) >= _cfg.LoadConfig().MinimumStars)
-                            {
-                                await UpdateUpcomingMatches();
-                                return JObject.Parse(jToken.ToString());
-                            }
-                        }
-                    }
-                    await UpdateUpcomingMatches();
-                    return null;                    
+                    return JObject.Parse(jToken.ToString());
                 }            
                 else
                 {
@@ -99,23 +89,47 @@ namespace HLTVDiscordBridge.Modules
                 .WithCurrentTimestamp();
 
             return builder.Build();
-        }        
-        public async Task HLTV(ITextChannel channel)
+        }
+        /// <summary>
+        /// Send the latest match as Embed in a Discord SocketTextChannel
+        /// </summary>
+        /// <param name="channel">List of all Channels in which the embed should be sent</param>
+        public async Task AktHLTV(List<SocketTextChannel> channels)
         {
-            var res = await GetResults();
+            JObject res = await GetResults();
+            
             if (res != null)
             {
-                var msg = await channel.SendMessageAsync("", false, GetStats(res));
-                await msg.AddReactionAsync(Emote.Parse("<:stats:793492596679901224>"));
+                Embed embed = GetStats(res);
+                foreach(SocketTextChannel channel in channels)
+                {    
+                    JArray upcoming = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
+                    foreach (JToken jTok in upcoming)
+                    {
+                        string MatchID = res.GetValue("matchId").ToString();
+                        JObject link = JObject.Parse(jTok.ToString());
+                        if (MatchID.Contains(link.GetValue("link").ToString()))
+                        {
+                            if (ushort.Parse(link.GetValue("stars").ToString()) >= _cfg.GetServerConfig(channel).MinimumStars)
+                            {
+                                var msg = await channel.SendMessageAsync("", false, embed);
+                                await msg.AddReactionAsync(Emote.Parse("<:stats:793492596679901224>"));
+                                await UpdateUpcomingMatches();
+                            }
+                        }
+                    }
+                    await UpdateUpcomingMatches();
+                }
             }
         }
-        public async Task aktHLTV(ITextChannel channel)
-        {
-            await HLTV(channel);
-        }
+        /// <summary>
+        /// Gets stats of a match with given matchlink
+        /// </summary>
+        /// <param name="matchlink">link of the match</param>
+        /// <returns>MatchStats</returns>
         public async Task<JArray> GetPLMessage(string matchlink)
         {
-            var URI = new Uri("https://hltv-api.vercel.app/api" + matchlink.Substring(20));
+            var URI = new Uri("https://hltv-api.revilum.com/" + matchlink.Substring(20));
             HttpClient http = new HttpClient();
 
             http.BaseAddress = URI;
@@ -124,6 +138,11 @@ namespace HLTVDiscordBridge.Modules
             httpResPLStats = await httpResponse.Content.ReadAsStringAsync();
             return JArray.Parse(httpResPLStats);
         }
+        /// <summary>
+        /// Converts a JArray of a MatchStats into a discord Embed
+        /// </summary>
+        /// <param name="matchlink"></param>
+        /// <returns>Discord Embed</returns>
         public async Task<Embed> GetPLStats(string matchlink)
         {
             //get team names from cached matches
