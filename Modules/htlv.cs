@@ -43,7 +43,8 @@ namespace HLTVDiscordBridge.Modules
 
             foreach(JToken jToken in jArr)
             {
-                if (!matchIDs.Contains(JObject.Parse(jToken.ToString()).GetValue("matchId").ToString()))
+                string MatchID = JObject.Parse(jToken.ToString()).GetValue("matchId").ToString();
+                if (!matchIDs.Contains(MatchID))
                 {
                     File.AppendAllText("./cache/matchIDs.txt", JObject.Parse(jToken.ToString()).GetValue("matchId").ToString() + "\n");
                     //ToDo: Stern Filter
@@ -52,7 +53,7 @@ namespace HLTVDiscordBridge.Modules
                     foreach(JToken jTok in upcoming)
                     {
                         JObject link = JObject.Parse(jTok.ToString());
-                        if(JObject.Parse(jToken.ToString()).GetValue("matchId").ToString() == link.GetValue("link").ToString())
+                        if(MatchID.Contains(link.GetValue("link").ToString()))
                         {
                             if(int.Parse(link.GetValue("stars").ToString()) >= _cfg.minStars)
                             {
