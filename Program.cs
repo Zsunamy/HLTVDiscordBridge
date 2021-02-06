@@ -42,7 +42,7 @@ namespace HLTVDiscordBridge
                 .AddSingleton(_commands)
                 .BuildServiceProvider();
 
-            string BotToken = _cfg.BotToken;
+            string BotToken = _cfg.LoadConfig().BotToken;
 
             _client.Log += Log;
             _client.UserJoined += AnnounceUserJoined;
@@ -74,7 +74,7 @@ namespace HLTVDiscordBridge
                 //await _hltvNews.aktHLTVNews(channel);
                 _cl.Cleaner();
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");
-                await Task.Delay(_cfg.ResultsTimeInterval);
+                await Task.Delay(_cfg.LoadConfig().CheckResultsTimeInterval);
             }
         }
 

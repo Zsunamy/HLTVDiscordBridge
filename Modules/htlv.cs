@@ -55,7 +55,7 @@ namespace HLTVDiscordBridge.Modules
                         JObject link = JObject.Parse(jTok.ToString());
                         if(MatchID.Contains(link.GetValue("link").ToString()))
                         {
-                            if(int.Parse(link.GetValue("stars").ToString()) >= _cfg.minStars)
+                            if(int.Parse(link.GetValue("stars").ToString()) >= _cfg.LoadConfig().MinimumStars)
                             {
                                 await UpdateUpcomingMatches();
                                 return JObject.Parse(jToken.ToString());

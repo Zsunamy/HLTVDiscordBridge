@@ -13,21 +13,16 @@ namespace HLTVDiscordBridge
 
     public class Config : ModuleBase<SocketCommandContext>
     {
-        public string BotToken;
-        public int ResultsTimeInterval;
-        public int minStars;
 
         XmlSerializer _xml;
         ConfigClass conf = new ConfigClass();
-        public void LoadConfig()
+        public ConfigClass LoadConfig()
         {
             _xml = new XmlSerializer(typeof(ConfigClass));
             FileStream stream = new FileStream("./config.xml", FileMode.Open);
             conf = (ConfigClass)_xml.Deserialize(stream);
-            BotToken = conf.BotToken;
-            ResultsTimeInterval = conf.CheckResultsTimeInterval;
-            minStars = conf.MinimumStars;
             stream.Close();
+            return conf;                      
         }
     }
 
