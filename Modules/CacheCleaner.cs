@@ -21,7 +21,7 @@ namespace HLTVDiscordBridge.Modules
                 File.WriteAllText("./cache/news.txt", news.Substring(news.Split("\n")[0].Length + 1));
             }
             string stars = File.ReadAllText("./cache/upcoming.json");
-            if (stars.Split(",").Length - 1 > 126)
+            if (stars.Split("}").Length - 1 > 126)
             {
                 File.WriteAllText("./cache/upcoming.json", "[\n" + stars.Substring(stars.Split("}")[0].Length + 4));
             }
