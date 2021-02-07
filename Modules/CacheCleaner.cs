@@ -32,6 +32,7 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/serverconfig");
             foreach(string file in Directory.GetFiles("./cache/serverconfig"))
             {
+                todelete = true;
                 foreach(SocketGuild guild in client.Guilds)
                 {
                     if (file.Contains(guild.Id.ToString()))
