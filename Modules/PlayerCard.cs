@@ -17,7 +17,7 @@ namespace HLTVDiscordBridge.Modules
             //gets PlayerID
             ushort playerID = await GetPlayerID(playername);   
             if(playerID == 0) { return null; }
-            Uri uri = new Uri("https://hltv-api.revilum.com/playerstats/" + playerID.ToString());
+            Uri uri = new Uri("https://hltv-api-steel.vercel.app/api/playerstats/" + playerID.ToString());
             HttpClient _http = new HttpClient();
             _http.BaseAddress = uri;
             HttpResponseMessage httpRequest = await _http.GetAsync(uri);
@@ -26,7 +26,7 @@ namespace HLTVDiscordBridge.Modules
         }
         private async Task<JArray> GetAchievements(string playername)
         {
-            Uri uri = new Uri("https://hltv-api.revilum.com/player/" + playername);
+            Uri uri = new Uri("https://hltv-api-steel.vercel.app/api/player/" + playername);
             HttpClient _http = new HttpClient();
             _http.BaseAddress = uri;
             HttpResponseMessage httpRequest = await _http.GetAsync(uri);
@@ -35,7 +35,7 @@ namespace HLTVDiscordBridge.Modules
 
         private async Task<ushort> GetPlayerID(string playername)
         {
-            Uri uri = new Uri("https://hltv-api.revilum.com/player/" + playername);
+            Uri uri = new Uri("https://hltv-api-steel.vercel.app/api/player/" + playername);
             HttpClient _http = new HttpClient();
             _http.BaseAddress = uri;
             HttpResponseMessage httpRequest = await _http.GetAsync(uri);

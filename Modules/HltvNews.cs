@@ -15,7 +15,7 @@ namespace HLTVDiscordBridge.Modules
 
         public async Task<JObject> GetMessage()
         {
-            var URI = new Uri("https://hltv-api.revilum.com/news");
+            var URI = new Uri("https://hltv-api-steel.vercel.app/api/news");
             HttpClient http = new HttpClient();
 
             http.BaseAddress = URI;

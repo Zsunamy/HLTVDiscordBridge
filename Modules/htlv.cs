@@ -22,7 +22,7 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>The latest match as JObject</returns>
         public async Task<JObject> GetResults()
         {
-            var URI = new Uri("https://hltv-api.revilum.com/results");
+            var URI = new Uri("https://hltv-api-steel.vercel.app/api/results");
             HttpClient http = new HttpClient();
             http.BaseAddress = URI;
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
@@ -135,7 +135,7 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>MatchStats</returns>
         public async Task<JArray> GetPLMessage(string matchlink)
         {
-            var URI = new Uri("https://hltv-api.revilum.com/" + matchlink.Substring(20));
+            var URI = new Uri("https://hltv-api-steel.vercel.app/api/" + matchlink.Substring(20));
             HttpClient http = new HttpClient();
 
             http.BaseAddress = URI;
@@ -214,7 +214,7 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>All upcoming matches</returns>
         public async Task<JArray> UpdateUpcomingMatches()
         {
-            var URI = new Uri("https://hltv-api.revilum.com/matches");
+            var URI = new Uri("https://hltv-api-steel.vercel.app/api/matches");
             HttpClient http = new HttpClient();
             http.BaseAddress = URI;
             HttpResponseMessage httpResponse = await http.GetAsync(URI);

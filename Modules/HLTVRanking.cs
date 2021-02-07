@@ -22,10 +22,10 @@ namespace HLTVDiscordBridge.Modules
             Uri uri;
             if (arg == "GLOBAL")
             {
-                uri = new Uri("https://hltv-api.revilum.com/ranking");
+                uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking");
             } else
             {
-                uri = new Uri("https://hltv-api.revilum.com/ranking/" + arg);
+                uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking/" + arg);
             }
             HttpClient httpClient = new HttpClient();            
             httpClient.BaseAddress = uri;
