@@ -14,7 +14,7 @@ namespace HLTVDiscordBridge.Modules
     {        
         private string httpRes = null;
         private string httpResPLStats = null;
-        private Config _cfg;
+        private Config _cfg = new Config();
 
         /// <summary>
         /// Gets the latest Match, if it isn't already tracked and has more than the required stars (s. Config)
@@ -22,9 +22,6 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>The latest match as JObject</returns>
         public async Task<JObject> GetResults()
         {
-            _cfg = new Config();
-            _cfg.LoadConfig();
-
             var URI = new Uri("https://hltv-api.revilum.com/results");
             HttpClient http = new HttpClient();
             http.BaseAddress = URI;

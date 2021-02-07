@@ -42,15 +42,40 @@ namespace HLTVDiscordBridge
         }
 
         [Command("init"), RequireUserPermission(GuildPermission.ManageChannels)]
-        public async Task InitTextChannel(string name = "default")
+        public async Task InitTextChannel(SocketTextChannel channel = null)
         {
-            if (name == "default")
+            if(channel == null)
             {
-                await GuildJoined(Context.Guild, Context.Channel.Id);
-            } else
+                channel = (SocketTextChannel)Context.Channel;
+            }
+            await GuildJoined(Context.Guild, channel);
+        }
+
+        [Command("minstars"), RequireUserPermission(GuildPermission.Administrator)]
+        public async Task ChangeMinStars(string stars = "")
+        {
+            EmbedBuilder builder = new EmbedBuilder();
+            ushort starsNum;
+            if(!ushort.TryParse(stars, out starsNum) || stars == "" || starsNum < 0 || starsNum > 5)
             {
-                await GuildJoined(Context.Guild, 0, name);
-            }         
+                builder.WithColor(Color.Red)
+                    .WithTitle("SYNTAX ERROR")
+                    .WithDescription("Please mind the syntax: !minstars [stars (number between 0-5)]")
+                    .WithCurrentTimestamp();
+                await ReplyAsync("", false, builder.Build());
+            }            
+            ServerConfig _config = new ServerConfig();
+            _config = GetServerConfig(Context.Guild);
+            _config.MinimumStars = starsNum;
+            FileStream fs = new FileStream("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Open);
+            XmlSerializer _xml = new XmlSerializer(typeof(ServerConfig));
+            _xml.Serialize(fs, _config);
+            fs.Close();
+            builder.WithColor(Color.Green)
+                    .WithTitle("SUCCESS")
+                    .WithDescription($"You successfully changed the minimum stars to output a HLTV match to \"{starsNum}\"")
+                    .WithCurrentTimestamp();
+            await ReplyAsync("", false, builder.Build());
         }
 
         /// <summary>
@@ -59,33 +84,21 @@ namespace HLTVDiscordBridge
         /// <param name="guild">Guild on which the Channel should be created</param>
         /// <param name="channelID">Channel ID (default 0 if a channel should be created)</param>
         /// <param name="channelname">Sets a custom Channelname</param>
-        public async Task GuildJoined(SocketGuild guild, ulong channelID = 0, string channelname = "hltv-news-feed")
+        public async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null)
         {
+            if(channel == null)
+            {
+                channel = guild.DefaultChannel;
+            }
             ServerConfig _config = new ServerConfig();
-            if (channelID == 0)
-            {
-                RestTextChannel channel = await guild.CreateTextChannelAsync(channelname);
-                channelID = channel.Id;
-                EmbedBuilder builder = new EmbedBuilder();
-                builder.WithTitle("Init")
-                    .WithDescription($"Success! You created the channel {channel.Mention} and set it as default output for HLTV-NEWS")
-                    .WithCurrentTimestamp()
-                    .WithColor(Color.DarkBlue);
-                await channel.SendMessageAsync("", false, builder.Build());
-            }
-            else
-            {
-                SocketTextChannel channel;
-                channel = guild.GetTextChannel(channelID);
-                EmbedBuilder builder = new EmbedBuilder();
-                builder.WithTitle("Init")
-                    .WithDescription($"Success! You are now using the channel {channel.Mention} as default output for HLTV-NEWS")
-                    .WithCurrentTimestamp()
-                    .WithColor(Color.DarkBlue);
-                await channel.SendMessageAsync("", false, builder.Build());
-            }
+            EmbedBuilder builder = new EmbedBuilder();
+            builder.WithTitle("Init")
+                .WithDescription($"Success! You are now using the channel {channel.Mention} as default output for HLTV-NEWS")
+                .WithCurrentTimestamp()
+                .WithColor(Color.DarkBlue);
+            await channel.SendMessageAsync("", false, builder.Build());            
 
-            _config.NewsChannelID = channelID;
+            _config.NewsChannelID = channel.Id;
             _config.guildID = guild.Id;
             _config.MinimumStars = 0;
 
@@ -136,6 +149,20 @@ namespace HLTVDiscordBridge
                 }
             }
             return null;
+        }
+        /// <summary>
+        /// Gets the Serverconfig
+        /// </summary>
+        /// <param name="guild">Guild of wanted config</param>
+        /// <returns>ServerConfig</returns>
+        public ServerConfig GetServerConfig(SocketGuild guild)
+        {
+            ServerConfig _config = new ServerConfig();
+            _xml = new XmlSerializer(typeof(ServerConfig));
+            FileStream fs = new FileStream("./cache/serverconfig/" + guild.Id + ".xml", FileMode.Open);
+            _config = (ServerConfig)_xml.Deserialize(fs);
+            fs.Close();
+            return _config;
         }
     }
 
