@@ -10,7 +10,7 @@ namespace HLTVDiscordBridge.Modules
     public class HLTVRanking : ModuleBase<SocketCommandContext>
     {
         [Command("ranking")]
-        public async Task getRanking(string num = "10", string arg = "GLOBAL")
+        public async Task getRanking(string num = "10", [Remainder]string arg = "GLOBAL")
         {
             EmbedBuilder embed = new EmbedBuilder();
             int number;
@@ -54,7 +54,8 @@ namespace HLTVDiscordBridge.Modules
                 }
             }
             embed.WithTitle($"TOP {teamsDisplayed} {arg.ToUpper()}")
-                .AddField("teams:", val);
+                .AddField("teams:", val)
+                .WithColor(Color.Blue);
             await ReplyAsync("", false, embed.Build());
         }        
     }

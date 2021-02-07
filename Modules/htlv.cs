@@ -91,7 +91,7 @@ namespace HLTVDiscordBridge.Modules
         /// Send the latest match as Embed in a Discord SocketTextChannel
         /// </summary>
         /// <param name="channel">List of all Channels in which the embed should be sent</param>
-        public async Task AktHLTV(List<SocketTextChannel> channels)
+        public async Task AktHLTV(List<SocketTextChannel> channels, DiscordSocketClient client)
         {
             JObject res = await GetResults();
             
@@ -109,8 +109,17 @@ namespace HLTVDiscordBridge.Modules
                         {
                             if (ushort.Parse(link.GetValue("stars").ToString()) >= _cfg.GetServerConfig(channel).MinimumStars)
                             {
+                                bool emoteCreate = true;
                                 var msg = await channel.SendMessageAsync("", false, embed);
-                                await msg.AddReactionAsync(Emote.Parse("<:stats:793492596679901224>"));
+                                foreach(GuildEmote emote in client.GetGuild(_cfg.GetServerConfig(channel).guildID).Emotes)
+                                {
+                                    if(emote.Id == _cfg.GetServerConfig(channel).EmoteID)
+                                    {
+                                        emoteCreate = false;
+                                    }
+                                }
+                                if (emoteCreate) { await client.GetGuild(_cfg.GetServerConfig(channel).guildID).CreateEmoteAsync("hltvstats", new Image("./res/headshot.png")); }
+                                await msg.AddReactionAsync(Emote.Parse($"<:hltvstats:{_cfg.GetServerConfig(channel).EmoteID}>"));
                                 await UpdateUpcomingMatches();
                             }
                         }

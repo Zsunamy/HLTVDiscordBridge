@@ -21,6 +21,7 @@ namespace HLTVDiscordBridge
         public ulong guildID { get; set; }
         public ulong NewsChannelID { get; set; }
         public ushort MinimumStars { get; set; }
+        public ulong EmoteID { get; set; }
     }
 
     public class Config : ModuleBase<SocketCommandContext>
@@ -86,21 +87,33 @@ namespace HLTVDiscordBridge
         /// <param name="channelname">Sets a custom Channelname</param>
         public async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null)
         {
-            if(channel == null)
-            {
+            EmbedBuilder builder = new EmbedBuilder();
+            if (channel == null)
+            {                
                 channel = guild.DefaultChannel;
+                builder.WithTitle("INIT")
+                    .WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. {channel.Mention} is set as default output for HLTV-NEWS. " +
+                    $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
+                    $"https://github.com/Zsunamy/HLTVDiscordBridge/issues \n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>")
+                    .WithCurrentTimestamp()
+                    .WithColor(Color.DarkBlue);
+            } else
+            {
+                builder.WithTitle("Init")
+                    .WithDescription($"Success! You are now using the channel {channel.Mention} as default output for HLTV-NEWS")
+                    .WithCurrentTimestamp()
+                    .WithColor(Color.DarkBlue);
             }
             ServerConfig _config = new ServerConfig();
-            EmbedBuilder builder = new EmbedBuilder();
-            builder.WithTitle("Init")
-                .WithDescription($"Success! You are now using the channel {channel.Mention} as default output for HLTV-NEWS")
-                .WithCurrentTimestamp()
-                .WithColor(Color.DarkBlue);
+
+            
+            
             await channel.SendMessageAsync("", false, builder.Build());            
 
             _config.NewsChannelID = channel.Id;
             _config.guildID = guild.Id;
             _config.MinimumStars = 0;
+            _config.EmoteID = (await guild.CreateEmoteAsync("hltvstats", new Image("./res/headshot.png"))).Id;
 
             _xml = new XmlSerializer(typeof(ServerConfig));
             Directory.CreateDirectory("./cache/serverconfig");

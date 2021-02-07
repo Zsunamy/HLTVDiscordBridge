@@ -57,7 +57,7 @@ namespace HLTVDiscordBridge
 
             await _client.SetGameAsync("!help");
 
-            await BGTask(_client);
+            await BGTask();
 
             await Task.Delay(-1);
         }
@@ -67,14 +67,14 @@ namespace HLTVDiscordBridge
             await _cfg.GuildJoined(guild);
         }
 
-        private async Task BGTask(DiscordSocketClient client)
+        private async Task BGTask()
         {
             await Task.Delay(3000);
             while (true)
             {
-                await _hltv.AktHLTV(_cfg.GetChannels(_client));                    
+                await _hltv.AktHLTV(_cfg.GetChannels(_client), _client);                    
                 await _hltvNews.aktHLTVNews(_cfg.GetChannels(_client));
-                _cl.Cleaner(client);
+                _cl.Cleaner(_client);
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");
                 await Task.Delay(_cfg.LoadConfig().CheckResultsTimeInterval);
             }
@@ -91,7 +91,7 @@ namespace HLTVDiscordBridge
                 embedReac = em;
             }
 
-            if (msg.Author.IsBot && !reaction.User.Value.IsBot && embedReac.Author.Value.Name.ToString().ToLower() == "full details by hltv.org" && reaction.Emote.Name == "stats")
+            if (msg.Author.IsBot && !reaction.User.Value.IsBot && embedReac.Author.Value.Name.ToString().ToLower() == "full details by hltv.org" && reaction.Emote.Name == "hltvstats")
             {
                 await _hltv.stats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);
             }
