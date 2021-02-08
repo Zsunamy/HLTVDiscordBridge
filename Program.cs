@@ -46,7 +46,6 @@ namespace HLTVDiscordBridge
             string BotToken = _cfg.LoadConfig().BotToken;
 
             _client.Log += Log;
-            _client.UserJoined += AnnounceUserJoined;
             _client.ReactionAdded += ReactionAdd;
             _client.JoinedGuild += GuildJoined;
 
@@ -95,13 +94,6 @@ namespace HLTVDiscordBridge
             {
                 await _hltv.stats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);
             }
-        }
-
-        private async Task AnnounceUserJoined(SocketGuildUser user)
-        {
-            var guild = user.Guild;
-            var channel = guild.DefaultChannel;
-            await channel.SendMessageAsync($"Welcome {user.Mention}!");
         }
 
         private Task Log(LogMessage arg)

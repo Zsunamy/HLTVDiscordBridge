@@ -109,7 +109,17 @@ namespace HLTVDiscordBridge
             _config.NewsChannelID = channel.Id;
             _config.guildID = guild.Id;
             _config.MinimumStars = 0;
-            try { _config.EmoteID = (await guild.CreateEmoteAsync("hltvstats", new Image("./res/headshot.png"))).Id; }
+            try {
+                bool CreateEmote = true;
+                GuildEmote emote = null;
+                foreach(GuildEmote emo in guild.Emotes)
+                {
+                    if (emo.Name == "hltvstats") { CreateEmote = false; emote = emo; }
+                    Console.WriteLine(emo.Name);
+                }
+                if (CreateEmote) { emote = await guild.CreateEmoteAsync("hltvstats", new Image("./res/headshot.png")); }
+                else { _config.EmoteID = emote.Id; }
+            }
             catch(Discord.Net.HttpException)
             {
                 builder.WithTitle("INIT ERROR")
