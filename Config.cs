@@ -21,7 +21,6 @@ namespace HLTVDiscordBridge
         public ulong guildID { get; set; }
         public ulong NewsChannelID { get; set; }
         public ushort MinimumStars { get; set; }
-        public ulong EmoteID { get; set; }
     }
 
     public class Config : ModuleBase<SocketCommandContext>
@@ -49,7 +48,7 @@ namespace HLTVDiscordBridge
             {
                 channel = (SocketTextChannel)Context.Channel;
             }
-            await GuildJoined(Context.Guild, channel);
+            await GuildJoined(Context.Guild, Context.Client, channel);
         }
 
         [Command("minstars"), RequireUserPermission(GuildPermission.Administrator)]
@@ -85,7 +84,7 @@ namespace HLTVDiscordBridge
         /// <param name="guild">Guild on which the Channel should be created</param>
         /// <param name="channelID">Channel ID (default 0 if a channel should be created)</param>
         /// <param name="channelname">Sets a custom Channelname</param>
-        public async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null)
+        public async Task GuildJoined(SocketGuild guild, DiscordSocketClient client, SocketTextChannel channel = null)
         {
             EmbedBuilder builder = new EmbedBuilder();
             if (channel == null)
@@ -108,33 +107,7 @@ namespace HLTVDiscordBridge
 
             _config.NewsChannelID = channel.Id;
             _config.guildID = guild.Id;
-            _config.MinimumStars = 0;
-            try {
-                bool CreateEmote = true;
-                GuildEmote emote = null;
-                foreach(GuildEmote emo in guild.Emotes)
-                {
-                    if (emo.Name == "hltvstats") { CreateEmote = false; emote = emo; }
-                    Console.WriteLine(emo.Name);
-                }
-                if (CreateEmote) { emote = await guild.CreateEmoteAsync("hltvstats", new Image("./res/headshot.png")); }
-                else { _config.EmoteID = emote.Id; }
-            }
-            catch(Discord.Net.HttpException)
-            {
-                builder.WithTitle("INIT ERROR")
-                    .WithDescription("Please make sure that the HLTV bot has enough permission and that there is at least one custom emoji slot left. Try to add the bot again!");
-
-                try { var PM = await guild.Owner.GetOrCreateDMChannelAsync(); await PM.SendMessageAsync("", false, builder.Build()); } 
-                catch(Discord.Net.HttpException)
-                {
-                    Console.WriteLine($"not enough permission to write to {guild.Owner.Nickname}");
-                }
-                
-                await guild.LeaveAsync();
-                return;
-            }
-            
+            _config.MinimumStars = 0;            
 
             _xml = new XmlSerializer(typeof(ServerConfig));
             Directory.CreateDirectory("./cache/serverconfig");
@@ -149,9 +122,22 @@ namespace HLTVDiscordBridge
                     $"in a channel of your choice, but make sure that the bot has enough permission to access and send messages in that channel. " +
                     $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
                     $"https://github.com/Zsunamy/HLTVDiscordBridge/issues \n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>");
-                await guild.Owner.SendMessageAsync("", false, builder.Build());
+                try { await guild.Owner.SendMessageAsync("", false, builder.Build()); }
+                catch (Discord.Net.HttpException) { }
             }
                
+        }
+
+        public async Task<GuildEmote> GetEmote(DiscordSocketClient client)
+        {
+            foreach (SocketGuild guild in client.Guilds)
+            {
+                if (guild.Id == 748637221300732076)
+                {
+                    return await guild.GetEmoteAsync(808033604529684530);
+                }                
+            }
+            return null;
         }
 
         /// <summary>

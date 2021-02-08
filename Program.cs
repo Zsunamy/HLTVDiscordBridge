@@ -63,7 +63,7 @@ namespace HLTVDiscordBridge
 
         private async Task GuildJoined(SocketGuild guild)
         {
-            await _cfg.GuildJoined(guild);
+            await _cfg.GuildJoined(guild, _client);
         }
 
         private async Task BGTask()
