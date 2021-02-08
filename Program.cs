@@ -48,10 +48,6 @@ namespace HLTVDiscordBridge
             _client.Log += Log;
             _client.ReactionAdded += ReactionAdd;
             _client.JoinedGuild += GuildJoined;
-            foreach (SocketGuild guild in _client.Guilds) 
-            {
-                await guild.LeaveAsync();
-            }
 
             await RegisterCommandsAsync();
 
