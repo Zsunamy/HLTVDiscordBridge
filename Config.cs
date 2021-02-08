@@ -42,7 +42,7 @@ namespace HLTVDiscordBridge
             return conf;
         }
 
-        [Command("init"), RequireUserPermission(GuildPermission.ManageChannels)]
+        [Command("init")/*, RequireUserPermission(GuildPermission.ManageChannels)*/]
         public async Task InitTextChannel(SocketTextChannel channel = null)
         {
             if(channel == null)
