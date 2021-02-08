@@ -18,25 +18,25 @@ namespace HLTVDiscordBridge.Modules
                 case "init":
                     builder.WithTitle("HELP INIT")
                         .AddField("Syntax:", "\"!init [Textchannel (leave blank for current channel)]\"")
-                        .AddField("Summary:", $"sets the default channel for HLTV-NEWS\nexample:\n\"!init {((SocketTextChannel)Context.Channel).Mention}\"")
+                        .AddField("Summary:", $"Sets the default channel for HLTV-NEWS\nexample:\n\"!init {((SocketTextChannel)Context.Channel).Mention}\"")
                         .AddField("Permissions:", "ManageChannels");
                     break;
                 case "player":
                     builder.WithTitle("HELP PLAYER")
                         .AddField("Syntax:", "\"!player [name]\"")
-                        .AddField("Summary:", "gets the stats of a player\nexample:\n\"!player tabsen\"")
+                        .AddField("Summary:", "Gets the stats of a player\nfirst time requests may take up to 10 seconds\nexample:\n\"!player tabsen\"")
                         .AddField("Permissions:", "none");
                     break;
                 case "minstars":
                     builder.WithTitle("HELP MINSTARS")
                         .AddField("Syntax:", "\"!minstars [stars (number betweeen 0-5)]\"")
-                        .AddField("Summary:", "changes the minimum stars of a match to be displayed in your HLTV-News-Feed\nexample:\n\"!minstars 0\"")
+                        .AddField("Summary:", "Changes the minimum stars of a match to be displayed in your HLTV-News-Feed\nexample:\n\"!minstars 0\"")
                         .AddField("Permissions:", "Admin");
                     break;
                 case "ranking":
                     builder.WithTitle("HELP RANKING")
                         .AddField("Syntax:", "\"!ranking [number from 1-30 (default = 10)] [country or region (default = GLOBAL)]\"")
-                        .AddField("Summary:", "displays the team ranking of a specific country or region \nexample:\n\"!ranking 15 germany\"\n\"!ranking 3 united states\"")
+                        .AddField("Summary:", "Sisplays the team ranking of a specific country or region \nexample:\n\"!ranking 15 germany\"\n\"!ranking 3 united states\"")
                         .AddField("Permissions:", "none");
                     break;
                 default:
