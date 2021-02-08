@@ -48,7 +48,14 @@ namespace HLTVDiscordBridge.Modules
                 {
                     File.Delete(file);
                 }
-            }                
+            }
+            //delete playercards after 7 days
+            Directory.CreateDirectory("./cache/playercards");
+            foreach (string dir in Directory.GetDirectories("./cache/playercards"))
+            {
+                if (Directory.GetCreationTime(dir).AddDays(7).Date == DateTime.Now.Date) { Directory.Delete(dir); }                
+            }
+            
         }
     }
 }

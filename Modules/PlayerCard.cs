@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -12,36 +14,46 @@ namespace HLTVDiscordBridge.Modules
 {
     public class PlayerCard : ModuleBase<SocketCommandContext>
     {
-        private async Task<JObject> GetPlayerStats(string playername)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="playername"></param>
+        /// <returns>PlayerStats as JObject, PlayerID as ushort, Achievements as JArray</returns>
+        private async Task<(JObject, ushort, JArray)> GetPlayerStats(string playername)
         {
-            //gets PlayerID
-            ushort playerID = await GetPlayerID(playername);   
-            if(playerID == 0) { return null; }
-            Uri uri = new Uri("https://hltv-api-steel.vercel.app/api/playerstats/" + playerID.ToString());
-            HttpClient _http = new HttpClient();
-            _http.BaseAddress = uri;
-            HttpResponseMessage httpRequest = await _http.GetAsync(uri);
-            JObject jObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync());
-            return jObj;
-        }
-        private async Task<JArray> GetAchievements(string playername)
-        {
-            Uri uri = new Uri("https://hltv-api-steel.vercel.app/api/player/" + playername);
-            HttpClient _http = new HttpClient();
-            _http.BaseAddress = uri;
-            HttpResponseMessage httpRequest = await _http.GetAsync(uri);
-            return JArray.Parse(JObject.Parse(await httpRequest.Content.ReadAsStringAsync()).GetValue("achievements").ToString());
-        }
+            JObject idJObj;
+            JObject statsJObj;
+            //Cache Player
+            Directory.CreateDirectory("./cache/playercards");
+            if (Directory.Exists($"./cache/playercards/{playername.ToLower()}"))
+            {
+                idJObj = JObject.Parse(File.ReadAllText($"./cache/playercards/{playername.ToLower()}/id.json"));
+                statsJObj = JObject.Parse(File.ReadAllText($"./cache/playercards/{playername.ToLower()}/stats.json"));
+                ushort playerID = ushort.Parse(idJObj.GetValue("id").ToString());
+                JArray achievements = JArray.Parse(idJObj.GetValue("achievements").ToString());
+                return (statsJObj, playerID, achievements);
+            } else
+            {
+                //Get non cached Player
+                Directory.CreateDirectory($"./cache/playercards/{playername.ToLower()}");
+                Uri uri = new Uri("https://hltv-api-steel.vercel.app/api/player/" + playername);
+                HttpClient _http = new HttpClient();
+                _http.BaseAddress = uri;
+                HttpResponseMessage httpRequest = await _http.GetAsync(uri);
+                idJObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync());
+                if (idJObj.Count == 0) { return (null, 0, null); }
+                File.WriteAllText($"./cache/playercards/{playername.ToLower()}/id.json", idJObj.ToString());
+                ushort playerID = ushort.Parse(idJObj.GetValue("id").ToString());
+                JArray achievements = JArray.Parse(idJObj.GetValue("achievements").ToString());
 
-        private async Task<ushort> GetPlayerID(string playername)
-        {
-            Uri uri = new Uri("https://hltv-api-steel.vercel.app/api/player/" + playername);
-            HttpClient _http = new HttpClient();
-            _http.BaseAddress = uri;
-            HttpResponseMessage httpRequest = await _http.GetAsync(uri);
-            JObject jObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync());
-            if (jObj.Count == 0) { return 0; }
-            return ushort.Parse(jObj.GetValue("id").ToString());
+                Uri uri1 = new Uri("https://hltv-api-steel.vercel.app/api/playerstats/" + playerID.ToString());
+                HttpClient _http1 = new HttpClient();
+                _http1.BaseAddress = uri1;
+                HttpResponseMessage httpRequest1 = await _http1.GetAsync(uri1);
+                statsJObj = JObject.Parse(await httpRequest1.Content.ReadAsStringAsync());
+                File.WriteAllText($"./cache/playercards/{playername.ToLower()}/stats.json", statsJObj.ToString());
+                return (statsJObj, playerID, achievements);
+            }            
         }
 
         private async Task<Embed> GetPlayerCard(string playername = "")
@@ -53,8 +65,9 @@ namespace HLTVDiscordBridge.Modules
                     .WithTitle("SYNTAX ERROR")
                     .WithDescription("Please mind the syntax: \"!player [name]\"");
                 return builder.Build();
-            }            
-            JObject jObj = await GetPlayerStats(playername);
+            }
+            var req = await GetPlayerStats(playername);
+            JObject jObj = req.Item1;            
             if (jObj == null) 
             {
                 builder.WithColor(Color.Red)
@@ -62,8 +75,8 @@ namespace HLTVDiscordBridge.Modules
                     .WithDescription($"The player \"{playername}\" does not exist");
                 return builder.Build();
             }
-            JArray achievements = await GetAchievements(jObj.GetValue("ign").ToString());
-            
+            JArray achievements = req.Item3;
+
             JObject stats = JObject.Parse(jObj.GetValue("statistics").ToString());
             JObject country = JObject.Parse(jObj.GetValue("country").ToString());
             jObj.TryGetValue("team", out JToken teamTok);
@@ -74,7 +87,7 @@ namespace HLTVDiscordBridge.Modules
             string name;
             string age;
             if (teamTok == null) { team = "n.A"; }
-            else { team = teamTok.ToString(); }
+            else { team = JObject.Parse(teamTok.ToString()).GetValue("name").ToString(); }
 
             if (nameTok == null) { name = "n.A"; }
             else { name = nameTok.ToString(); }
@@ -85,7 +98,7 @@ namespace HLTVDiscordBridge.Modules
             if (PBUrlTok != null) { builder.WithThumbnailUrl(PBUrlTok.ToString()); }
                
 
-            builder.WithAuthor("more info on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://hltv.org/player/" + (await GetPlayerID(jObj.GetValue("ign").ToString())).ToString() + "/" + jObj.GetValue("ign").ToString())
+            builder.WithAuthor("more info on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://hltv.org/player/" + req.Item2.ToString() + "/" + jObj.GetValue("ign").ToString())
                .WithTitle(jObj.GetValue("ign").ToString() + $" :flag_{country.GetValue("code").ToString().ToLower()}:")
                .AddField("Name:", name, true)
                .AddField("Age:", age, true)
@@ -131,7 +144,6 @@ namespace HLTVDiscordBridge.Modules
                     $"{JObject.Parse(ach3.GetValue("event").ToString()).GetValue("name")} finished: {ach3.GetValue("place")}\n and {achievements.Count - 3} more");
                     break;
             }
-            
 
             return builder.Build();
         }
