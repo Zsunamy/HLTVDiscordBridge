@@ -106,10 +106,6 @@ namespace HLTVDiscordBridge
             }
             ServerConfig _config = new ServerConfig();
 
-            
-            
-            await channel.SendMessageAsync("", false, builder.Build());            
-
             _config.NewsChannelID = channel.Id;
             _config.guildID = guild.Id;
             _config.MinimumStars = 0;
@@ -121,6 +117,8 @@ namespace HLTVDiscordBridge
 
             _xml.Serialize(stream, _config);            
             stream.Close();
+
+            await channel.SendMessageAsync("", false, builder.Build());   
         }
 
         /// <summary>
