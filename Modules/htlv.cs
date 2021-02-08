@@ -212,7 +212,7 @@ namespace HLTVDiscordBridge.Modules
         /// Gets upcoming HLTV matches and their star rating and saves them in ./cache/upcoming.json
         /// </summary>
         /// <returns>All upcoming matches</returns>
-        public async Task<JArray> UpdateUpcomingMatches()
+        public async Task UpdateUpcomingMatches()
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/matches");
             HttpClient http = new HttpClient();
@@ -226,36 +226,23 @@ namespace HLTVDiscordBridge.Modules
             {
                 FileStream fs = File.Create("./cache/upcoming.json");
                 fs.Close();
-                foreach (JToken jToken in jArr)
-                {
-                    string link = "{link: \"" + JObject.Parse(jToken.ToString()).GetValue("link").ToString() + "\",\n";
-                    string stars = "stars: " + JObject.Parse(jToken.ToString()).GetValue("stars").ToString() + "}";
-                    JToken tok = JToken.FromObject(JObject.Parse(link + stars));
-                    myJArr.Add(tok);
-                }                
-                File.WriteAllText("./cache/upcoming.json", myJArr.ToString());
-                return myJArr;
+                File.WriteAllText("./cache/upcoming.json", jArr.ToString());
+                return;
             }
             else
             {
                 myJArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
+                //Console.WriteLine(myJArr);
             }
             
             foreach(JToken jToken in jArr)
             {
-                string link = "{link: \"" + JObject.Parse(jToken.ToString()).GetValue("link").ToString() + "\",\n";
-                string stars = "stars: " + JObject.Parse(jToken.ToString()).GetValue("stars").ToString() + "}";
-                JToken tok = JToken.FromObject(JObject.Parse(link + stars));
-
                 if (!myJArr.ToString().Contains(JObject.Parse(jToken.ToString()).GetValue("link").ToString()))
                 {
-                    myJArr.Add(tok);
-                }
-                
-                                 
+                    myJArr.Add(jToken);
+                }          
             }
             File.WriteAllText("./cache/upcoming.json", myJArr.ToString());
-            return myJArr;
         } 
     }
 }

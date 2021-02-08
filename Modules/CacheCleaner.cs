@@ -1,5 +1,6 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
+using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 
@@ -22,10 +23,12 @@ namespace HLTVDiscordBridge.Modules
                 File.WriteAllText("./cache/news.txt", news.Substring(news.Split("\n")[0].Length + 1));
             }
             //upcoming.json
-            string stars = File.ReadAllText("./cache/upcoming.json");
-            if (stars.Split("}").Length - 1 > 126)
+            string upcoming = File.ReadAllText("./cache/upcoming.json");
+            JArray jArr = JArray.Parse(upcoming);
+            if (jArr.Count > 100)
             {
-                File.WriteAllText("./cache/upcoming.json", "[\n" + stars.Substring(stars.Split("}")[0].Length + 4));
+                jArr.Remove(jArr[0]);
+                File.WriteAllText("./cache/upcoming.json", jArr.ToString());
             }
             //ServerConfigs
             bool todelete = true;

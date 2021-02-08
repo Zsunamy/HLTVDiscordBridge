@@ -65,29 +65,31 @@ namespace HLTVDiscordBridge.Modules
             JArray achievements = await GetAchievements(jObj.GetValue("ign").ToString());
             
             JObject stats = JObject.Parse(jObj.GetValue("statistics").ToString());
-            JObject team = JObject.Parse(jObj.GetValue("team").ToString());
             JObject country = JObject.Parse(jObj.GetValue("country").ToString());
+            jObj.TryGetValue("team", out JToken teamTok);
             jObj.TryGetValue("name", out JToken nameTok);
             jObj.TryGetValue("age", out JToken ageTok);
             jObj.TryGetValue("image", out JToken PBUrlTok);
+            string team;
             string name;
             string age;
-            if (nameTok == null)
-                name = "n.A";
-            else
-                name = nameTok.ToString();
-            if (ageTok == null)
-                age = "n.A";
-            else
-                age = ageTok.ToString();
-            if (PBUrlTok != null)
-                builder.WithThumbnailUrl(PBUrlTok.ToString());
+            if (teamTok == null) { team = "n.A"; }
+            else { team = teamTok.ToString(); }
+
+            if (nameTok == null) { name = "n.A"; }
+            else { name = nameTok.ToString(); }
+
+            if (ageTok == null) { age = "n.A"; }
+            else { age = ageTok.ToString(); }
+
+            if (PBUrlTok != null) { builder.WithThumbnailUrl(PBUrlTok.ToString()); }
+               
 
             builder.WithAuthor("more info on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://hltv.org/player/" + (await GetPlayerID(jObj.GetValue("ign").ToString())).ToString() + "/" + jObj.GetValue("ign").ToString())
                .WithTitle(jObj.GetValue("ign").ToString() + $" :flag_{country.GetValue("code").ToString().ToLower()}:")
                .AddField("Name:", name, true)
                .AddField("Age:", age, true)
-               .AddField("Team:", team.GetValue("name").ToString(), true)
+               .AddField("Team:", team, true)
                .AddField("Stats:", "Maps played:\nKills/Deaths:\nHeadshot %:\nADR:\nKills per round:\nAssists per round:\nDeaths per round:", true)
                .AddField("\u200b", $"{stats.GetValue("mapsPlayed")}\n{stats.GetValue("kills")}/{stats.GetValue("deaths")} ({stats.GetValue("kdRatio")})\n" +
                $"{stats.GetValue("headshots")}\n{stats.GetValue("damagePerRound")}\n {stats.GetValue("killsPerRound")}\n {stats.GetValue("assistsPerRound")}\n {stats.GetValue("deathsPerRound")}", true)
