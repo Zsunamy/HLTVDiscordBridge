@@ -76,7 +76,9 @@ namespace HLTVDiscordBridge.Modules
                 Embed embed = GetNews(msg);
                 foreach(SocketTextChannel channel in channels)
                 {
-                    await channel.SendMessageAsync("", false, embed);
+                    try { await channel.SendMessageAsync("", false, embed); }
+                    catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); }
+                    
                 }                
             }
         }

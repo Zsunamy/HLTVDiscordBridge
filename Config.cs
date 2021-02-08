@@ -124,8 +124,13 @@ namespace HLTVDiscordBridge
             {
                 builder.WithTitle("INIT ERROR")
                     .WithDescription("Please make sure that the HLTV bot has enough permission and that there is at least one custom emoji slot left. Try to add the bot again!");
-                var PM = await guild.Owner.GetOrCreateDMChannelAsync();
-                await PM.SendMessageAsync("", false, builder.Build());
+
+                try { var PM = await guild.Owner.GetOrCreateDMChannelAsync(); await PM.SendMessageAsync("", false, builder.Build()); } 
+                catch(Discord.Net.HttpException)
+                {
+                    Console.WriteLine($"not enough permission to write to {guild.Owner.Nickname}");
+                }
+                
                 await guild.LeaveAsync();
                 return;
             }

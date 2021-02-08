@@ -110,17 +110,24 @@ namespace HLTVDiscordBridge.Modules
                             if (ushort.Parse(link.GetValue("stars").ToString()) >= _cfg.GetServerConfig(channel).MinimumStars)
                             {
                                 bool emoteCreate = true;
-                                var msg = await channel.SendMessageAsync("", false, embed);
-                                foreach(GuildEmote emote in client.GetGuild(_cfg.GetServerConfig(channel).guildID).Emotes)
+                                foreach (GuildEmote emote in client.GetGuild(_cfg.GetServerConfig(channel).guildID).Emotes)
                                 {
-                                    if(emote.Id == _cfg.GetServerConfig(channel).EmoteID)
+                                    if (emote.Id == _cfg.GetServerConfig(channel).EmoteID)
                                     {
                                         emoteCreate = false;
                                     }
                                 }
                                 if (emoteCreate) { await client.GetGuild(_cfg.GetServerConfig(channel).guildID).CreateEmoteAsync("hltvstats", new Image("./res/headshot.png")); }
-                                await msg.AddReactionAsync(Emote.Parse($"<:hltvstats:{_cfg.GetServerConfig(channel).EmoteID}>"));
+                                try { var msg = await channel.SendMessageAsync("", false, embed); await msg.AddReactionAsync(Emote.Parse($"<:hltvstats:{_cfg.GetServerConfig(channel).EmoteID}>")); } 
+                                catch(Discord.Net.HttpException)
+                                {
+                                    Console.Write($"not enough permission in channel {channel}");
+                                }
                                 await UpdateUpcomingMatches();
+
+
+
+
                             }
                         }
                     }
