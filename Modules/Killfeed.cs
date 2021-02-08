@@ -9,11 +9,30 @@ namespace HLTVDiscordBridge.Modules
 {
     public class Killfeed : ModuleBase<SocketCommandContext>
     {
-        [Command("killfeed")]
-        public async Task RenderKillfeed(string firstPlayerName = "BOT Bjöööan", bool isTerrorist = false)
+        private Rendering.NameGenerator nameGenerator;
+        private Rendering.KillfeedGenerator killfeedGenerator;
+
+        public Killfeed()
         {
-            KillfeedGenerator.KillfeedGenerator gen = new KillfeedGenerator.KillfeedGenerator();
-            gen.GenerateImage(firstPlayerName, isTerrorist);
+            nameGenerator = new Rendering.NameGenerator();
+            killfeedGenerator = new Rendering.KillfeedGenerator();
+        }
+
+        [Command("killfeed")]
+        public async Task KillfeedCommand(string firstPlayerName = "none", string secondPlayerName = "none", bool firstPlayerIsTerrorist = false, bool secondPlayerIsTerrorist = true, string weapon = "ak47", bool isHeadshot = true)
+        {
+            
+
+            if(firstPlayerName == "none")
+            {
+                firstPlayerName = nameGenerator.GenerateName();
+            } 
+            if(secondPlayerName == "none")
+            {
+                secondPlayerName = nameGenerator.GenerateName();
+            }
+
+            killfeedGenerator.GenerateImage(firstPlayerName, secondPlayerName, firstPlayerIsTerrorist, secondPlayerIsTerrorist, weapon, isHeadshot);
             await Context.Channel.SendFileAsync("killfeed.png");
         }
     }
