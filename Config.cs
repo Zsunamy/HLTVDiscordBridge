@@ -109,7 +109,17 @@ namespace HLTVDiscordBridge
             _config.NewsChannelID = channel.Id;
             _config.guildID = guild.Id;
             _config.MinimumStars = 0;
-            _config.EmoteID = (await guild.CreateEmoteAsync("hltvstats", new Image("./res/headshot.png"))).Id;
+            try { _config.EmoteID = (await guild.CreateEmoteAsync("hltvstats", new Image("./res/headshot.png"))).Id; }
+            catch(Discord.Net.HttpException)
+            {
+                builder.WithTitle("INIT ERROR")
+                    .WithDescription("Please make sure that the HLTV bot has enough permission and that there is at least one custom emoji slot left. Try to add the bot again!");
+                var PM = await guild.Owner.GetOrCreateDMChannelAsync();
+                await PM.SendMessageAsync("", false, builder.Build());
+                await guild.LeaveAsync();
+                return;
+            }
+            
 
             _xml = new XmlSerializer(typeof(ServerConfig));
             Directory.CreateDirectory("./cache/serverconfig");
@@ -117,8 +127,16 @@ namespace HLTVDiscordBridge
 
             _xml.Serialize(stream, _config);            
             stream.Close();
-
-            await channel.SendMessageAsync("", false, builder.Build());   
+            try { await channel.SendMessageAsync("", false, builder.Build()); }
+            catch(Discord.Net.HttpException)
+            {
+                builder.WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. To set a default HLTV-News output channel, type !init " +
+                    $"in a channel of your choice, but make sure that the bot has enough permission to access and send messages in that channel. " +
+                    $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
+                    $"https://github.com/Zsunamy/HLTVDiscordBridge/issues \n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>");
+                await guild.Owner.SendMessageAsync("", false, builder.Build());
+            }
+               
         }
 
         /// <summary>
