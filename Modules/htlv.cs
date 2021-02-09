@@ -28,7 +28,9 @@ namespace HLTVDiscordBridge.Modules
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
 
             httpRes = await httpResponse.Content.ReadAsStringAsync();
-            JArray jArr = JArray.Parse(httpRes);
+            JArray jArr;
+            try { jArr = JArray.Parse(httpRes); }
+            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
 
             Directory.CreateDirectory("./cache");
             if (!File.Exists("./cache/matchIDs.txt"))
@@ -213,7 +215,9 @@ namespace HLTVDiscordBridge.Modules
             http.BaseAddress = URI;
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
             string httpResult = await httpResponse.Content.ReadAsStringAsync();
-            JArray jArr = JArray.Parse(httpResult);
+            JArray jArr;
+            try { jArr = JArray.Parse(httpResult); }
+            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return; }
             JArray myJArr = new JArray();
             Directory.CreateDirectory("./cache");
             if (!File.Exists("./cache/upcoming.json"))

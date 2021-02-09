@@ -30,7 +30,17 @@ namespace HLTVDiscordBridge.Modules
             HttpClient httpClient = new HttpClient();            
             httpClient.BaseAddress = uri;
             HttpResponseMessage response = await httpClient.GetAsync(uri);
-            JArray jArr = JArray.Parse(await response.Content.ReadAsStringAsync());
+            JArray jArr = null;
+            try { jArr = JArray.Parse(await response.Content.ReadAsStringAsync()); }
+            catch (Newtonsoft.Json.JsonReaderException) 
+            { 
+                Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
+                embed.WithColor(Color.Red)
+                    .WithTitle($"SYSTEM ERROR")
+                    .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");
+                await ReplyAsync("", false, embed.Build());
+                return;
+            }
 
             if (jArr.Count == 0)
             {

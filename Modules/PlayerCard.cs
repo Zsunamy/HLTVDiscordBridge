@@ -34,14 +34,17 @@ namespace HLTVDiscordBridge.Modules
                 return (statsJObj, playerID, achievements);
             } else
             {
-                //Get non cached Player
-                Directory.CreateDirectory($"./cache/playercards/{playername.ToLower()}");
+                //Get non cached Player                
                 Uri uri = new Uri("https://hltv-api-steel.vercel.app/api/player/" + playername);
                 HttpClient _http = new HttpClient();
                 _http.BaseAddress = uri;
                 HttpResponseMessage httpRequest = await _http.GetAsync(uri);
-                idJObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync());
-                if (idJObj.Count == 0) { return (null, 0, null); }
+
+                try { idJObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync()); }
+                catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return (null, 0, null); }                    
+                if (idJObj.Count == 0) { return (null, 0, JArray.Parse("[]")); }
+
+                Directory.CreateDirectory($"./cache/playercards/{playername.ToLower()}");
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/id.json", idJObj.ToString());
                 ushort playerID = ushort.Parse(idJObj.GetValue("id").ToString());
                 JArray achievements = JArray.Parse(idJObj.GetValue("achievements").ToString());
@@ -67,15 +70,23 @@ namespace HLTVDiscordBridge.Modules
                 return builder.Build();
             }
             var req = await GetPlayerStats(playername);
-            JObject jObj = req.Item1;            
-            if (jObj == null) 
+            JObject jObj = req.Item1;
+            JArray achievements = req.Item3;
+            if (jObj == null && achievements != null) 
             {
                 builder.WithColor(Color.Red)
                     .WithTitle("ERROR")
                     .WithDescription($"The player \"{playername}\" does not exist");
                 return builder.Build();
+            } else if(jObj == null && achievements == null)
+            {
+                Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
+                builder.WithColor(Color.Red)
+                    .WithTitle($"SYSTEM ERROR")
+                    .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");                
+                return builder.Build();
             }
-            JArray achievements = req.Item3;
+            
 
             JObject stats = JObject.Parse(jObj.GetValue("statistics").ToString());
             JObject country = JObject.Parse(jObj.GetValue("country").ToString());
@@ -149,7 +160,7 @@ namespace HLTVDiscordBridge.Modules
         }
 
         [Command("player")]
-        public async Task Player(string playername)
+        public async Task Player(string playername = "")
         {
             await ReplyAsync("", false, await GetPlayerCard(playername));
         }

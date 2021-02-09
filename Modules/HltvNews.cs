@@ -22,7 +22,9 @@ namespace HLTVDiscordBridge.Modules
 
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
 
-            JArray jArr = JArray.Parse(await httpResponse.Content.ReadAsStringAsync());
+            JArray jArr;
+            try { jArr = JArray.Parse(await httpResponse.Content.ReadAsStringAsync()); }
+            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
 
             Directory.CreateDirectory("./cache");
             if (!File.Exists("./cache/news.txt"))

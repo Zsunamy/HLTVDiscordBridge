@@ -32,18 +32,24 @@ namespace HLTVDiscordBridge.Modules
                         .AddField("Syntax:", "\"!minstars [stars (number betweeen 0-5)]\"")
                         .AddField("Summary:", "Changes the minimum stars of a match to be displayed in your HLTV-News-Feed\nexample:\n\"!minstars 0\"")
                         .AddField("Permissions:", "Admin");
-                    break;
-                case "ranking":
+                    break;          
+                case "ranking":  
                     builder.WithTitle("HELP RANKING")
                         .AddField("Syntax:", "\"!ranking [number from 1-30 (default = 10)] [country or region (default = GLOBAL)]\"")
-                        .AddField("Summary:", "Sisplays the team ranking of a specific country or region \nexample:\n\"!ranking 15 germany\"\n\"!ranking 3 united states\"")
+                        .AddField("Summary:", "Displays the team ranking of a specific country or region \nexample:\n\"!ranking 15 germany\"\n\"!ranking 3 united states\"")
+                        .AddField("Permissions:", "none");
+                    break;
+                case "upcoming":
+                    builder.WithTitle("HELP UPCOMING")
+                        .AddField("Syntax:", "\"!upcoming [date or team or event or leave blank for all upcoming matches]\"")
+                        .AddField("Summary:", "Displays the upcoming matches for a day in the future, a team or an event \nexample:\n\"!upcoming 9.2\"\n\"!upcoming g2\"")
                         .AddField("Permissions:", "none");
                     break;
                 default:
                     builder.WithTitle("HELP")
-                        .AddField("Commands:", "\"!init\"\n\"!player\"\n\"!minstars\"\n\"!ranking\"\n\"!about\"", true)
+                        .AddField("Commands:", "\"!init\"\n\"!player\"\n\"!minstars\"\n\"!ranking\"\n\"!about\"\n\"!upcoming\"", true)
                         .AddField("Short summary:", $"sets the default channel for HLTV-NEWS\ngives stats for a player\nsets minimumstars for HLTV matches to output\n" +
-                        $"displays the team ranking\nsiplays the contact page", true)
+                        $"displays the team ranking\ndisplays the contact page\ndisplays upcoming matches", true)
                         .WithFooter("For more info type: \"!help [command]\"");
                     break;
             }
