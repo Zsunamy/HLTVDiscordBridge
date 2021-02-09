@@ -10,27 +10,33 @@ namespace HLTVDiscordBridge.Modules
     public class HLTVRanking : ModuleBase<SocketCommandContext>
     {
         [Command("ranking")]
-        public async Task getRanking(string num = "10", [Remainder]string arg = "GLOBAL")
+        public async Task getRanking(string arg = "GLOBAL")
         {
             EmbedBuilder embed = new EmbedBuilder();
-            int number;
-            if(!int.TryParse(num, out number))
-            {
-                arg = num;
-                number = 10;
-            }
             Uri uri;
+            DateTime time;
+            if (arg.Contains('-'))
+            {
+                arg = "";
+                foreach (string str in arg.Split('-')) { arg += $"{str} "; }
+            }
             if (arg == "GLOBAL")
             {
                 uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking");
+            } else if (DateTime.TryParse(arg, out time)) 
+            {
+                string[] months = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };                
+                uri = new Uri($"https://hltv-api-steel.vercel.app/api/ranking/{time.Day}/{months[time.Month - 1]}/{time.Year}");
             } else
             {
                 uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking/" + arg);
             }
+
+
             HttpClient httpClient = new HttpClient();            
             httpClient.BaseAddress = uri;
             HttpResponseMessage response = await httpClient.GetAsync(uri);
-            JArray jArr = null;
+            JArray jArr = JArray.Parse("[]");
             try { jArr = JArray.Parse(await response.Content.ReadAsStringAsync()); }
             catch (Newtonsoft.Json.JsonReaderException) 
             { 
@@ -53,11 +59,12 @@ namespace HLTVDiscordBridge.Modules
 
             int teamsDisplayed = jArr.Count;
             string val = "";
-            for(int i = 0; i < jArr.Count; i++)
+            int maxTeams = 10;
+            for (int i = 0; i < jArr.Count; i++)
             {
                 JObject jObj = JObject.Parse(JObject.Parse(jArr[i].ToString()).GetValue("team").ToString());
                 val += $"{i + 1}.\t{jObj.GetValue("name")}\n";
-                if(i + 1 == number)
+                if(i + 1 == maxTeams)
                 {
                     teamsDisplayed = i + 1;
                     break;

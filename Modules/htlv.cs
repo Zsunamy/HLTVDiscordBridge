@@ -12,9 +12,32 @@ namespace HLTVDiscordBridge.Modules
 {
     public class Hltv : ModuleBase<SocketCommandContext>
     {        
-        private string httpRes = null;
-        private string httpResPLStats = null;
         private Config _cfg = new Config();
+
+        /// <summary>
+        /// Gets a match by its matchlink
+        /// </summary>
+        /// <param name="matchLink">Matchlink</param>
+        /// <returns>Matchstats as JObject and HTTP error code</returns>
+        private async Task<(JObject, ushort)> getMatchByMatchlink (string matchLink)
+        {
+            var URI = new Uri("https://hltv-api-steel.vercel.app/api/results");
+            HttpClient http = new HttpClient();
+            http.BaseAddress = URI;
+            HttpResponseMessage httpResponse = await http.GetAsync(URI);
+            string httpRes = await httpResponse.Content.ReadAsStringAsync();
+            JArray jArr;
+            try { jArr = JArray.Parse(httpRes); }
+            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return (null, 503); }
+
+            JObject jObj = null;
+            foreach (JToken jTok in jArr)
+            {
+                jObj = JObject.Parse(jTok.ToString());
+                if (jObj.GetValue("matchId").ToString() == matchLink) { return (jObj, 200); }
+            }
+            return (null, 404);
+        }
 
         /// <summary>
         /// Gets the latest Match, if it isn't already tracked and has more than the required stars (s. Config)
@@ -27,7 +50,7 @@ namespace HLTVDiscordBridge.Modules
             http.BaseAddress = URI;
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
 
-            httpRes = await httpResponse.Content.ReadAsStringAsync();
+            string httpRes = await httpResponse.Content.ReadAsStringAsync();
             JArray jArr;
             try { jArr = JArray.Parse(httpRes); }
             catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
@@ -124,6 +147,8 @@ namespace HLTVDiscordBridge.Modules
                 }
             }
         }
+
+
         /// <summary>
         /// Gets stats of a match with given matchlink
         /// </summary>
@@ -131,13 +156,11 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>MatchStats</returns>
         public async Task<JArray> GetPLMessage(string matchlink)
         {
-            var URI = new Uri("https://hltv-api-steel.vercel.app/api/" + matchlink.Substring(20));
+            var URI = new Uri("https://hltv-api-steel.vercel.app/api/oldmatchstats" + matchlink.Substring(20));
             HttpClient http = new HttpClient();
-
             http.BaseAddress = URI;
-
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            httpResPLStats = await httpResponse.Content.ReadAsStringAsync();
+            string httpResPLStats = await httpResponse.Content.ReadAsStringAsync();
             return JArray.Parse(httpResPLStats);
         }
         /// <summary>
@@ -147,25 +170,28 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>Discord Embed</returns>
         public async Task<Embed> GetPLStats(string matchlink)
         {
+            EmbedBuilder builder = new EmbedBuilder();
             //get team names from cached matches
             string team1name = null;
             string team2name = null;
-            JArray jsonArray1 = JArray.Parse(httpRes);
-            foreach(JToken tok in jsonArray1)
+            var res = await getMatchByMatchlink(matchlink.Substring(20));
+            JObject jObj = res.Item1;
+            if(jObj == null && res.Item2 == 503)
             {
-                var jobj = JObject.Parse(tok.ToString());
-                if(jobj.GetValue("matchId").ToString() == matchlink.Substring(20))
-                {
-                    team1name = JObject.Parse(jobj["team1"].ToString()).GetValue("name").ToString();
-                    team2name = JObject.Parse(jobj["team2"].ToString()).GetValue("name").ToString();
-                }
+                Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
+                builder.WithColor(Color.Red)
+                    .WithTitle($"SYSTEM ERROR")
+                    .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");
+                return builder.Build();
+            } else if (jObj == null && res.Item2 == 404)
+            {
+                builder.WithColor(Color.Red)
+                    .WithTitle($"SYSTEM ERROR")
+                    .WithDescription("Match was not found, because it is too old.");
+                return builder.Build();
             }
-
-            var URI = new Uri("https://hltv-api.vercel.app/api" + matchlink.Substring(20));
-            HttpClient http = new HttpClient();
-            http.BaseAddress = URI;
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            httpResPLStats = await httpResponse.Content.ReadAsStringAsync();
+            team1name = JObject.Parse(jObj.GetValue("team1").ToString()).GetValue("name").ToString();
+            team2name = JObject.Parse(jObj.GetValue("team2").ToString()).GetValue("name").ToString();
 
             JArray jsonArray = await GetPLMessage(matchlink);
             var PL0 = JObject.Parse(jsonArray[0].ToString());
@@ -179,7 +205,7 @@ namespace HLTVDiscordBridge.Modules
             var PL8 = JObject.Parse(jsonArray[8].ToString());
             var PL9 = JObject.Parse(jsonArray[9].ToString());
 
-            EmbedBuilder builder = new EmbedBuilder();
+            
             builder.WithTitle($"PLAYERSTATS ({team1name} vs. {team2name})")
                 .WithColor(Color.Red)
                 .AddField($"players ({team1name}):", PL0.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL1.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL2.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL3.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL4.GetValue("playerName").ToString().Split(' ')[1], true)
@@ -202,7 +228,6 @@ namespace HLTVDiscordBridge.Modules
         {
             await channel.SendMessageAsync("", false, await GetPLStats(matchlink));
         }
-
 
         /// <summary>
         /// Gets upcoming HLTV matches and their star rating and saves them in ./cache/upcoming.json

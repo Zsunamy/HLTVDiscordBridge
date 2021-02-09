@@ -92,7 +92,8 @@ namespace HLTVDiscordBridge
 
             if (msg.Author.IsBot && !reaction.User.Value.IsBot && embedReac.Author.Value.Name.ToString().ToLower() == "full details by hltv.org" && reaction.Emote.Name == "hltvstats")
             {
-                await _hltv.stats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);
+                await msg.RemoveAllReactionsAsync();
+                await _hltv.stats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);                
             }
         }
 
