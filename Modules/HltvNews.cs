@@ -110,15 +110,14 @@ namespace HLTVDiscordBridge.Modules
         public async Task aktHLTVNews(List<SocketTextChannel> channels)
         {
             //await GetNews(); 
-            var msg = await GetMessage();
+            JObject msg = await GetMessage();
             if (msg != null)
             {
                 Embed embed = GetNews(msg);
                 foreach(SocketTextChannel channel in channels)
                 {
                     try { await channel.SendMessageAsync("", false, embed); }
-                    catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
-                    
+                    catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }                   
                 }                
             }
         }

@@ -111,7 +111,7 @@ namespace HLTVDiscordBridge
 
             _xml = new XmlSerializer(typeof(ServerConfig));
             Directory.CreateDirectory("./cache/serverconfig");
-            FileStream stream = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.OpenOrCreate);  
+            FileStream stream = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.Create);  
 
             _xml.Serialize(stream, _config);            
             stream.Close();
@@ -155,7 +155,7 @@ namespace HLTVDiscordBridge
                 FileStream fs = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.Open);
                 _config = (ServerConfig)_xml.Deserialize(fs);
                 fs.Close();
-                channel.Add((SocketTextChannel)client.GetChannel(_config.NewsChannelID));
+                if ((SocketTextChannel)client.GetChannel(_config.NewsChannelID) != null) { channel.Add((SocketTextChannel)client.GetChannel(_config.NewsChannelID)); }                
             }            
             return channel;
         }
