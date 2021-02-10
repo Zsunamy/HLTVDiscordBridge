@@ -137,7 +137,7 @@ namespace HLTVDiscordBridge.Modules
                                 try { var msg = await channel.SendMessageAsync("", false, embed); await msg.AddReactionAsync(await _cfg.GetEmote(client)); } 
                                 catch(Discord.Net.HttpException)
                                 {
-                                    Console.Write($"not enough permission in channel {channel}");
+                                    Console.WriteLine($"not enough permission in channel {channel}");
                                 }
                                 await UpdateUpcomingMatches();
                             }

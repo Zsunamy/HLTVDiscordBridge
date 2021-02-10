@@ -134,7 +134,7 @@ namespace HLTVDiscordBridge
             {
                 if (guild.Id == 748637221300732076)
                 {
-                    return await guild.GetEmoteAsync(808033604529684530);
+                    return await guild.GetEmoteAsync(809082404324114522);
                 }                
             }
             return null;
