@@ -130,7 +130,7 @@ namespace HLTVDiscordBridge.Modules
                     {
                         string MatchID = res.GetValue("matchId").ToString();
                         JObject link = JObject.Parse(jTok.ToString());
-                        if (MatchID.Contains(link.GetValue("link").ToString()))
+                        if (MatchID == link.GetValue("link").ToString())
                         {
                             if (ushort.Parse(link.GetValue("stars").ToString()) >= _cfg.GetServerConfig(channel).MinimumStars)
                             {                                
