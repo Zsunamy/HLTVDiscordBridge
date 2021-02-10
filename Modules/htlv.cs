@@ -140,7 +140,6 @@ namespace HLTVDiscordBridge.Modules
                                     Console.WriteLine($"not enough permission in channel {channel}");
                                     continue;
                                 }
-                                await UpdateUpcomingMatches();
                             }
                         }
                     }
