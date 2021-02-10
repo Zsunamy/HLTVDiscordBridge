@@ -7,12 +7,49 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace HLTVDiscordBridge.Modules
 {
+    public class News
+    {
+        public string title { get; set; }
+        public string description { get; set; }
+        public string link { get; set; }
+    }
+
+
     public class HltvNews : ModuleBase<SocketCommandContext>
     {
+        //official RSS Feed       
+        public async Task<News> GetNews()
+        {
+            HttpClient http = new HttpClient();
+            HttpRequestMessage req = new HttpRequestMessage();
+            req.RequestUri = new Uri("https://www.hltv.org/rss/news");
+            HttpResponseMessage res = await http.SendAsync(req);
+            string result = await res.Content.ReadAsStringAsync();
+            if (!File.Exists("./cache/news.xml")) { var fs = File.Create("./cache/news.xml");  fs.Close(); }
+            if (File.ReadAllText("./cache/news.xml") == result) { return null; }
+            File.WriteAllText("./cache/news.xml", await res.Content.ReadAsStringAsync());
 
+            XmlDocument doc = new XmlDocument();
+            doc.Load("./cache/newsneu.xml");
+            XmlNodeList nodes = doc.GetElementsByTagName("item");
+            XmlNodeList latestNews = nodes[0].ChildNodes;
+            Console.WriteLine(latestNews.ToString());
+            return null;
+        }
+
+
+
+
+
+
+
+
+        //Veraltet mit api
         public async Task<JObject> GetMessage()
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/news");
@@ -72,6 +109,7 @@ namespace HLTVDiscordBridge.Modules
 
         public async Task aktHLTVNews(List<SocketTextChannel> channels)
         {
+            await GetNews(); /*
             var msg = await GetMessage();
             if (msg != null)
             {
@@ -82,7 +120,7 @@ namespace HLTVDiscordBridge.Modules
                     catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); }
                     
                 }                
-            }
+            }*/
         }
     }
 }

@@ -138,6 +138,7 @@ namespace HLTVDiscordBridge.Modules
                                 catch(Discord.Net.HttpException)
                                 {
                                     Console.WriteLine($"not enough permission in channel {channel}");
+                                    continue;
                                 }
                                 await UpdateUpcomingMatches();
                             }

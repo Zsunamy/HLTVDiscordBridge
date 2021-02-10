@@ -82,11 +82,9 @@ namespace HLTVDiscordBridge
         private async Task ReactionAdd(Cacheable<IUserMessage, ulong> cacheable, ISocketMessageChannel channel, SocketReaction reaction)
         {
             IUserMessage msg = await cacheable.GetOrDownloadAsync();
-            string _em = "";
             IEmbed embedReac = null;
             foreach (IEmbed em in msg.Embeds)
             {
-                _em = em.ToString();
                 embedReac = em;
             }
 
