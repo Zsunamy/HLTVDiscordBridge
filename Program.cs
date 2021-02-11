@@ -88,6 +88,8 @@ namespace HLTVDiscordBridge
                 embedReac = em;
             }
 
+            if (embedReac == null) { return; }
+            if (embedReac.Author == null) { return; }
             if (msg.Author.IsBot && !reaction.User.Value.IsBot && embedReac.Author.Value.Name.ToString().ToLower() == "full details by hltv.org" && reaction.Emote.Name == "hltvstats")
             {
                 await msg.RemoveAllReactionsAsync();
