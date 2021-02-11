@@ -35,73 +35,25 @@ namespace HLTVDiscordBridge.Modules
             File.WriteAllText("./cache/news.xml", await res.Content.ReadAsStringAsync());
 
             XmlDocument doc = new XmlDocument();
-            doc.Load("./cache/newsneu.xml");
+            doc.Load("./cache/news.xml");
             XmlNodeList nodes = doc.GetElementsByTagName("item");
             XmlNodeList latestNews = nodes[0].ChildNodes;
-            Console.WriteLine(latestNews.ToString());
-            return null;
+
+            News news = new News();
+            news.title = latestNews[0].InnerText;
+            news.description = latestNews[1].InnerText;
+            news.link = latestNews[2].InnerText;
+            return news;
         }
 
-
-
-
-
-
-
-
-        //Veraltet mit api
-        public async Task<JObject> GetMessage()
+        public Embed GetNews(News news)
         {
-            var URI = new Uri("https://hltv-api-steel.vercel.app/api/news");
-            HttpClient http = new HttpClient();
-
-            http.BaseAddress = URI;
-
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-
-            JArray jArr;
-            try { jArr = JArray.Parse(await httpResponse.Content.ReadAsStringAsync()); }
-            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
-
-            Directory.CreateDirectory("./cache");
-            if (!File.Exists("./cache/news.txt"))
-            {
-                var stream = File.Create("./cache/news.txt");
-                stream.Close();
-
-                foreach (JToken jToken in jArr)
-                {
-                    File.AppendAllText("./cache/news.txt", JObject.Parse(jToken.ToString()).GetValue("link").ToString() + "\n");
-                }
-                return null;
-            }
-            string news = File.ReadAllText("./cache/news.txt");
-
-            foreach (JToken jToken in jArr)
-            {
-                if (!news.Contains(JObject.Parse(jToken.ToString()).GetValue("link").ToString()))
-                {
-                    File.AppendAllText("./cache/news.txt", JObject.Parse(jToken.ToString()).GetValue("link").ToString() + "\n");
-                    return JObject.Parse(jToken.ToString());
-                }
-                else
-                {
-                    continue;
-                }
-            }
-            return null;
-        }
-
-        public Embed GetNews(JObject jObj)
-        {
-            var data = jObj;
-
             EmbedBuilder builder = new EmbedBuilder();
-            builder.WithTitle(data.GetValue("title").ToString())
+            builder.WithTitle(news.title)
                 .WithColor(Color.Blue);       
 
-            builder.AddField("description:", data.GetValue("description"));
-            builder.WithAuthor("full story on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", data.GetValue("link").ToString());
+            builder.AddField("description:", news.description);
+            builder.WithAuthor("full story on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", news.link);
             builder.WithCurrentTimestamp();
 
             return builder.Build();
@@ -109,11 +61,10 @@ namespace HLTVDiscordBridge.Modules
 
         public async Task aktHLTVNews(List<SocketTextChannel> channels)
         {
-            //await GetNews(); 
-            JObject msg = await GetMessage();
-            if (msg != null)
+            News bam = await GetNews();
+            if (bam != null)
             {
-                Embed embed = GetNews(msg);
+                Embed embed = GetNews(bam);
                 foreach(SocketTextChannel channel in channels)
                 {
 #if RELEASE

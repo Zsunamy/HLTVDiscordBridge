@@ -16,12 +16,6 @@ namespace HLTVDiscordBridge.Modules
             {
                 File.WriteAllText("./cache/matchIDs.txt", matches.Substring(matches.Split("\n")[0].Length + 1));
             }
-            //news
-            string news = File.ReadAllText("./cache/news.txt");
-            if((news.Split("\n").Length - 1) > 20)
-            {
-                File.WriteAllText("./cache/news.txt", news.Substring(news.Split("\n")[0].Length + 1));
-            }
             //upcoming.json
             string upcoming = File.ReadAllText("./cache/upcoming.json");
             JArray jArr = JArray.Parse(upcoming);
