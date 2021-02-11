@@ -45,7 +45,7 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>The latest match as JObject</returns>
         public async Task<JObject> GetResults()
         {
-            var URI = new Uri("https://hltv-api-steel.vercel.app/api/results");
+            var URI = new Uri("https://hltv-api-steel.vercel.app/api/legacy/results");
             HttpClient http = new HttpClient();
             http.BaseAddress = URI;
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
