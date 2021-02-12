@@ -145,13 +145,14 @@ namespace HLTVDiscordBridge
         /// </summary>
         /// <param name="client">acting client</param>
         /// <returns>List<SocketTextChannel> of all channels</returns>
-        public List<SocketTextChannel> GetChannels (DiscordSocketClient client)
+        public async Task<List<SocketTextChannel>> GetChannels (DiscordSocketClient client)
         {
             List<SocketTextChannel> channel = new List<SocketTextChannel>();
             ServerConfig _config = new ServerConfig();
             _xml = new XmlSerializer(typeof(ServerConfig));
             foreach (SocketGuild guild in client.Guilds)
             {
+                if (!File.Exists($"./cache/serverconfig/{guild.Id}.xml")) { await GuildJoined(guild, client); }                
                 FileStream fs = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.Open);
                 _config = (ServerConfig)_xml.Deserialize(fs);
                 fs.Close();

@@ -71,8 +71,8 @@ namespace HLTVDiscordBridge
             await Task.Delay(3000);
             while (true)
             {
-                await _hltv.AktHLTV(_cfg.GetChannels(_client), _client);                    
-                await _hltvNews.aktHLTVNews(_cfg.GetChannels(_client));
+                await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);                    
+                await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
                 _cl.Cleaner(_client);
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");
                 await Task.Delay(_cfg.LoadConfig().CheckResultsTimeInterval);

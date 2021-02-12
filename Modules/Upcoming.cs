@@ -35,9 +35,12 @@ namespace HLTVDiscordBridge.Modules
             {
                 JObject jObj = JObject.Parse(jArr[0].ToString());
                 string team1name = JObject.Parse(JArray.Parse(jObj.GetValue("teams").ToString())[0].ToString()).GetValue("name").ToString();
+                if (team1name == "") { team1name = "TBD"; }
                 string team2name = JObject.Parse(JArray.Parse(jObj.GetValue("teams").ToString())[1].ToString()).GetValue("name").ToString();
+                if (team2name == "") { team2name = "TBD"; }
                 string format = jObj.GetValue("map").ToString();
                 string eventname = JObject.Parse(JObject.Parse(jObj.GetValue("event").ToString()).ToString()).GetValue("name").ToString();
+                if (eventname == "") { eventname = "n.A"; }
                 string link = jObj.GetValue("link").ToString();
                 DateTime time = DateTime.Parse(jObj.GetValue("time").ToString());
                 builder.AddField("match:", $"{team1name} vs. {team2name}")

@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Rest;
 using Discord.WebSocket;
 using Newtonsoft.Json.Linq;
 using System;
@@ -34,7 +35,7 @@ namespace HLTVDiscordBridge.Modules
             foreach (JToken jTok in jArr)
             {
                 jObj = JObject.Parse(jTok.ToString());
-                if (jObj.GetValue("matchId").ToString() == matchLink) { return (jObj, 200); }
+                if (matchLink.Contains(jObj.GetValue("id").ToString())) { return (jObj, 200); }
             }
             return (null, 404);
         }
@@ -45,7 +46,7 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>The latest match as JObject</returns>
         public async Task<JObject> GetResults()
         {
-            var URI = new Uri("https://hltv-api-steel.vercel.app/api/legacy/results");
+            var URI = new Uri("https://hltv-api-steel.vercel.app/api/results");
             HttpClient http = new HttpClient();
             http.BaseAddress = URI;
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
@@ -63,7 +64,7 @@ namespace HLTVDiscordBridge.Modules
                 
                 foreach (JToken jToken in jArr)
                 {
-                    File.AppendAllText("./cache/matchIDs.txt", JObject.Parse(jToken.ToString()).GetValue("matchId").ToString() + "\n");
+                    File.AppendAllText("./cache/matchIDs.txt", JObject.Parse(jToken.ToString()).GetValue("id").ToString() + "\n");
                 }
                 return null;
             }
@@ -71,10 +72,10 @@ namespace HLTVDiscordBridge.Modules
 
             foreach(JToken jToken in jArr)
             {
-                string MatchID = JObject.Parse(jToken.ToString()).GetValue("matchId").ToString();
+                string MatchID = JObject.Parse(jToken.ToString()).GetValue("id").ToString();
                 if (!matchIDs.Contains(MatchID))
                 {
-                    File.AppendAllText("./cache/matchIDs.txt", JObject.Parse(jToken.ToString()).GetValue("matchId").ToString() + "\n");
+                    File.AppendAllText("./cache/matchIDs.txt", JObject.Parse(jToken.ToString()).GetValue("id").ToString() + "\n");
                     return JObject.Parse(jToken.ToString());
                 }            
                 else
@@ -95,19 +96,22 @@ namespace HLTVDiscordBridge.Modules
             {
                 return null;
             }
-            var data = res;
-            var team1 = JObject.Parse(data["team1"].ToString());
-            var team2 = JObject.Parse(data["team2"].ToString());
-            string latmatchid = data.GetValue("matchId").ToString();            
+            JObject data = res;
+            JObject eventinfo = JObject.Parse(data.GetValue("event").ToString());
+            JObject team1 = JObject.Parse(data.GetValue("team1").ToString());
+            JObject team2 = JObject.Parse(data.GetValue("team2").ToString());
+            string[] result = data.GetValue("result").ToString().Split(" - ");
+            string latmatchid = $"https://www.hltv.org/matches/{data.GetValue("id")}/{team1.GetValue("name").ToString().Replace(' ', '-')}-vs-" +
+                $"{team2.GetValue("name").ToString().Replace(' ', '-')}-{eventinfo.GetValue("name").ToString().Replace(' ', '-')}";            
 
             EmbedBuilder builder = new EmbedBuilder();
             builder.WithTitle($"{team1.GetValue("name")} vs. {team2.GetValue("name")}")
                 .WithColor(Color.Red)
-                .AddField("event:", data.GetValue("event"))
-                .AddField("maps:", data.GetValue("maps"))
-                .AddField(team1.GetValue("name").ToString(), team1.GetValue("result"), true)
-                .AddField(team2.GetValue("name").ToString(), team2.GetValue("result"), true)
-                .WithAuthor("full details by hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://www.hltv.org" + latmatchid)
+                .AddField("event:", eventinfo.GetValue("name"))
+                .AddField("maps:", data.GetValue("format"))
+                .AddField(team1.GetValue("name").ToString(), result[0], true)
+                .AddField(team2.GetValue("name").ToString(), result[1], true)
+                .WithAuthor("full details by hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", latmatchid)
                 .WithCurrentTimestamp();
 
             return builder.Build();
@@ -124,25 +128,16 @@ namespace HLTVDiscordBridge.Modules
             {
                 Embed embed = GetStats(res);
                 foreach(SocketTextChannel channel in channels)
-                {    
-                    JArray upcoming = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
-                    foreach (JToken jTok in upcoming)
+                {
+                    if (ushort.Parse(res.GetValue("stars").ToString()) >= _cfg.GetServerConfig(channel).MinimumStars)
                     {
-                        string MatchID = res.GetValue("matchId").ToString();
-                        JObject link = JObject.Parse(jTok.ToString());
-                        if (MatchID == link.GetValue("link").ToString())
-                        {
-                            if (ushort.Parse(link.GetValue("stars").ToString()) >= _cfg.GetServerConfig(channel).MinimumStars)
-                            {
 #if RELEASE
-                                try { var msg = await channel.SendMessageAsync("", false, embed); await msg.AddReactionAsync(await _cfg.GetEmote(client)); } 
-                                catch(Discord.Net.HttpException)
-                                {
-                                    Console.WriteLine($"not enough permission in channel {channel}");
-                                }
-#endif
-                            }
+                        try { RestUserMessage msg = await channel.SendMessageAsync("", false, embed); await msg.AddReactionAsync(await _cfg.GetEmote(client)); }
+                        catch (Discord.Net.HttpException)
+                        {
+                            Console.WriteLine($"not enough permission in channel {channel}");
                         }
+#endif
                     }
                     await UpdateUpcomingMatches();
                 }
@@ -155,14 +150,14 @@ namespace HLTVDiscordBridge.Modules
         /// </summary>
         /// <param name="matchlink">link of the match</param>
         /// <returns>MatchStats</returns>
-        public async Task<JArray> GetPLMessage(string matchlink)
+        public async Task<JObject> GetPLMessage(string matchid)
         {
-            var URI = new Uri("https://hltv-api-steel.vercel.app/api/oldmatchstats" + matchlink.Substring(20));
+            var URI = new Uri("https://hltv-api-steel.vercel.app/api/match/" + matchid);
             HttpClient http = new HttpClient();
             http.BaseAddress = URI;
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
             string httpResPLStats = await httpResponse.Content.ReadAsStringAsync();
-            return JArray.Parse(httpResPLStats);
+            return JObject.Parse(httpResPLStats);
         }
         /// <summary>
         /// Converts a JArray of a MatchStats into a discord Embed
@@ -171,50 +166,34 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>Discord Embed</returns>
         public async Task<Embed> GetPLStats(string matchlink)
         {
+            Console.WriteLine(matchlink);
             EmbedBuilder builder = new EmbedBuilder();
             //get team names from cached matches
             string team1name = null;
             string team2name = null;
-            var res = await getMatchByMatchlink(matchlink.Substring(20));
-            JObject jObj = res.Item1;
-            if(jObj == null && res.Item2 == 503)
-            {
-                Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
-                builder.WithColor(Color.Red)
-                    .WithTitle($"SYSTEM ERROR")
-                    .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");
-                return builder.Build();
-            } else if (jObj == null && res.Item2 == 404)
-            {
-                builder.WithColor(Color.Red)
-                    .WithTitle($"SYSTEM ERROR")
-                    .WithDescription("Match was not found, because it is too old.");
-                return builder.Build();
-            }
-            team1name = JObject.Parse(jObj.GetValue("team1").ToString()).GetValue("name").ToString();
-            team2name = JObject.Parse(jObj.GetValue("team2").ToString()).GetValue("name").ToString();
+            Console.WriteLine(matchlink.Substring(29, 7));
 
-            JArray jsonArray = await GetPLMessage(matchlink);
-            var PL0 = JObject.Parse(jsonArray[0].ToString());
-            var PL1 = JObject.Parse(jsonArray[1].ToString());
-            var PL2 = JObject.Parse(jsonArray[2].ToString());
-            var PL3 = JObject.Parse(jsonArray[3].ToString());
-            var PL4 = JObject.Parse(jsonArray[4].ToString());
-            var PL5 = JObject.Parse(jsonArray[5].ToString());
-            var PL6 = JObject.Parse(jsonArray[6].ToString());
-            var PL7 = JObject.Parse(jsonArray[7].ToString());
-            var PL8 = JObject.Parse(jsonArray[8].ToString());
-            var PL9 = JObject.Parse(jsonArray[9].ToString());
+            JObject matchStats = await GetPLMessage(matchlink.Substring(29, 7));
+            team1name = JObject.Parse(matchStats.GetValue("team1").ToString()).GetValue("name").ToString();
+            team2name = JObject.Parse(matchStats.GetValue("team2").ToString()).GetValue("name").ToString();
+            JArray team1PL = JArray.Parse(JObject.Parse(matchStats.GetValue("players").ToString()).GetValue("team1").ToString());
+            JArray team2PL = JArray.Parse(JObject.Parse(matchStats.GetValue("players").ToString()).GetValue("team2").ToString());
+            var PL0 = JObject.Parse(team1PL[0].ToString());
+            var PL1 = JObject.Parse(team1PL[1].ToString());
+            var PL2 = JObject.Parse(team1PL[2].ToString());
+            var PL3 = JObject.Parse(team1PL[3].ToString());
+            var PL4 = JObject.Parse(team1PL[4].ToString());
+            var PL5 = JObject.Parse(team2PL[0].ToString());
+            var PL6 = JObject.Parse(team2PL[1].ToString());
+            var PL7 = JObject.Parse(team2PL[2].ToString());
+            var PL8 = JObject.Parse(team2PL[3].ToString());
+            var PL9 = JObject.Parse(team2PL[4].ToString());
 
             
             builder.WithTitle($"PLAYERSTATS ({team1name} vs. {team2name})")
                 .WithColor(Color.Red)
-                .AddField($"players ({team1name}):", PL0.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL1.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL2.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL3.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL4.GetValue("playerName").ToString().Split(' ')[1], true)
-                .AddField("K/D:", PL0.GetValue("kills") + "/" + PL0.GetValue("deaths") + "\n" + PL1.GetValue("kills") + "/" + PL1.GetValue("deaths") + "\n" + PL2.GetValue("kills") + "/" + PL2.GetValue("deaths") + "\n" + PL3.GetValue("kills") + "/" + PL3.GetValue("deaths") + "\n" + PL4.GetValue("kills") + "/" + PL4.GetValue("deaths"), true)
-                .AddField("rating:", PL0.GetValue("rating") + "\n" + PL1.GetValue("rating") + "\n" + PL2.GetValue("rating") + "\n" + PL3.GetValue("rating") + "\n" + PL4.GetValue("rating"), true)
-                .AddField($"players ({team2name}):", PL5.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL6.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL7.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL8.GetValue("playerName").ToString().Split(' ')[1] + "\n" + PL9.GetValue("playerName").ToString().Split(' ')[1], true)
-                .AddField("K/D:", PL5.GetValue("kills") + "/" + PL5.GetValue("deaths") + "\n" + PL6.GetValue("kills") + "/" + PL6.GetValue("deaths") + "\n" + PL7.GetValue("kills") + "/" + PL7.GetValue("deaths") + "\n" + PL8.GetValue("kills") + "/" + PL8.GetValue("deaths") + "\n" + PL9.GetValue("kills") + "/" + PL9.GetValue("deaths"), true)
-                .AddField("rating:", PL5.GetValue("rating") + "\n" + PL6.GetValue("rating") + "\n" + PL7.GetValue("rating") + "\n" + PL8.GetValue("rating") + "\n" + PL9.GetValue("rating"), true)
+                .AddField($"players ({team1name}):", PL0.GetValue("name").ToString() + "\n" + PL1.GetValue("name").ToString() + "\n" + PL2.GetValue("name").ToString() + "\n" + PL3.GetValue("name").ToString() + "\n" + PL4.GetValue("name").ToString(), true)
+                .AddField($"players ({team2name}):", PL5.GetValue("name").ToString() + "\n" + PL6.GetValue("name").ToString() + "\n" + PL7.GetValue("name").ToString() + "\n" + PL8.GetValue("name").ToString() + "\n" + PL9.GetValue("name").ToString(), true)
                 .WithAuthor("full stats on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", matchlink)
                 .WithCurrentTimestamp();
 
@@ -264,6 +243,10 @@ namespace HLTVDiscordBridge.Modules
                 if (!myJArr.ToString().Contains(JObject.Parse(jToken.ToString()).GetValue("link").ToString()))
                 {
                     myJArr.Add(jToken);
+                    /*if(myJArr.Contains(JObject.Parse(jToken.ToString()).GetValue("id").ToString()))
+                    {
+                        myJArr.IndexOf()
+                    }*/
                 }          
             }
             File.WriteAllText("./cache/upcoming.json", myJArr.ToString());

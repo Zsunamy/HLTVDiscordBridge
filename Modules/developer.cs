@@ -37,7 +37,7 @@ namespace HLTVDiscordBridge.Modules
                     .WithDescription(message)
                     .WithColor(Color.Green)
                     .WithCurrentTimestamp();
-                foreach (SocketTextChannel channel in _cfg.GetChannels(Context.Client))
+                foreach (SocketTextChannel channel in await _cfg.GetChannels(Context.Client))
                 {
                     await channel.SendMessageAsync("", false, builder.Build());
                 }
