@@ -12,7 +12,7 @@ namespace HLTVDiscordBridge.Modules
         {
             //matches
             string matches = File.ReadAllText("./cache/matchIDs.txt");
-            if((matches.Split("\n").Length - 1) > 200)
+            if((matches.Split("\n").Length - 1) > 400)
             {
                 File.WriteAllText("./cache/matchIDs.txt", matches.Substring(matches.Split("\n")[0].Length + 1));
             }

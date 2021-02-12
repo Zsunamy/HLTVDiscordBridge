@@ -131,13 +131,13 @@ namespace HLTVDiscordBridge.Modules
                 {
                     if (ushort.Parse(res.GetValue("stars").ToString()) >= _cfg.GetServerConfig(channel).MinimumStars)
                     {
-#if RELEASE
+//#if RELEASE
                         try { RestUserMessage msg = await channel.SendMessageAsync("", false, embed); await msg.AddReactionAsync(await _cfg.GetEmote(client)); }
                         catch (Discord.Net.HttpException)
                         {
                             Console.WriteLine($"not enough permission in channel {channel}");
                         }
-#endif
+//#endif
                     }
                     await UpdateUpcomingMatches();
                 }
