@@ -10,12 +10,7 @@ namespace HLTVDiscordBridge.Modules
     {             
         public void Cleaner(DiscordSocketClient client)
         {
-            //matches
-            string matches = File.ReadAllText("./cache/matchIDs.txt");
-            if((matches.Split("\n").Length - 1) > 400)
-            {
-                File.WriteAllText("./cache/matchIDs.txt", matches.Substring(matches.Split("\n")[0].Length + 1));
-            }
+            
             //upcoming.json
             string upcoming = File.ReadAllText("./cache/upcoming.json");
             JArray jArr = JArray.Parse(upcoming);

@@ -22,6 +22,7 @@ namespace HLTVDiscordBridge
         private HltvNews _hltvNews;
         private Config _cfg;
         private CacheCleaner _cl;
+        private Upcoming _upcoming;
 
         public async Task RunBotAsync()
         {
@@ -32,11 +33,11 @@ namespace HLTVDiscordBridge
             _hltvNews = new HltvNews();
             _cfg = new Config();
             _cl = new CacheCleaner();
-
+            _upcoming = new Upcoming();
             
             //_cfg.CreateXML();
 
-            await _hltv.UpdateUpcomingMatches();
+            await _upcoming.UpdateUpcomingMatches();
 
             _services = new ServiceCollection()
                 .AddSingleton(_client)

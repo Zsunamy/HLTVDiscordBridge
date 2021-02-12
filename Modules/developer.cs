@@ -19,7 +19,7 @@ namespace HLTVDiscordBridge.Modules
                 foreach (SocketGuild guild in Context.Client.Guilds)
                 {
                     totalUser += guild.Users.Count;
-                    servernames += $"{guild.Name}\n";
+                    servernames += $"{guild.Name} | {guild.Users.Count}\n";
 
                 }
                 await ReplyAsync($"{Context.Client.Guilds.Count} server and {totalUser} user \n\n{servernames}");
