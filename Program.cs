@@ -20,6 +20,7 @@ namespace HLTVDiscordBridge
         private IServiceProvider _services;
         private Hltv _hltv;
         private HltvNews _hltvNews;
+        private HltvEvents _hltvevents;
         private Config _cfg;
         private CacheCleaner _cl;
         private Upcoming _upcoming;
@@ -31,6 +32,7 @@ namespace HLTVDiscordBridge
             _commands = new CommandService();
             _hltv = new Hltv();
             _hltvNews = new HltvNews();
+            _hltvevents = new HltvEvents();
             _cfg = new Config();
             _cl = new CacheCleaner();
             _upcoming = new Upcoming();
@@ -74,6 +76,7 @@ namespace HLTVDiscordBridge
             {
                 await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);                    
                 await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
+                await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
                 _cl.Cleaner(_client);
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");
                 await Task.Delay(_cfg.LoadConfig().CheckResultsTimeInterval);
@@ -82,7 +85,9 @@ namespace HLTVDiscordBridge
 
         private async Task ReactionAdd(Cacheable<IUserMessage, ulong> cacheable, ISocketMessageChannel channel, SocketReaction reaction)
         {
-            IUserMessage msg = await cacheable.GetOrDownloadAsync();
+            IUserMessage msg;
+            try { msg = await cacheable.GetOrDownloadAsync(); }
+            catch(Discord.Net.HttpException) { return; }
             IEmbed embedReac = null;
             foreach (IEmbed em in msg.Embeds)
             {

@@ -21,6 +21,7 @@ namespace HLTVDiscordBridge
         public ulong guildID { get; set; }
         public ulong NewsChannelID { get; set; }
         public ushort MinimumStars { get; set; }
+        public bool OnlyFeaturedEvents { get; set; }
     }
 
     public class Config : ModuleBase<SocketCommandContext>
@@ -67,13 +68,42 @@ namespace HLTVDiscordBridge
             ServerConfig _config = new ServerConfig();
             _config = GetServerConfig(Context.Guild);
             _config.MinimumStars = starsNum;
-            FileStream fs = new FileStream("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Open);
+            FileStream fs = new FileStream("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
             XmlSerializer _xml = new XmlSerializer(typeof(ServerConfig));
             _xml.Serialize(fs, _config);
             fs.Close();
             builder.WithColor(Color.Green)
                     .WithTitle("SUCCESS")
                     .WithDescription($"You successfully changed the minimum stars to output a HLTV match to \"{starsNum}\"")
+                    .WithCurrentTimestamp();
+            await ReplyAsync("", false, builder.Build());
+        }
+
+        [Command("featuredevents"), RequireUserPermission(GuildPermission.Administrator)]
+        public async Task ChangeFeaturedEvents(string arg = "")
+        {
+            EmbedBuilder builder = new EmbedBuilder();
+            ServerConfig _config = new ServerConfig();
+            _config = GetServerConfig(Context.Guild);
+            string description = "You successfully changed the event output ";
+            if (arg.ToLower() != "true" && arg.ToLower() != "false")
+            {
+                builder.WithColor(Color.Red)
+                    .WithTitle("SYNTAX ERROR")
+                    .WithDescription("Please mind the syntax: !featuredevents [true/false]")
+                    .WithCurrentTimestamp();
+                await ReplyAsync("", false, builder.Build());
+            }
+            else if (arg.ToLower() == "true") { _config.OnlyFeaturedEvents = true; description += "ONLY FEATURED EVENTS"; }
+            else { _config.OnlyFeaturedEvents = false; description += "SHOW ALL EVENTS"; }
+
+            FileStream fs = new FileStream("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
+            XmlSerializer _xml = new XmlSerializer(typeof(ServerConfig));
+            _xml.Serialize(fs, _config);
+            fs.Close();
+            builder.WithColor(Color.Green)
+                    .WithTitle("SUCCESS")
+                    .WithDescription(description)
                     .WithCurrentTimestamp();
             await ReplyAsync("", false, builder.Build());
         }
@@ -107,7 +137,8 @@ namespace HLTVDiscordBridge
 
             _config.NewsChannelID = channel.Id;
             _config.guildID = guild.Id;
-            _config.MinimumStars = 0;            
+            _config.MinimumStars = 0;
+            _config.OnlyFeaturedEvents = false;
 
             _xml = new XmlSerializer(typeof(ServerConfig));
             Directory.CreateDirectory("./cache/serverconfig");

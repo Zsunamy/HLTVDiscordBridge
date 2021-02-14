@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Newtonsoft.Json.Linq;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -32,29 +33,41 @@ namespace HLTVDiscordBridge.Modules
                 uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking/" + arg);
             }
 
-
-            HttpClient httpClient = new HttpClient();            
-            httpClient.BaseAddress = uri;
-            HttpResponseMessage response = await httpClient.GetAsync(uri);
-            JArray jArr = JArray.Parse("[]");
-            try { jArr = JArray.Parse(await response.Content.ReadAsStringAsync()); }
-            catch (Newtonsoft.Json.JsonReaderException) 
-            { 
-                Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
-                embed.WithColor(Color.Red)
-                    .WithTitle($"SYSTEM ERROR")
-                    .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");
-                await ReplyAsync("", false, embed.Build());
-                return;
-            }
-
-            if (jArr.Count == 0)
+            //cache
+            JArray jArr;
+            Directory.CreateDirectory("./cache/ranking");
+            if(!File.Exists($"./cache/ranking/ranking_{arg.ToLower()}.json"))
             {
-                embed.WithColor(Color.Red)
+                HttpClient httpClient = new HttpClient();
+                httpClient.BaseAddress = uri;
+                HttpResponseMessage response = await httpClient.GetAsync(uri);
+                try { jArr = JArray.Parse(await response.Content.ReadAsStringAsync()); }
+                catch (Newtonsoft.Json.JsonReaderException)
+                {
+                    Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
+                    embed.WithColor(Color.Red)
+                        .WithTitle($"SYSTEM ERROR")
+                        .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");
+                    await ReplyAsync("", false, embed.Build());
+                    return;
+                }
+                if (jArr.Count == 0) 
+                {
+                    embed.WithColor(Color.Red)
                     .WithTitle($"{arg} DOES NOT EXIST")
                     .WithDescription("Please state a valid country!");
-                await ReplyAsync("", false, embed.Build());
-                return;
+                    await ReplyAsync("", false, embed.Build());
+                    return;
+                } else
+                {
+                    FileStream fs = File.Create($"./cache/ranking/ranking_{arg.ToLower()}.json");
+                    fs.Close();
+                    File.WriteAllText($"./cache/ranking/ranking_{arg.ToLower()}.json", jArr.ToString());
+                }
+            }
+            else
+            {
+                jArr = JArray.Parse(File.ReadAllText($"./cache/ranking/ranking_{arg.ToLower()}.json"));
             }
 
             int teamsDisplayed = jArr.Count;

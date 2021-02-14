@@ -9,8 +9,7 @@ namespace HLTVDiscordBridge.Modules
     public class CacheCleaner : ModuleBase<SocketCommandContext>
     {             
         public void Cleaner(DiscordSocketClient client)
-        {
-            
+        {            
             //upcoming.json
             string upcoming = File.ReadAllText("./cache/upcoming.json");
             JArray jArr = JArray.Parse(upcoming);
@@ -44,7 +43,14 @@ namespace HLTVDiscordBridge.Modules
             {
                 if (Directory.GetCreationTime(dir).AddDays(7).Date == DateTime.Now.Date) { Directory.Delete(dir); }                
             }
-            
+
+            if(DateTime.Now.DayOfWeek == DayOfWeek.Tuesday)
+            {
+                foreach(string file in Directory.GetFiles("./cache/ranking"))
+                {
+                    File.Delete(file);
+                }
+            }
         }
     }
 }
