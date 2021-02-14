@@ -34,7 +34,7 @@ namespace HLTVDiscordBridge.Modules
         /// Gets new upcoming events and writes them into ./cache/events/upcoming.json
         /// </summary>
         /// <returns>new upcoming event as JObject</returns>
-        public async Task<JObject> GetUpcomingEvents() 
+        public async Task GetUpcomingEvents() 
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/upcommingevents");
             HttpClient http = new HttpClient();
@@ -51,8 +51,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 FileStream fs = File.Create("./cache/events/upcoming.json");
                 fs.Close();
-                File.WriteAllText("./cache/events/upcoming.json", jArr.ToString());                
-                return null;
+                File.WriteAllText("./cache/events/upcoming.json", jArr.ToString()); 
             }
             JArray cachedJArray = JArray.Parse(File.ReadAllText("./cache/events/upcoming.json"));
             if (cachedJArray != jArr)
@@ -67,11 +66,9 @@ namespace HLTVDiscordBridge.Modules
                     if (update)
                     {
                         File.WriteAllText("./cache/events/upcoming.json", jArr.ToString());
-                        return JObject.Parse(jTok.ToString());
                     }
                 }
             }
-            return null;
         }
 
         /// <summary>
