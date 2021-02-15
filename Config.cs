@@ -49,7 +49,7 @@ namespace HLTVDiscordBridge
             {
                 channel = (SocketTextChannel)Context.Channel;
             }
-            await GuildJoined(Context.Guild, Context.Client, channel);
+            await GuildJoined(Context.Guild, channel);
         }
 
         [Command("minstars"), RequireUserPermission(GuildPermission.Administrator)]
@@ -112,9 +112,10 @@ namespace HLTVDiscordBridge
         /// Creates channel and sets it as output for HLTVNews and HLTVMatches
         /// </summary>
         /// <param name="guild">Guild on which the Channel should be created</param>
-        /// <param name="channelID">Channel ID (default 0 if a channel should be created)</param>
-        /// <param name="channelname">Sets a custom Channelname</param>
-        public async Task GuildJoined(SocketGuild guild, DiscordSocketClient client, SocketTextChannel channel = null)
+        /// <param name="client">Bot Client</param>
+        /// <param name="channel">Sets a custom Channel. null = default channel on guild</param>
+        /// <param name="startup">Is this the startup?</param>
+        public async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null, bool startup = false)
         {
             EmbedBuilder builder = new EmbedBuilder();
             if (channel == null)
@@ -142,8 +143,8 @@ namespace HLTVDiscordBridge
 
             _xml = new XmlSerializer(typeof(ServerConfig));
             Directory.CreateDirectory("./cache/serverconfig");
+            if(File.Exists($"./cache/serverconfig/{guild.Id}.xml") && startup) { return; }
             FileStream stream = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.Create);  
-
             _xml.Serialize(stream, _config);            
             stream.Close();
             try { await channel.SendMessageAsync("", false, builder.Build()); }
@@ -183,7 +184,7 @@ namespace HLTVDiscordBridge
             _xml = new XmlSerializer(typeof(ServerConfig));
             foreach (SocketGuild guild in client.Guilds)
             {
-                if (!File.Exists($"./cache/serverconfig/{guild.Id}.xml")) { await GuildJoined(guild, client); }                
+                if (!File.Exists($"./cache/serverconfig/{guild.Id}.xml")) { await GuildJoined(guild); }                
                 FileStream fs = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.Open);
                 _config = (ServerConfig)_xml.Deserialize(fs);
                 fs.Close();

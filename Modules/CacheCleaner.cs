@@ -10,7 +10,7 @@ namespace HLTVDiscordBridge.Modules
     {             
         public void Cleaner(DiscordSocketClient client)
         {            
-            /*//upcoming.json
+            //upcoming.json
             string upcoming = File.ReadAllText("./cache/upcoming.json");
             JArray jArr = JArray.Parse(upcoming);
             if (jArr.Count > 100)
@@ -19,11 +19,10 @@ namespace HLTVDiscordBridge.Modules
                 File.WriteAllText("./cache/upcoming.json", jArr.ToString());
             }
             //ServerConfigs
-            bool todelete = true;
             Directory.CreateDirectory("./cache/serverconfig");
             foreach(string file in Directory.GetFiles("./cache/serverconfig"))
             {
-                todelete = true;
+                bool todelete = true;
                 foreach(SocketGuild guild in client.Guilds)
                 {
                     if (file.Contains(guild.Id.ToString()))
@@ -50,7 +49,7 @@ namespace HLTVDiscordBridge.Modules
                 {
                     File.Delete(file);
                 }
-            }*/
+            }
         }
     }
 }

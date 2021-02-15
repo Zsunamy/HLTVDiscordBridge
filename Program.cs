@@ -36,8 +36,6 @@ namespace HLTVDiscordBridge
             _cfg = new Config();
             _cl = new CacheCleaner();
             _upcoming = new Upcoming();
-            
-            //_cfg.CreateXML();
 
             await _upcoming.UpdateUpcomingMatches();
 
@@ -52,9 +50,10 @@ namespace HLTVDiscordBridge
             _client.ReactionAdded += ReactionAdd;
             _client.JoinedGuild += GuildJoined;
 
+            //catch if serverconfigs exist
             foreach(SocketGuild guild in _client.Guilds)
             {
-                await _cfg.GuildJoined(guild, _client);
+                await _cfg.GuildJoined(guild, null, true);
             }
             
 
@@ -72,7 +71,7 @@ namespace HLTVDiscordBridge
 
         private async Task GuildJoined(SocketGuild guild)
         {
-            await _cfg.GuildJoined(guild, _client);
+            await _cfg.GuildJoined(guild);
         }
 
         private async Task BGTask()
