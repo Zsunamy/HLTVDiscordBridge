@@ -9,15 +9,7 @@ namespace HLTVDiscordBridge.Modules
     public class CacheCleaner : ModuleBase<SocketCommandContext>
     {             
         public void Cleaner(DiscordSocketClient client)
-        {            
-            //upcoming.json
-            string upcoming = File.ReadAllText("./cache/upcoming.json");
-            JArray jArr = JArray.Parse(upcoming);
-            if (jArr.Count > 100)
-            {
-                jArr.Remove(jArr[0]);
-                File.WriteAllText("./cache/upcoming.json", jArr.ToString());
-            }
+        {
             //ServerConfigs
             Directory.CreateDirectory("./cache/serverconfig");
             foreach(string file in Directory.GetFiles("./cache/serverconfig"))

@@ -37,8 +37,6 @@ namespace HLTVDiscordBridge
             _cl = new CacheCleaner();
             _upcoming = new Upcoming();
 
-            await _upcoming.UpdateUpcomingMatches();
-
             _services = new ServiceCollection()
                 .AddSingleton(_client)
                 .AddSingleton(_commands)

@@ -24,33 +24,15 @@ namespace HLTVDiscordBridge.Modules
             JArray jArr;
             try { jArr = JArray.Parse(httpResult); }
             catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return; }
-            JArray myJArr = new JArray();
             Directory.CreateDirectory("./cache");
             if (!File.Exists("./cache/upcoming.json"))
             {
                 FileStream fs = File.Create("./cache/upcoming.json");
                 fs.Close();
-                File.WriteAllText("./cache/upcoming.json", jArr.ToString());
+                
                 return;
             }
-            else
-            {
-                myJArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
-                //Console.WriteLine(myJArr);
-            }
-
-            foreach (JToken jToken in jArr)
-            {
-                if (!myJArr.ToString().Contains(JObject.Parse(jToken.ToString()).GetValue("id").ToString()))
-                {
-                    myJArr.Add(jToken);
-                    /*if(myJArr.Contains(JObject.Parse(jToken.ToString()).GetValue("id").ToString()))
-                    {
-                        myJArr.IndexOf()
-                    }*/
-                }
-            }
-            File.WriteAllText("./cache/upcoming.json", myJArr.ToString());
+            File.WriteAllText("./cache/upcoming.json", jArr.ToString());
         }
         [Command("upcoming")]
         public async Task GetUpcoming([Remainder] string arg = "")
