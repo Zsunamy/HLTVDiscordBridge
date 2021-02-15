@@ -14,7 +14,6 @@ namespace HLTVDiscordBridge.Modules
     public class Hltv : ModuleBase<SocketCommandContext>
     {        
         private Config _cfg = new Config();
-        private Upcoming _upcoming = new Upcoming();
         public async Task<(JObject, ushort)> getLatestMatch()
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/results");
@@ -331,7 +330,6 @@ namespace HLTVDiscordBridge.Modules
         public async Task AktHLTV(List<SocketTextChannel> channels, DiscordSocketClient client)
         {
             //JObject res = await GetResults();
-            _upcoming = new Upcoming();
             (JObject, ushort) res = (await getLatestMatch());
             if (res.Item1 != null)
             {
@@ -347,9 +345,7 @@ namespace HLTVDiscordBridge.Modules
                             Console.WriteLine($"not enough permission in channel {channel}");
                         }
 #endif
-                    }
-                    await _upcoming.UpdateUpcomingMatches();
-                    
+                    } 
                 }
             }
         }
