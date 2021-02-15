@@ -40,7 +40,11 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/playercards");
             foreach (string dir in Directory.GetDirectories("./cache/playercards"))
             {
-                if (Directory.GetCreationTime(dir).AddDays(7).Date == DateTime.Now.Date) { Directory.Delete(dir); }                
+                if (Directory.GetCreationTime(dir).AddDays(7).Date == DateTime.Now.Date) 
+                { 
+                    foreach (string file in Directory.GetFiles("./cache/playercards")) { File.Delete(file); }
+                    Directory.Delete(dir); 
+                }                
             }
 
             if(DateTime.Now.DayOfWeek == DayOfWeek.Tuesday)
