@@ -42,7 +42,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 if (Directory.GetCreationTime(dir).AddDays(7).Date == DateTime.Now.Date) 
                 { 
-                    foreach (string file in Directory.GetFiles("./cache/playercards")) { File.Delete(file); }
+                    foreach (string file in Directory.GetFiles(dir)) { File.Delete(file); }
                     Directory.Delete(dir); 
                 }                
             }
