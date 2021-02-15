@@ -109,7 +109,7 @@ namespace HLTVDiscordBridge.Modules
             if (PBUrlTok != null) { builder.WithThumbnailUrl(PBUrlTok.ToString()); }
                
 
-            builder.WithAuthor("more info on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://hltv.org/player/" + req.Item2.ToString() + "/" + jObj.GetValue("ign").ToString())
+            builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://hltv.org/player/" + req.Item2.ToString() + "/" + jObj.GetValue("ign").ToString())
                .WithTitle(jObj.GetValue("ign").ToString() + $" :flag_{country.GetValue("code").ToString().ToLower()}:")
                .AddField("Name:", name, true)
                .AddField("Age:", age, true)
