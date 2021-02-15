@@ -104,7 +104,7 @@ namespace HLTVDiscordBridge
 
             if (embedReac == null) { return; }
             if (embedReac.Author == null) { return; }
-            if (msg.Author.IsBot && !reaction.User.Value.IsBot && embedReac.Author.Value.Name.ToString().ToLower() == "full details by hltv.org")
+            if (msg.Author.IsBot && !reaction.User.Value.IsBot && embedReac.Author.Value.Name.ToString().ToLower() == "click here for more details")
             {
                 await msg.RemoveAllReactionsAsync();
                 await _hltv.stats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);                
