@@ -91,6 +91,7 @@ namespace HLTVDiscordBridge
 
         private async Task ReactionAdd(Cacheable<IUserMessage, ulong> cacheable, ISocketMessageChannel channel, SocketReaction reaction)
         {
+            if (reaction.Emote.Name != "hltvstats") { return; }
             IUserMessage msg;
             try { msg = await cacheable.GetOrDownloadAsync(); }
             catch(Discord.Net.HttpException) { return; }
@@ -102,7 +103,7 @@ namespace HLTVDiscordBridge
 
             if (embedReac == null) { return; }
             if (embedReac.Author == null) { return; }
-            if (msg.Author.IsBot && !reaction.User.Value.IsBot && embedReac.Author.Value.Name.ToString().ToLower() == "full details by hltv.org" && reaction.Emote.Name == "hltvstats")
+            if (msg.Author.IsBot && !reaction.User.Value.IsBot && embedReac.Author.Value.Name.ToString().ToLower() == "full details by hltv.org")
             {
                 await msg.RemoveAllReactionsAsync();
                 await _hltv.stats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);                
