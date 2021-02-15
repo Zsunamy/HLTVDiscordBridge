@@ -10,7 +10,7 @@ namespace HLTVDiscordBridge.Modules
     {             
         public void Cleaner(DiscordSocketClient client)
         {            
-            //upcoming.json
+            /*//upcoming.json
             string upcoming = File.ReadAllText("./cache/upcoming.json");
             JArray jArr = JArray.Parse(upcoming);
             if (jArr.Count > 100)
@@ -50,7 +50,7 @@ namespace HLTVDiscordBridge.Modules
                 {
                     File.Delete(file);
                 }
-            }
+            }*/
         }
     }
 }
