@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using System;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
@@ -39,7 +40,11 @@ namespace HLTVDiscordBridge.Modules
                     .WithCurrentTimestamp();
                 foreach (SocketTextChannel channel in await _cfg.GetChannels(Context.Client))
                 {
-                    await channel.SendMessageAsync("", false, builder.Build());
+                    try { await channel.SendMessageAsync("", false, builder.Build()); }
+                    catch (Discord.Net.HttpException)
+                    {
+                        Console.WriteLine($"not enough permission in channel {channel}");
+                    }
                 }
             }
             
