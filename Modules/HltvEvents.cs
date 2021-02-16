@@ -211,10 +211,11 @@ namespace HLTVDiscordBridge.Modules
 
             return (builder.Build(), bool.Parse(eventObj.GetValue("featured").ToString()));
         }
-        public static DateTime UnixTimeStampToDateTime(string unixTimeStamp)
+        private static DateTime UnixTimeStampToDateTime(string unixTimeStamp)
         {
             DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
             dtDateTime = dtDateTime.AddMilliseconds(double.Parse(unixTimeStamp)).ToUniversalTime();
+            dtDateTime = dtDateTime.AddHours(1);
             return dtDateTime;
         }
 

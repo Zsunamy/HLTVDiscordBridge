@@ -168,6 +168,7 @@ namespace HLTVDiscordBridge.Modules
                 double time = double.Parse(date.ToString());
                 DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 dtDateTime = dtDateTime.AddMilliseconds(time);
+                dtDateTime = dtDateTime.AddHours(1);
                 if (dtDateTime.CompareTo(DateTime.Now) != -1)
                 {
                     result.Add(jTok);
@@ -199,6 +200,7 @@ namespace HLTVDiscordBridge.Modules
                     double time = double.Parse(date.ToString());
                     dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                     dtDateTime = dtDateTime.AddMilliseconds(time);
+                    dtDateTime = dtDateTime.AddHours(1);
                 }
                 else { dtDateTime = new DateTime(2035, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc); }
 
@@ -223,6 +225,7 @@ namespace HLTVDiscordBridge.Modules
 
                 DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 dtDateTime = dtDateTime.AddMilliseconds(time);
+                dtDateTime = dtDateTime.AddHours(1);
                 if (dtDateTime.ToString().Substring(0, 10) == dateArg.ToString().Substring(0, 10))
                 {
                     if (dtDateTime.CompareTo(DateTime.Now) != -1) { result.Add(jTok); }
