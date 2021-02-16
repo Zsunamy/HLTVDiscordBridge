@@ -39,7 +39,8 @@ namespace HLTVDiscordBridge.Modules
                 }                
             }
 
-            if(DateTime.Now.DayOfWeek == DayOfWeek.Tuesday)
+            Directory.CreateDirectory("./cache/ranking");
+            if (DateTime.Now.DayOfWeek == DayOfWeek.Tuesday)
             {
                 foreach(string file in Directory.GetFiles("./cache/ranking"))
                 {
