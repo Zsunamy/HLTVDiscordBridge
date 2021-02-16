@@ -193,11 +193,16 @@ namespace HLTVDiscordBridge.Modules
                 else { team2name = JObject.Parse(JObject.Parse(jTok.ToString()).GetValue("team2").ToString()).GetValue("name").ToString().ToLower(); }
 
                 JToken date = JObject.Parse(jTok.ToString()).GetValue("date");
-                if (date == null) { result.Add(jTok); continue; }
+                DateTime dtDateTime;
+                if (date != null) 
+                {
+                    double time = double.Parse(date.ToString());
+                    dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                    dtDateTime = dtDateTime.AddMilliseconds(time);
+                }
+                else { dtDateTime = new DateTime(2035, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc); }
 
-                double time = double.Parse(date.ToString());
-                DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-                dtDateTime = dtDateTime.AddMilliseconds(time);
+                
                 if (arg.ToLower() == eventname || arg.ToLower() == team1name || arg.ToLower() == team2name)
                 {
                     if (dtDateTime.CompareTo(DateTime.Now) != -1) { result.Add(jTok); }                    
