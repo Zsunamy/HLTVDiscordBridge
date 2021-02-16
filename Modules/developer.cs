@@ -35,7 +35,7 @@ namespace HLTVDiscordBridge.Modules
                 _cfg = new Config();
                 EmbedBuilder builder = new EmbedBuilder();
                 builder.WithTitle($"UPDATE {version}")
-                    .WithDescription(message + "If you are experiencing any issue feel free to write us an issue at:\n https://github.com/Zsunamy/HLTVDiscordBridge/issues \n" +
+                    .WithDescription(message + "\nIf you are experiencing any issue feel free to write us an issue at:\n https://github.com/Zsunamy/HLTVDiscordBridge/issues \n" +
                     "Also feel free to donate us a cup of coffee at:\n https://www.patreon.com/zsunamy")
                     .WithColor(Color.Green)
                     .WithCurrentTimestamp();
