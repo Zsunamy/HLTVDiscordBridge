@@ -95,10 +95,11 @@ namespace HLTVDiscordBridge.Modules
             jObj.TryGetValue("age", out JToken ageTok);
             jObj.TryGetValue("image", out JToken PBUrlTok);
             string team;
+            string teamLink;
             string name;
             string age;
-            if (teamTok == null) { team = "n.A"; }
-            else { team = JObject.Parse(teamTok.ToString()).GetValue("name").ToString(); }
+            if (teamTok == null) { team = "n.A"; teamLink = ""; }
+            else { team = JObject.Parse(teamTok.ToString()).GetValue("name").ToString(); teamLink = $"https://www.hltv.org/team/{JObject.Parse(teamTok.ToString()).GetValue("id")}/{team.Replace(' ', '-')}"; }
 
             if (nameTok == null) { name = "n.A"; }
             else { name = nameTok.ToString(); }
@@ -113,7 +114,7 @@ namespace HLTVDiscordBridge.Modules
                .WithTitle(jObj.GetValue("ign").ToString() + $" :flag_{country.GetValue("code").ToString().ToLower()}:")
                .AddField("Name:", name, true)
                .AddField("Age:", age, true)
-               .AddField("Team:", team, true)
+               .AddField("Team:", $"[{team}]({teamLink})", true)
                .AddField("Stats:", "Maps played:\nKills/Deaths:\nHeadshot %:\nADR:\nKills per round:\nAssists per round:\nDeaths per round:", true)
                .AddField("\u200b", $"{stats.GetValue("mapsPlayed")}\n{stats.GetValue("kills")}/{stats.GetValue("deaths")} ({stats.GetValue("kdRatio")})\n" +
                $"{stats.GetValue("headshots")}\n{stats.GetValue("damagePerRound")}\n {stats.GetValue("killsPerRound")}\n {stats.GetValue("assistsPerRound")}\n {stats.GetValue("deathsPerRound")}", true)

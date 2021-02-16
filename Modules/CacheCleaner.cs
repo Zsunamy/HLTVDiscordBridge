@@ -38,13 +38,22 @@ namespace HLTVDiscordBridge.Modules
                     Directory.Delete(dir); 
                 }                
             }
-
+            //ranking
             Directory.CreateDirectory("./cache/ranking");
             if (DateTime.Now.DayOfWeek == DayOfWeek.Tuesday)
             {
                 foreach(string file in Directory.GetFiles("./cache/ranking"))
                 {
                     File.Delete(file);
+                }
+            }
+            //live matches
+            Directory.CreateDirectory("./cache/livematches");
+            foreach(string matchFile in Directory.GetFiles("./cache/livematches"))
+            {
+                if(File.GetCreationTimeUtc(matchFile).AddHours(12).CompareTo(DateTime.Now.ToUniversalTime()) < 0)
+                {
+                    File.Delete(matchFile);
                 }
             }
         }

@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge
@@ -136,6 +137,12 @@ namespace HLTVDiscordBridge
             {
                 var context = new SocketCommandContext(_client, Message);
                 var Result = await _commands.ExecuteAsync(context, argPos, _services);
+
+                //Log Commands
+                var fs = File.OpenWrite($"./cache/log/{DateTime.Now.ToShortDateString()}.txt"); fs.Close();
+                string ori = File.ReadAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt");
+                File.WriteAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt", ori + DateTime.Now.ToShortTimeString() + " " + Message.Channel.ToString() + " " + Message.ToString() + "\n");
+
                 if (!Result.IsSuccess)
                     Console.WriteLine(Result.ErrorReason);
             }

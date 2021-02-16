@@ -28,14 +28,15 @@ namespace HLTVDiscordBridge.Modules
         }
 
         [Command("update")]
-        public async Task Update([Remainder] string message)
+        public async Task Update(string version, [Remainder] string message)
         {
             if (Context.User.Id == 255000770707980289 || Context.User.Id == 224037892387766272 || Context.User.Id == 248110264610848778) 
             {
                 _cfg = new Config();
                 EmbedBuilder builder = new EmbedBuilder();
-                builder.WithTitle("UPDATE")
-                    .WithDescription(message)
+                builder.WithTitle($"UPDATE {version}")
+                    .WithDescription(message + "If you are experiencing any issue feel free to write us an issue at:\n https://github.com/Zsunamy/HLTVDiscordBridge/issues \n" +
+                    "Also feel free to donate us a cup of coffee at:\n https://www.patreon.com/zsunamy")
                     .WithColor(Color.Green)
                     .WithCurrentTimestamp();
                 foreach (SocketTextChannel channel in await _cfg.GetChannels(Context.Client))
@@ -46,8 +47,7 @@ namespace HLTVDiscordBridge.Modules
                         Console.WriteLine($"not enough permission in channel {channel}");
                     }
                 }
-            }
-            
+            }            
         }
     }    
 }

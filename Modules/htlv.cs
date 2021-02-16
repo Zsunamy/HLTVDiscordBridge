@@ -14,7 +14,18 @@ namespace HLTVDiscordBridge.Modules
     public class Hltv : ModuleBase<SocketCommandContext>
     {        
         private Config _cfg = new Config();
-        public async Task<(JObject, ushort)> getLatestMatch()
+
+        public async Task<JObject> GetMatchByMatchId(uint matchId)
+        {
+            var URI = new Uri("https://hltv-api-steel.vercel.app/api/match/" + matchId);
+            HttpClient http = new HttpClient();
+            http.BaseAddress = URI;
+            HttpResponseMessage httpResponse = await http.GetAsync(URI);
+            string httpRes = await httpResponse.Content.ReadAsStringAsync();
+            return JObject.Parse(httpRes);
+        }
+
+        private async Task<(JObject, ushort)> getLatestMatch()
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/results");
             HttpClient http = new HttpClient();
@@ -60,52 +71,7 @@ namespace HLTVDiscordBridge.Modules
             return (null, 0);
         }
 
-        /// <summary>
-        /// Gets the latest Match, if it isn't already tracked and has more than the required stars (s. Config)
-        /// </summary>
-        /// <returns>The latest match as JObject</returns>
-        public async Task<JObject> GetResults()
-        {
-            var URI = new Uri("https://hltv-api-steel.vercel.app/api/results");
-            HttpClient http = new HttpClient();
-            http.BaseAddress = URI;
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-
-            string httpRes = await httpResponse.Content.ReadAsStringAsync();
-            JArray jArr;
-            try { jArr = JArray.Parse(httpRes); }
-            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
-
-            Directory.CreateDirectory("./cache");
-            if (!File.Exists("./cache/results.json"))
-            {
-                var stream = File.Create("./cache/results.json");                
-                stream.Close();
-                File.WriteAllText("./cache/results.json", jArr.ToString());
-                return null;
-            }
-            JArray results = JArray.Parse(File.ReadAllText("./cache/results.json")); 
-
-            foreach(JToken jToken in jArr)
-            {
-                bool update = true;
-                foreach (JToken resultTok in results) 
-                {                    
-                    if(resultTok.ToString() == jToken.ToString()) 
-                    {
-                        update = false;
-                    }
-                }
-                if (update)
-                {
-                    File.WriteAllText("./cache/results.json", jArr.ToString());
-                    return JObject.Parse(jToken.ToString());
-                }
-            }
-            return null;
-        }
-
-        public string getMapNameByAcronym(string arg)
+        private string getMapNameByAcronym(string arg)
         {
             switch(arg)
             {
@@ -132,13 +98,15 @@ namespace HLTVDiscordBridge.Modules
         /// </summary>
         /// <param name="res">JObject containing the match</param>
         /// <returns>Embed</returns>
-        public Embed GetStats(JObject res)
+        private Embed GetStats(JObject res)
         {
             JObject eventInfo = JObject.Parse(res.GetValue("event").ToString());
+            string eventLink = $"https://www.hltv.org/events/{eventInfo.GetValue("id")}/{eventInfo.GetValue("name").ToString().Replace(' ', '-')}";
             string additionalInfo = res.GetValue("additionalInfo").ToString();
             JObject team1 = JObject.Parse(res.GetValue("team1").ToString());
             JObject team2 = JObject.Parse(res.GetValue("team2").ToString());
             JObject winner = JObject.Parse(res.GetValue("winnerTeam").ToString());
+            string winnerLink = $"https://www.hltv.org/team/{winner.GetValue("id")}/{winner.GetValue("name").ToString().Replace(' ','-')}";
             JArray maps = JArray.Parse(res.GetValue("maps").ToString());
             JArray highlights = JArray.Parse(res.GetValue("highlights").ToString());
             string format = res.GetValue("format").ToString();
@@ -154,8 +122,8 @@ namespace HLTVDiscordBridge.Modules
             EmbedBuilder builder = new EmbedBuilder();
             builder.WithTitle($"{team1.GetValue("name")} vs. {team2.GetValue("name")}")
                 .WithColor(Color.Red)
-                .AddField("event:", $"{eventInfo.GetValue("name")}\n{additionalInfo}")
-                .AddField("winner:", winner.GetValue("name").ToString(), true)
+                .AddField("event:", $"[{eventInfo.GetValue("name")}]({eventLink})\n{additionalInfo}")
+                .AddField("winner:", $"[{winner.GetValue("name")}]({winnerLink})", true)
                 .AddField("format:", format, true)
                 .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", latmatchid)
                 .WithCurrentTimestamp();
@@ -338,13 +306,13 @@ namespace HLTVDiscordBridge.Modules
                 {
                     if (res.Item2 >= _cfg.GetServerConfig(channel).MinimumStars)
                     {
-#if RELEASE
+//#if RELEASE
                         try { RestUserMessage msg = await channel.SendMessageAsync("", false, embed); await msg.AddReactionAsync(await _cfg.GetEmote(client)); }
                         catch (Discord.Net.HttpException)
                         {
                             Console.WriteLine($"not enough permission in channel {channel}");
                         }
-#endif
+//#endif
                     } 
                 }
             }
@@ -356,7 +324,7 @@ namespace HLTVDiscordBridge.Modules
         /// </summary>
         /// <param name="matchlink">link of the match</param>
         /// <returns>MatchStats</returns>
-        public async Task<(JObject, uint)> GetPLMessage(string matchid)
+        private async Task<(JObject, uint)> GetPLMessage(string matchid)
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/match/" + matchid);
             HttpClient http = new HttpClient();
@@ -372,12 +340,13 @@ namespace HLTVDiscordBridge.Modules
             string matchStats = await httpResponse1.Content.ReadAsStringAsync();
             return (JObject.Parse(matchStats), uint.Parse(match.GetValue("statsId").ToString()));
         }
+
         /// <summary>
         /// Converts a JArray of a MatchStats into a discord Embed
         /// </summary>
         /// <param name="matchlink"></param>
         /// <returns>Discord Embed</returns>
-        public async Task<Embed> GetPLStats(string matchlink)
+        private async Task<Embed> GetPLStats(string matchlink)
         {
             EmbedBuilder builder = new EmbedBuilder();
 

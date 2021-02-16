@@ -244,12 +244,16 @@ namespace HLTVDiscordBridge.Modules
         {
             EmbedBuilder builder = new EmbedBuilder();
             JArray events = JArray.Parse(JObject.Parse(JArray.Parse(File.ReadAllText("./cache/events/upcoming.json"))[0].ToString()).GetValue("events").ToString());
+            JArray eventsMonth2 = JArray.Parse(JObject.Parse(JArray.Parse(File.ReadAllText("./cache/events/upcoming.json"))[1].ToString()).GetValue("events").ToString());
+            foreach (JToken jTok in eventsMonth2) { events.Add(jTok); }
             string eventString = "";
             foreach (JToken jTok in events)
             {
                 JObject eventObj = JObject.Parse(jTok.ToString());
+                DateTime date = UnixTimeStampToDateTime(eventObj.GetValue("dateStart").ToString());
+                if (date.AddDays(30).CompareTo(DateTime.Now) == -1) { break; }
                 eventString += $"[{eventObj.GetValue("name")}](https://www.hltv.org/events/{eventObj.GetValue("id")}/{eventObj.GetValue("name").ToString().Replace(' ', '-')}) " +
-                    $"({UnixTimeStampToDateTime(eventObj.GetValue("dateStart").ToString()).ToString().Substring(0, 10)})\n";
+                    $"({date.ToString().Substring(0, 10)})\n";
             }
             builder.WithTitle("UPCOMING EVENTS")
                 .WithColor(Color.Green)

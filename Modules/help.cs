@@ -45,11 +45,36 @@ namespace HLTVDiscordBridge.Modules
                         .AddField("Summary:", "Displays the upcoming matches for a day in the future, a team or an event \nexample:\n\"!upcoming 9.2\"\n\"!upcoming g2\"")
                         .AddField("Permissions:", "none");
                     break;
+                case "event":
+                    builder.WithTitle("HELP EVENT")
+                        .AddField("Syntax:", "\"!event [eventname or parts of the eventname]\"")
+                        .AddField("Summary:", "Displays information about a specific event \nexample:\n\"!event blast\"")
+                        .AddField("Permissions:", "none");
+                    break;
+                case "events":
+                    builder.WithTitle("HELP EVENTS")
+                        .AddField("Syntax:", "\"!events\"")
+                        .AddField("Summary:", "Displays all ongoing events\nexample:\n\"!events\"")
+                        .AddField("Permissions:", "none");
+                    break;
+                case "upcomingevents":
+                    builder.WithTitle("HELP UPCOMINGEVENTS")
+                        .AddField("Syntax:", "\"!upcomingevents\"")
+                        .AddField("Summary:", "Displays upcoming events for the next 30 days \nexample:\n\"!upcomingevents\"")
+                        .AddField("Permissions:", "none");
+                    break;
+                case "live":
+                    builder.WithTitle("HELP LIVE")
+                        .AddField("Syntax:", "\"!live\"")
+                        .AddField("Summary:", "Displays all live matches and their livestreams \nexample:\n\"!live\"")
+                        .AddField("Permissions:", "none");
+                    break;
                 default:
                     builder.WithTitle("HELP")
-                        .AddField("Commands:", "\"!init\"\n\"!player\"\n\"!minstars\"\n\"!ranking\"\n\"!about\"\n\"!upcoming\"", true)
+                        .AddField("Commands:", "\"!init\"\n\"!player\"\n\"!minstars\"\n\"!ranking\"\n\"!about\"\n\"!upcoming\"\n\"!event\"\n\"!events\"\n\"!upcomingevents\"\n\"!live\"", true)
                         .AddField("Short summary:", $"sets the default channel for HLTV-NEWS\ngives stats for a player\nsets minimumstars for HLTV matches to output\n" +
-                        $"displays the team ranking\ndisplays the contact page\ndisplays upcoming matches", true)
+                        $"displays the team ranking\ndisplays the contact page\ndisplays upcoming matches\ngives information about a specific event\nshows all ongoing events\n" +
+                        $"shows upcoming events for the next 30 days\nshows all live matches", true)
                         .WithFooter("For more info type: \"!help [command]\"");
                     break;
             }

@@ -76,7 +76,8 @@ namespace HLTVDiscordBridge.Modules
             for (int i = 0; i < jArr.Count; i++)
             {
                 JObject jObj = JObject.Parse(JObject.Parse(jArr[i].ToString()).GetValue("team").ToString());
-                val += $"{i + 1}.\t{jObj.GetValue("name")}\n";
+                string teamLink = $"https://www.hltv.org/team/{jObj.GetValue("id")}/{jObj.GetValue("name").ToString().Replace(' ', '-')}";
+                val += $"{i + 1}.\t[{jObj.GetValue("name")}]({teamLink})\n";
                 if(i + 1 == maxTeams)
                 {
                     teamsDisplayed = i + 1;
