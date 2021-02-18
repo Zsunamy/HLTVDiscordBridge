@@ -22,6 +22,7 @@ namespace HLTVDiscordBridge
         public ulong NewsChannelID { get; set; }
         public ushort MinimumStars { get; set; }
         public bool OnlyFeaturedEvents { get; set; }
+        public string Prefix { get; set; }
     }
 
     public class Config : ModuleBase<SocketCommandContext>
@@ -42,7 +43,8 @@ namespace HLTVDiscordBridge
             return conf;
         }
 
-        [Command("init")/*, RequireUserPermission(GuildPermission.ManageChannels)*/]
+        #region Commands
+        [Command("init"), RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task InitTextChannel(SocketTextChannel channel = null)
         {
             if(channel == null)
@@ -61,7 +63,7 @@ namespace HLTVDiscordBridge
             {
                 builder.WithColor(Color.Red)
                     .WithTitle("SYNTAX ERROR")
-                    .WithDescription("Please mind the syntax: !minstars [stars (number between 0-5)]")
+                    .WithDescription($"Please mind the syntax: {GetServerConfig(Context.Guild).Prefix}minstars [stars (number between 0-5)]")
                     .WithCurrentTimestamp();
                 await ReplyAsync("", false, builder.Build());
             }            
@@ -90,7 +92,7 @@ namespace HLTVDiscordBridge
             {
                 builder.WithColor(Color.Red)
                     .WithTitle("SYNTAX ERROR")
-                    .WithDescription("Please mind the syntax: !featuredevents [true/false]")
+                    .WithDescription($"Please mind the syntax: {_config.Prefix}featuredevents [true/false]")
                     .WithCurrentTimestamp();
                 await ReplyAsync("", false, builder.Build());
             }
@@ -107,6 +109,25 @@ namespace HLTVDiscordBridge
                     .WithCurrentTimestamp();
             await ReplyAsync("", false, builder.Build());
         }
+        [Command("prefix"), RequireUserPermission(GuildPermission.Administrator)]
+        public async Task ChangePrefix(string arg = "")
+        {
+            EmbedBuilder builder = new EmbedBuilder();
+            ServerConfig _config = new ServerConfig();
+            _config = GetServerConfig(Context.Guild);
+            _config.Prefix = arg;
+
+            FileStream fs = new FileStream("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
+            XmlSerializer _xml = new XmlSerializer(typeof(ServerConfig));
+            _xml.Serialize(fs, _config);
+            fs.Close();
+            builder.WithColor(Color.Green)
+                    .WithTitle("SUCCESS")
+                    .WithDescription($"You successfully changed the command prefix to \"{arg}\"")
+                    .WithCurrentTimestamp();
+            await ReplyAsync("", false, builder.Build());
+        }
+        #endregion
 
         /// <summary>
         /// Creates channel and sets it as output for HLTVNews and HLTVMatches
@@ -140,6 +161,7 @@ namespace HLTVDiscordBridge
             _config.guildID = guild.Id;
             _config.MinimumStars = 0;
             _config.OnlyFeaturedEvents = false;
+            _config.Prefix = "!";
 
             _xml = new XmlSerializer(typeof(ServerConfig));
             Directory.CreateDirectory("./cache/serverconfig");

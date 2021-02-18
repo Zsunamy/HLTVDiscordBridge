@@ -265,12 +265,13 @@ namespace HLTVDiscordBridge.Modules
         [Command("event")]
         public async Task GetEventByName([Remainder]string arg = "")
         {
+            Config _cfg = new Config();
             EmbedBuilder builder = new EmbedBuilder();
             if(arg == "")
             {
                 builder.WithColor(Color.Red)
                     .WithTitle("SYNTAX ERROR")
-                    .WithDescription("Please mind the syntax: !event [eventname]")
+                    .WithDescription($"Please mind the syntax: {_cfg.GetServerConfig(Context.Guild).Prefix}event [eventname]")
                     .WithCurrentTimestamp();
                 await ReplyAsync("", false, builder.Build());
                 return;

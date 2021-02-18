@@ -126,20 +126,23 @@ namespace HLTVDiscordBridge
 
         private async Task HandleCommandAsync(SocketMessage arg)
         {
-            var Message = arg as SocketUserMessage;
+            SocketUserMessage Message = arg as SocketUserMessage;
 
             if (Message is null || Message.Author.IsBot)
                 return;
 
             int argPos = 0;
+            string prefix;
+            if (Message.Channel as SocketGuildChannel == null) { prefix = "!"; }
+            else { prefix = _cfg.GetServerConfig((Message.Channel as SocketGuildChannel).Guild).Prefix; }
 
-            if (Message.HasStringPrefix("!", ref argPos) || Message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            if (Message.HasStringPrefix(prefix, ref argPos) || Message.HasStringPrefix($"{prefix} ", ref argPos) || Message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                var context = new SocketCommandContext(_client, Message);
-                var Result = await _commands.ExecuteAsync(context, argPos, _services);
+                SocketCommandContext context = new SocketCommandContext(_client, Message);
+                IResult Result = await _commands.ExecuteAsync(context, argPos, _services);
 
                 //Log Commands
-                var fs = File.OpenWrite($"./cache/log/{DateTime.Now.ToShortDateString()}.txt"); fs.Close();
+                FileStream fs = File.OpenWrite($"./cache/log/{DateTime.Now.ToShortDateString()}.txt"); fs.Close();
                 string ori = File.ReadAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt");
                 File.WriteAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt", ori + DateTime.Now.ToShortTimeString() + " " + Message.Channel.ToString() + " " + Message.ToString() + "\n");
 

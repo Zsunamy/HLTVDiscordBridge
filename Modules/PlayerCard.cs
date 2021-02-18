@@ -61,12 +61,13 @@ namespace HLTVDiscordBridge.Modules
 
         private async Task<Embed> GetPlayerCard(string playername = "")
         {
+            Config _cfg = new Config();
             EmbedBuilder builder = new EmbedBuilder();
             if (playername == "")
             {
                 builder.WithColor(Color.Red)
                     .WithTitle("SYNTAX ERROR")
-                    .WithDescription("Please mind the syntax: \"!player [name]\"");
+                    .WithDescription($"Please mind the syntax: \"{_cfg.GetServerConfig(Context.Guild).Prefix}player [name]\"");
                 return builder.Build();
             }
             var req = await GetPlayerStats(playername);
