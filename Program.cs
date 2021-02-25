@@ -94,7 +94,7 @@ namespace HLTVDiscordBridge
             while (true)
             {
                 //top.gg API                
-                if(DateTime.Now.Hour == 0 && updateTopGG) 
+                if(DateTime.Now.Hour == 0 && updateTopGG && _client.CurrentUser.Id == 807182830752628766) 
                 {
                     updateTopGG = false;
                     HttpClient http = new HttpClient();
