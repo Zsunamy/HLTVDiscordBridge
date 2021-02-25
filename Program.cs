@@ -25,6 +25,7 @@ namespace HLTVDiscordBridge
         private Config _cfg;
         private CacheCleaner _cl;
         private Upcoming _upcoming;
+        private Scoreboard _scoreboard;
 
         public async Task RunBotAsync()
         {
@@ -37,6 +38,7 @@ namespace HLTVDiscordBridge
             _cfg = new Config();
             _cl = new CacheCleaner();
             _upcoming = new Upcoming();
+            _scoreboard = new Scoreboard(2346455);
 
             _services = new ServiceCollection()
                 .AddSingleton(_client)
@@ -63,9 +65,17 @@ namespace HLTVDiscordBridge
 
             await _client.SetGameAsync("!help");
 
+            _scoreboard.OnKillfeedUpdate += LogWebSocket;
+            //await _scoreboard.ConnectWebSocket();            
+
             await BGTask();
 
             await Task.Delay(-1);
+        }
+        private async Task LogWebSocket(string mes)
+        {
+            Console.WriteLine(mes);
+            //File.WriteAllText($"./cache/{DateTime.Now.Ticks}.txt", mes);
         }
 
         private async Task GuildJoined(SocketGuild guild)

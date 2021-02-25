@@ -113,6 +113,15 @@ namespace HLTVDiscordBridge
         public async Task ChangePrefix(string arg = "")
         {
             EmbedBuilder builder = new EmbedBuilder();
+            if (arg == "") {
+                builder.WithColor(Color.Red)
+                        .WithTitle("SYNTAX ERROR")
+                        .WithDescription($"Please mind the syntax: \"{GetServerConfig(Context.Guild).Prefix}prefix [Prefix]\"")
+                        .WithCurrentTimestamp();
+                await ReplyAsync("", false, builder.Build());
+                return;
+            } 
+            
             ServerConfig _config = new ServerConfig();
             _config = GetServerConfig(Context.Guild);
             _config.Prefix = arg;

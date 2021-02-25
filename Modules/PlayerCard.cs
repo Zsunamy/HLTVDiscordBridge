@@ -162,7 +162,7 @@ namespace HLTVDiscordBridge.Modules
         }
 
         [Command("player")]
-        public async Task Player(string playername = "")
+        public async Task Player([Remainder]string playername = "")
         {
             await ReplyAsync("", false, await GetPlayerCard(playername));
         }

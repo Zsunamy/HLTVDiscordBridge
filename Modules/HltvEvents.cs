@@ -196,10 +196,14 @@ namespace HLTVDiscordBridge.Modules
                 string prizeString = "";
                 for (int i = 0; i < 4; i++)
                 {
-                    try { prizeString += $"{JObject.Parse(prizeDistribution[i].ToString()).GetValue("place")} " +
-                            $"{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("name")} " +
-                            $"({JObject.Parse(prizeDistribution[i].ToString()).GetValue("prize")})" + "\n"; }
+                    try
+                    {
+                        prizeString += $"{JObject.Parse(prizeDistribution[i].ToString()).GetValue("place")} " +
+                          $"{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("name")} " +
+                          $"({JObject.Parse(prizeDistribution[i].ToString()).GetValue("prize")})" + "\n";
+                    }
                     catch (IndexOutOfRangeException) { break; }
+                    catch (NullReferenceException) { break; }
                     if (i == 4) { prizeString += $"and {prizeDistribution.Count - 4} more"; }
                 }
                 builder.AddField("results:", prizeString);
