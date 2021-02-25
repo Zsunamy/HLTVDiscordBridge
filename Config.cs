@@ -14,6 +14,7 @@ namespace HLTVDiscordBridge
     {
         public string BotToken { get; set; }
         public int CheckResultsTimeInterval { get; set; }
+        public string topGGApiKey { get; set; }
     }
 
     public class ServerConfig

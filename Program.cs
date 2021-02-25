@@ -5,6 +5,7 @@ using HLTVDiscordBridge.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,6 +27,7 @@ namespace HLTVDiscordBridge
         private CacheCleaner _cl;
         private Upcoming _upcoming;
         private Scoreboard _scoreboard;
+        private ConfigClass Botconfig;
 
         public async Task RunBotAsync()
         {
@@ -45,7 +47,9 @@ namespace HLTVDiscordBridge
                 .AddSingleton(_commands)
                 .BuildServiceProvider();
 
-            string BotToken = _cfg.LoadConfig().BotToken;
+            Botconfig = _cfg.LoadConfig();
+
+            string BotToken = Botconfig.BotToken;
 
             _client.Log += Log;
             _client.ReactionAdded += ReactionAdd;
@@ -86,8 +90,20 @@ namespace HLTVDiscordBridge
         private async Task BGTask()
         {
             await Task.Delay(3000);
+            bool updateTopGG = true;
             while (true)
             {
+                //top.gg API                
+                if(DateTime.Now.Hour == 0 && updateTopGG) 
+                {
+                    /*updateTopGG = false;
+                    HttpClient http = new HttpClient();
+                    http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Authorization", Botconfig.topGGApiKey);
+                    HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, "https://top.gg/api/bots/807182830752628766/stats");
+                    req.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+                    await http.SendAsync(req);*/
+                } else if(DateTime.Now.Hour == 1) { updateTopGG = true; }
+
                 await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);                    
                 await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
                 await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
@@ -95,7 +111,7 @@ namespace HLTVDiscordBridge
                 await _upcoming.UpdateUpcomingMatches();
                 _cl.Cleaner(_client);
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");
-                await Task.Delay(_cfg.LoadConfig().CheckResultsTimeInterval);
+                await Task.Delay(Botconfig.CheckResultsTimeInterval);
             }
         }
 

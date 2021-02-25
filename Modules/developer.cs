@@ -28,7 +28,7 @@ namespace HLTVDiscordBridge.Modules
         }
 
         [Command("update")]
-        public async Task Update(string version, [Remainder] string message)
+        private async Task Update(string version, [Remainder] string message)
         {
             if (Context.User.Id == 255000770707980289 || Context.User.Id == 224037892387766272 || Context.User.Id == 248110264610848778) 
             {
