@@ -156,8 +156,8 @@ namespace HLTVDiscordBridge.Modules
                 builder.WithTitle($"{eventStats.GetValue("name")} just ended!");
             }
             
-            builder.AddField("starting:", UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()/*.Substring(0, 16)*/) + " UTC", true)
-                .AddField("ending:", UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()/*.Substring(0, 16)*/) + " UTC", true)
+            builder.AddField("starting:", UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).ToString().Substring(0, 16) + " UTC", true)
+                .AddField("ending:", UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).ToString().Substring(0, 16) + " UTC", true)
                 .AddField("\u200b", "\u200b", true)
                 .AddField("prize pool:", eventStats.GetValue("prizePool"), true)
                 .AddField("location:", location.GetValue("name"), true)
@@ -168,7 +168,10 @@ namespace HLTVDiscordBridge.Modules
                 string teamsString = "";
                 for (int i = 0; i < 5; i++)
                 {
-                    try { teamsString += JObject.Parse(teams[i].ToString()).GetValue("name").ToString() + "\n"; }
+                    try {
+                        string teamLink = $"https://www.hltv.org/team/{JObject.Parse(teams[i].ToString()).GetValue("id")}/{JObject.Parse(teams[i].ToString()).GetValue("name").ToString().Replace(' ', '-')}";
+                        teamsString += $"[{JObject.Parse(teams[i].ToString()).GetValue("name")}]({teamLink})\n"; 
+                    }
                     catch (IndexOutOfRangeException) { break; }
                     if (i == 4) { teamsString += $"and {teams.Count - 5} more"; }
                 }
@@ -181,8 +184,10 @@ namespace HLTVDiscordBridge.Modules
                 {
                     try
                     {
+                        string teamLink = $"https://www.hltv.org/team/{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("id")}/" +
+                            $"{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("name").ToString().Replace(' ', '-')}";
                         prizeString += $"{JObject.Parse(prizeDistribution[i].ToString()).GetValue("place")} " +
-                          $"{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("name")} " +
+                          $"[{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("name")}]({teamLink}) " +
                           $"({JObject.Parse(prizeDistribution[i].ToString()).GetValue("prize")})" + "\n";
                     }
                     catch (IndexOutOfRangeException) { break; }
