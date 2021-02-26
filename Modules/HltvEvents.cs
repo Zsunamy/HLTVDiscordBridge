@@ -17,7 +17,8 @@ namespace HLTVDiscordBridge.Modules
         public async Task AktEvents(List<SocketTextChannel> channels) 
         {
             Config _cfg = new Config();
-            var res = await GetOngoingEventEmbed(await GetOngoingEvents());
+            var eventDif = await GetOngoingEvents();
+            var res = await GetOngoingEventEmbed(eventDif);
             if(res.Item1 != null)
             {
                 foreach (SocketTextChannel channel in channels)
@@ -85,7 +86,7 @@ namespace HLTVDiscordBridge.Modules
             string httpRes = await httpResponse.Content.ReadAsStringAsync();
             JArray jArr = null;
             try { jArr = JArray.Parse(httpRes); }
-            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); }
+            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return (null, false); }
 
             Directory.CreateDirectory("./cache/events");
             if (!File.Exists("./cache/events/ongoing.json"))
@@ -128,26 +129,7 @@ namespace HLTVDiscordBridge.Modules
                 }
             }
             return (null, false);
-        }
-
-        /// <summary>
-        /// Gets detailed eventstats by its eventID
-        /// </summary>
-        /// <param name="eventId">eventId</param>
-        /// <returns>JObject with stats of the event</returns>
-        public async Task<JObject> GetEventStats(ushort eventId)
-        {
-            var URI = new Uri($"https://hltv-api-steel.vercel.app/api/event/{eventId}");
-            HttpClient http = new HttpClient();
-            http.BaseAddress = URI;
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-
-            string httpRes = await httpResponse.Content.ReadAsStringAsync();
-            JObject jObj = null;
-            try { jObj = JObject.Parse(httpRes); }
-            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
-            return jObj;
-        }
+        }        
 
         /// <summary>
         /// Builds the Embed of started/ended events
@@ -215,6 +197,27 @@ namespace HLTVDiscordBridge.Modules
 
             return (builder.Build(), bool.Parse(eventObj.GetValue("featured").ToString()));
         }
+
+
+        /// <summary>
+        /// Gets detailed eventstats by its eventID
+        /// </summary>
+        /// <param name="eventId">eventId</param>
+        /// <returns>JObject with stats of the event</returns>
+        public async Task<JObject> GetEventStats(ushort eventId)
+        {
+            var URI = new Uri($"https://hltv-api-steel.vercel.app/api/eventbyid/{eventId}");
+            HttpClient http = new HttpClient();
+            http.BaseAddress = URI;
+            HttpResponseMessage httpResponse = await http.GetAsync(URI);
+
+            string httpRes = await httpResponse.Content.ReadAsStringAsync();
+            JObject jObj = null;
+            try { jObj = JObject.Parse(httpRes); }
+            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
+            return jObj;
+        }
+
         private static DateTime UnixTimeStampToDateTime(string unixTimeStamp)
         {
             DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
@@ -223,7 +226,7 @@ namespace HLTVDiscordBridge.Modules
             return dtDateTime;
         }
 
-
+        #region COMMANDS
         //User commands
         [Command("events")] 
         public async Task GetAllOngoingEvents()
@@ -315,6 +318,7 @@ namespace HLTVDiscordBridge.Modules
                 .WithDescription($"{arg} was not found in any event title in the next {events.Count} months");
             await ReplyAsync("", false, builder.Build());
         }
+        #endregion
 
     }
 }

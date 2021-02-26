@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using HLTVDiscordBridge.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
@@ -23,10 +24,10 @@ namespace HLTVDiscordBridge
         private Hltv _hltv;
         private HltvNews _hltvNews;
         private HltvEvents _hltvevents;
+        private HltvLive _hltvlive;
         private Config _cfg;
         private CacheCleaner _cl;
         private Upcoming _upcoming;
-        private Scoreboard _scoreboard;
         private ConfigClass Botconfig;
 
         public async Task RunBotAsync()
@@ -40,7 +41,7 @@ namespace HLTVDiscordBridge
             _cfg = new Config();
             _cl = new CacheCleaner();
             _upcoming = new Upcoming();
-            _scoreboard = new Scoreboard(2346455);
+            _hltvlive = new HltvLive();
 
             _services = new ServiceCollection()
                 .AddSingleton(_client)
@@ -75,6 +76,7 @@ namespace HLTVDiscordBridge
 
             await Task.Delay(-1);
         }
+
         private async Task GuildJoined(SocketGuild guild)
         {
             await _cfg.GuildJoined(guild);
@@ -99,10 +101,11 @@ namespace HLTVDiscordBridge
 #if RELEASE
                 await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);                    
                 await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
-                await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
+                
                 await _hltvevents.GetUpcomingEvents();
                 await _upcoming.UpdateUpcomingMatches();
 #endif
+                await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
                 _cl.Cleaner(_client);
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");
                 await Task.Delay(Botconfig.CheckResultsTimeInterval);
@@ -111,10 +114,18 @@ namespace HLTVDiscordBridge
 
         private async Task ReactionAdd(Cacheable<IUserMessage, ulong> cacheable, ISocketMessageChannel channel, SocketReaction reaction)
         {
-            if (reaction.Emote.Name != "hltvstats") { return; }
-            IUserMessage msg;
+            IUserMessage msg;            
             try { msg = await cacheable.GetOrDownloadAsync(); }
-            catch(Discord.Net.HttpException) { return; }
+            catch (Discord.Net.HttpException) { return; }
+            if (!msg.Author.IsBot || reaction.User.Value.IsBot) { return; }
+
+            string[] numberEmoteStrings = { "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣" };
+            foreach (string emoteString in numberEmoteStrings)
+            {
+                if (emoteString == reaction.Emote.ToString()) { _hltvlive.startScoreboard(msg, new Emoji(reaction.Emote.ToString()), (channel as SocketGuildChannel).Guild); return; }
+            }
+
+            if (reaction.Emote.Name != "hltvstats") { return; }            
             IEmbed embedReac = null;
             foreach (IEmbed em in msg.Embeds)
             {
@@ -123,7 +134,7 @@ namespace HLTVDiscordBridge
 
             if (embedReac == null) { return; }
             if (embedReac.Author == null) { return; }
-            if (msg.Author.IsBot && !reaction.User.Value.IsBot && embedReac.Author.Value.Name.ToString().ToLower() == "click here for more details")
+            if (embedReac.Author.Value.Name.ToString().ToLower() == "click here for more details")
             {
                 await msg.RemoveAllReactionsAsync();
                 await _hltv.stats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);                

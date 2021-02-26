@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.Rest;
+using Discord.WebSocket;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ namespace HLTVDiscordBridge.Modules
 {
     public class HltvLive : ModuleBase<SocketCommandContext>
     {
+        private Scoreboard _scoreboard;
         private Hltv _hltv;
         private async Task<List<JObject>> GetLiveMatches()
         {
@@ -70,6 +72,18 @@ namespace HLTVDiscordBridge.Modules
             return (builder.Build(), ushort.Parse(matches.Count.ToString()));
         }
 
+        public void startScoreboard(IUserMessage msg, Emoji emote, SocketGuild guild)
+        {
+            foreach(EmbedField field in msg.Embeds.First().Fields)
+            {
+                if(field.Name.Contains(emote.ToString()))
+                {
+                    uint matchId = uint.Parse(field.Value.Split("\n")[1].Substring(41,7));
+                    _scoreboard = new Scoreboard(matchId, guild, field.Name.Substring(4));
+                }
+            }
+        }
+
         #region COMMANDS
         [Command("live")]
         public async Task DisplayLiveMatches()
@@ -79,7 +93,9 @@ namespace HLTVDiscordBridge.Modules
             for(int i = 1; i <= res.Item2; i++)
             {
                 Emoji emote = new Emoji(i.ToString() + "️⃣");
+#if DEBUG
                 await msg.AddReactionAsync(emote);
+#endif
             }
         }
         #endregion
