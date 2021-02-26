@@ -25,7 +25,8 @@ namespace HLTVDiscordBridge.Modules
                 {   
                     if(!_cfg.GetServerConfig(channel).OnlyFeaturedEvents || _cfg.GetServerConfig(channel).OnlyFeaturedEvents == res.Item2)
                     {
-                        await channel.SendMessageAsync("", false, res.Item1);
+                        try { await channel.SendMessageAsync("", false, res.Item1); }
+                        catch(Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }                        
                     }
                 }
             }            
