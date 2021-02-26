@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Rest;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -41,14 +42,16 @@ namespace HLTVDiscordBridge.Modules
             }
             return matches;
         }
-        private Embed GetLiveMatchesEmbed(List<JObject> matches)
+        private async Task<(Embed, ushort)> GetLiveMatchesEmbed()
         {
+            List<JObject> matches = await GetLiveMatches();
             EmbedBuilder builder = new EmbedBuilder();
             builder.WithTitle("LIVE MATCHES")
                 .WithColor(Color.Blue)
                 .WithCurrentTimestamp();
             foreach(JObject jObj in matches)
-            {                
+            {
+                Emoji emote = new Emoji((matches.IndexOf(jObj) + 1).ToString() + "️⃣");
                 JObject team1 = JObject.Parse(jObj.GetValue("team1").ToString());
                 JObject team2 = JObject.Parse(jObj.GetValue("team2").ToString());
                 JObject eventObj = JObject.Parse(jObj.GetValue("event").ToString());
@@ -58,17 +61,28 @@ namespace HLTVDiscordBridge.Modules
                 string matchpageLink = $"https://www.hltv.org/matches/{jObj.GetValue("id")}/{team1.GetValue("name").ToString().Replace(' ', '-')}-vs-{team2.GetValue("name").ToString().Replace(' ', '-')}-" +
                     $"{eventObj.GetValue("name").ToString().Replace(' ', '-')}";
                 string eventLink = $"https://hltv.org/events/{eventObj.GetValue("id")}/{eventObj.GetValue("name").ToString().Replace(' ', '-')}";
-                builder.AddField($"{team1.GetValue("name")} vs. {team2.GetValue("name")}", $"[livestream]({streamLink})\n" +
+                builder.AddField($"{emote} {team1.GetValue("name")} vs. {team2.GetValue("name")}", 
+                    $"[livestream]({streamLink})\n" +
                     $"[matchpage]({matchpageLink})\n" +
                     $"event: [{eventObj.GetValue("name")}]({eventLink})\n");
+                builder.WithFooter("React with the matchnumber to add a live scoreboard to your server!");
             }
-            return builder.Build();
+            return (builder.Build(), ushort.Parse(matches.Count.ToString()));
         }
 
+        #region COMMANDS
         [Command("live")]
         public async Task DisplayLiveMatches()
         {
-            await ReplyAsync("", false, GetLiveMatchesEmbed(await GetLiveMatches()));
+            (Embed, ushort) res = await GetLiveMatchesEmbed();
+            RestUserMessage msg = (RestUserMessage)await ReplyAsync("", false, res.Item1);
+            for(int i = 1; i <= res.Item2; i++)
+            {
+                Emoji emote = new Emoji(i.ToString() + "️⃣");
+                await msg.AddReactionAsync(emote);
+            }
         }
+        #endregion
+
     }
 }

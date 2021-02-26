@@ -69,19 +69,12 @@ namespace HLTVDiscordBridge
 
             await _client.SetGameAsync("!help");
 
-            _scoreboard.OnKillfeedUpdate += LogWebSocket;
             //await _scoreboard.ConnectWebSocket();            
 
             await BGTask();
 
             await Task.Delay(-1);
         }
-        private async Task LogWebSocket(string mes)
-        {
-            Console.WriteLine(mes);
-            //File.WriteAllText($"./cache/{DateTime.Now.Ticks}.txt", mes);
-        }
-
         private async Task GuildJoined(SocketGuild guild)
         {
             await _cfg.GuildJoined(guild);
@@ -103,12 +96,13 @@ namespace HLTVDiscordBridge
                     req.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
                     await http.SendAsync(req);
                 } else if(DateTime.Now.Hour == 1) { updateTopGG = true; }
-
-                //await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);                    
-                //await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
-                //await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
-                //await _hltvevents.GetUpcomingEvents();
-                //await _upcoming.UpdateUpcomingMatches();
+#if DEBUG
+                await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);                    
+                await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
+                await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
+                await _hltvevents.GetUpcomingEvents();
+                await _upcoming.UpdateUpcomingMatches();
+#endif
                 _cl.Cleaner(_client);
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");
                 await Task.Delay(Botconfig.CheckResultsTimeInterval);
