@@ -38,6 +38,16 @@ namespace HLTVDiscordBridge.Modules
                     Directory.Delete(dir); 
                 }                
             }
+            //delete teamcards after 7 days
+            Directory.CreateDirectory("./cache/teamcards");
+            foreach (string dir in Directory.GetDirectories("./cache/teamcards"))
+            {
+                if (Directory.GetCreationTime(dir).AddDays(7).Date == DateTime.Now.Date)
+                {
+                    foreach (string file in Directory.GetFiles(dir)) { File.Delete(file); }
+                    Directory.Delete(dir);
+                }
+            }
             //ranking
             Directory.CreateDirectory("./cache/ranking");
             if (DateTime.Now.DayOfWeek == DayOfWeek.Tuesday)

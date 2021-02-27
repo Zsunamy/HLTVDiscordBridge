@@ -152,6 +152,7 @@ namespace HLTVDiscordBridge
             if (channel == null)
             {                
                 channel = guild.DefaultChannel;
+                if(channel == null) { await guild.LeaveAsync(); }
                 builder.WithTitle("INIT")
                     .WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. {channel.Mention} is set as default output for HLTV-NEWS. " +
                     $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +

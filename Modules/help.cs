@@ -8,7 +8,7 @@ namespace HLTVDiscordBridge.Modules
     public class Help : ModuleBase<SocketCommandContext>
     {
         [Command("help")]
-        public async Task help (string arg = "")
+        public async Task HelpCommand (string arg = "")
         {
             Config _cfg = new Config();
             string prefix = "!";

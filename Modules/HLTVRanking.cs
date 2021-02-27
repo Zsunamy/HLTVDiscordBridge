@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
 {
-    public class HLTVRanking : ModuleBase<SocketCommandContext>
+    public class HltvRanking : ModuleBase<SocketCommandContext>
     {
         [Command("ranking")]
         public async Task getRanking(string arg = "GLOBAL")
