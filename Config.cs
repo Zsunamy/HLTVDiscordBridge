@@ -171,7 +171,7 @@ namespace HLTVDiscordBridge
             }
             ServerConfig _config = new ServerConfig();
 
-            _config.NewsChannelID = channel.Id;
+            if(channel != null) { _config.NewsChannelID = channel.Id; }            
             _config.guildID = guild.Id;
             _config.MinimumStars = 0;
             _config.OnlyFeaturedEvents = false;
