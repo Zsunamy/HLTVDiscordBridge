@@ -152,9 +152,12 @@ namespace HLTVDiscordBridge
             if (channel == null)
             {                
                 channel = guild.DefaultChannel;
+                string guildName = "";
+                string channelMention = "";
                 if(channel == null) { return; }
+                else { guildName = guild.Name; channelMention = channel.Mention; }
                 builder.WithTitle("INIT")
-                    .WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. {channel.Mention} is set as default output for HLTV-NEWS. " +
+                    .WithDescription($"Thanks for adding the HLTVDiscordBridge to {guildName}. {channelMention} is set as default output for HLTV-NEWS. " +
                     $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
                     $"https://github.com/Zsunamy/HLTVDiscordBridge/issues \n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>")
                     .WithCurrentTimestamp()
