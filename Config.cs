@@ -154,7 +154,7 @@ namespace HLTVDiscordBridge
                 channel = guild.DefaultChannel;
                 string guildName = "";
                 string channelMention = "";
-                if(channel == null) { return; }
+                if(channel == null) { guildName = "n.A"; channelMention = "n.A"; }
                 else { guildName = guild.Name; channelMention = channel.Mention; }
                 builder.WithTitle("INIT")
                     .WithDescription($"Thanks for adding the HLTVDiscordBridge to {guildName}. {channelMention} is set as default output for HLTV-NEWS. " +
