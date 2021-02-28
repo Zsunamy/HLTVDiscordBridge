@@ -55,6 +55,7 @@ namespace HLTVDiscordBridge
             _client.Log += Log;
             _client.ReactionAdded += ReactionAdd;
             _client.JoinedGuild += GuildJoined;
+            _client.LeftGuild += GuildLeft;
 
             //catch if serverconfigs exist
             foreach(SocketGuild guild in _client.Guilds)
@@ -75,6 +76,11 @@ namespace HLTVDiscordBridge
             await BGTask();
 
             await Task.Delay(-1);
+        }
+
+        private async Task GuildLeft(SocketGuild arg)
+        {
+            _cl.Cleaner(_client);
         }
 
         private async Task GuildJoined(SocketGuild guild)
@@ -101,11 +107,10 @@ namespace HLTVDiscordBridge
 #if RELEASE
                 await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);                    
                 await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
-                
+                await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
                 await _hltvevents.GetUpcomingEvents();
                 await _upcoming.UpdateUpcomingMatches();
 #endif
-                await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
                 _cl.Cleaner(_client);
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");
                 await Task.Delay(Botconfig.CheckResultsTimeInterval);
