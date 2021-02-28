@@ -125,6 +125,9 @@ namespace HLTVDiscordBridge.Modules
             JObject ach1;
             JObject ach2;
             JObject ach3;
+            string ach1Link;
+            string ach2Link;
+            string ach3Link;
             switch (achievements.Count)
             {
                 case 0:
@@ -132,29 +135,47 @@ namespace HLTVDiscordBridge.Modules
                     break;
                 case 1:
                     ach1 = JObject.Parse(achievements[0].ToString());
-                    builder.AddField("Achievements:", $"{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name")} finished: {ach1.GetValue("place")}");
+                    ach1Link = $"https://www.hltv.org/events/{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("id")}/" +
+                        $"{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name").ToString().Replace(' ','-').ToLower()}";
+                    builder.AddField("Achievements:", $"[{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name")}]({ach1Link}) finished: {ach1.GetValue("place")}");
                     break;
                 case 2:
                     ach1 = JObject.Parse(achievements[0].ToString());
                     ach2 = JObject.Parse(achievements[1].ToString());
-                    builder.AddField("Achievements:", $"{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name")} finished: {ach1.GetValue("place")}\n" +
-                    $"{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("name")} finished: {ach2.GetValue("place")}\n");
+                    ach1Link = $"https://www.hltv.org/events/{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("id")}/" +
+                        $"{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name").ToString().Replace(' ', '-').ToLower()}";
+                    ach2Link = $"https://www.hltv.org/events/{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("id")}/" +
+                        $"{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("name").ToString().Replace(' ', '-').ToLower()}";
+                    builder.AddField("Achievements:", $"[{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name")}]({ach1Link}) finished: {ach1.GetValue("place")}\n" +
+                    $"[{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("name")}]({ach2Link}) finished: {ach2.GetValue("place")}\n");
                     break;
                 case 3:
                     ach1 = JObject.Parse(achievements[0].ToString());
                     ach2 = JObject.Parse(achievements[1].ToString());
                     ach3 = JObject.Parse(achievements[2].ToString());
-                    builder.AddField("Achievements:", $"{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name")} finished: {ach1.GetValue("place")}\n" +
-                    $"{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("name")} finished: {ach2.GetValue("place")}\n" +
-                    $"{JObject.Parse(ach3.GetValue("event").ToString()).GetValue("name")} finished: {ach3.GetValue("place")}");
+                    ach1Link = $"https://www.hltv.org/events/{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("id")}/" +
+                        $"{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name").ToString().Replace(' ', '-').ToLower()}";
+                    ach2Link = $"https://www.hltv.org/events/{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("id")}/" +
+                        $"{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("name").ToString().Replace(' ', '-').ToLower()}";
+                    ach3Link = $"https://www.hltv.org/events/{JObject.Parse(ach3.GetValue("event").ToString()).GetValue("id")}/" +
+                        $"{JObject.Parse(ach3.GetValue("event").ToString()).GetValue("name").ToString().Replace(' ', '-').ToLower()}";
+                    builder.AddField("Achievements:", $"[{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name")}]({ach1Link}) finished: {ach1.GetValue("place")}\n" +
+                    $"[{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("name")}]({ach2Link}) finished: {ach2.GetValue("place")}\n" +
+                    $"[{JObject.Parse(ach3.GetValue("event").ToString()).GetValue("name")}]({ach3Link}) finished: {ach3.GetValue("place")}");
                     break;
                 default:
                     ach1 = JObject.Parse(achievements[0].ToString());
                     ach2 = JObject.Parse(achievements[1].ToString());
                     ach3 = JObject.Parse(achievements[2].ToString());
-                    builder.AddField("Achievements:", $"{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name")} finished: {ach1.GetValue("place")}\n" +
-                    $"{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("name")} finished: {ach2.GetValue("place")}\n" +
-                    $"{JObject.Parse(ach3.GetValue("event").ToString()).GetValue("name")} finished: {ach3.GetValue("place")}\n and {achievements.Count - 3} more");
+                    ach1Link = $"https://www.hltv.org/events/{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("id")}/" +
+                        $"{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name").ToString().Replace(' ', '-').ToLower()}";
+                    ach2Link = $"https://www.hltv.org/events/{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("id")}/" +
+                        $"{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("name").ToString().Replace(' ', '-').ToLower()}";
+                    ach3Link = $"https://www.hltv.org/events/{JObject.Parse(ach3.GetValue("event").ToString()).GetValue("id")}/" +
+                        $"{JObject.Parse(ach3.GetValue("event").ToString()).GetValue("name").ToString().Replace(' ', '-').ToLower()}";
+                    builder.AddField("Achievements:", $"[{JObject.Parse(ach1.GetValue("event").ToString()).GetValue("name")}]({ach1Link}) finished: {ach1.GetValue("place")}\n" +
+                    $"[{JObject.Parse(ach2.GetValue("event").ToString()).GetValue("name")}]({ach2Link}) finished: {ach2.GetValue("place")}\n" +
+                    $"[{JObject.Parse(ach3.GetValue("event").ToString()).GetValue("name")}]({ach3Link}) finished: {ach3.GetValue("place")}\n and {achievements.Count - 3} more");
                     break;
             }
 

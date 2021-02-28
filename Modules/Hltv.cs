@@ -98,8 +98,11 @@ namespace HLTVDiscordBridge.Modules
         /// </summary>
         /// <param name="res">JObject containing the match</param>
         /// <returns>Embed</returns>
-        private Embed GetStats(JObject res)
+        private async Task<(Embed, ushort)> GetStats()
         {
+            var req = await getLatestMatch();
+            if(req.Item1 == null) { return (null, 0); }
+            JObject res = req.Item1;
             JObject eventInfo = JObject.Parse(res.GetValue("event").ToString());
             string eventLink = $"https://www.hltv.org/events/{eventInfo.GetValue("id")}/{eventInfo.GetValue("name").ToString().Replace(' ', '-')}";
             string additionalInfo = res.GetValue("additionalInfo").ToString();
@@ -125,8 +128,15 @@ namespace HLTVDiscordBridge.Modules
                 .AddField("event:", $"[{eventInfo.GetValue("name")}]({eventLink})\n{additionalInfo}")
                 .AddField("winner:", $"[{winner.GetValue("name")}]({winnerLink})", true)
                 .AddField("format:", format, true)
-                .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", latmatchid)
+                .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", latmatchid)                
                 .WithCurrentTimestamp();
+            string footerString = "";
+            Emoji emo = new Emoji("⭐");
+            for (int i = 1; i <= req.Item2; i++)
+            {
+                footerString += emo;
+            }
+            builder.WithFooter(footerString);
             switch(maps.Count)
             {
                 case 1:
@@ -141,7 +151,7 @@ namespace HLTVDiscordBridge.Modules
                         score0 = $"({score0.Split(' ')[0]}) {score0.Split(' ')[1].Replace(";", " |")} {score0.Split(' ')[2]}";
                     }
                     builder.AddField("maps:", $"{getMapNameByAcronym(JObject.Parse(maps[0].ToString()).GetValue("name").ToString())} {score0}");
-                    break;
+                    break;                
                 case 3:
                     score0 = JObject.Parse(maps[0].ToString()).GetValue("result").ToString();
                     if (score0.Split(' ').Length > 3)
@@ -194,7 +204,7 @@ namespace HLTVDiscordBridge.Modules
                     }
                     else
                     {
-                        score0 = $"{score0.Split(' ')[0]} {score0.Split(' ')[1].Replace(";", " |")} {score0.Split(' ')[2]}";
+                        score0 = $"({score0.Split(' ')[0]}) {score0.Split(' ')[1].Replace(";", " |")} {score0.Split(' ')[2]}";
                     }
                     score1 = JObject.Parse(maps[1].ToString()).GetValue("result").ToString();
                     if (score1.Split(' ').Length > 3)
@@ -204,7 +214,7 @@ namespace HLTVDiscordBridge.Modules
                     }
                     else
                     {
-                        score1 = $"{score1.Split(' ')[0]} {score1.Split(' ')[1].Replace(";", " |")} {score1.Split(' ')[2]}";
+                        score1 = $"({score1.Split(' ')[0]}) {score1.Split(' ')[1].Replace(";", " |")} {score1.Split(' ')[2]}";
                     }
                     score2 = JObject.Parse(maps[2].ToString()).GetValue("result").ToString();
                     if (score2.Split(' ').Length > 3)
@@ -214,13 +224,13 @@ namespace HLTVDiscordBridge.Modules
                     }
                     else
                     {
-                        score2 = $"({score1.Split(' ')[0]}) {score2.Split(' ')[1].Replace(";", " |")} {score2.Split(' ')[2]}";
+                        score2 = $"({score2.Split(' ')[0]}) {score2.Split(' ')[1].Replace(";", " |")} {score2.Split(' ')[2]}";
                     }
                     
                     
-                    mapsString = $"{getMapNameByAcronym(JObject.Parse(maps[0].ToString()).GetValue("name").ToString())} ({score0}\n" +
-                        $"{getMapNameByAcronym(JObject.Parse(maps[1].ToString()).GetValue("name").ToString())} ({score1}\n" +
-                        $"{getMapNameByAcronym(JObject.Parse(maps[2].ToString()).GetValue("name").ToString())} ({score2}\n";
+                    mapsString = $"{getMapNameByAcronym(JObject.Parse(maps[0].ToString()).GetValue("name").ToString())} {score0}\n" +
+                        $"{getMapNameByAcronym(JObject.Parse(maps[1].ToString()).GetValue("name").ToString())} {score1}\n" +
+                        $"{getMapNameByAcronym(JObject.Parse(maps[2].ToString()).GetValue("name").ToString())} {score2}\n";
                     if (JObject.Parse(maps[3].ToString()).GetValue("result").ToString() != "-:- ")
                     {
                         score3 = JObject.Parse(maps[3].ToString()).GetValue("result").ToString();
@@ -233,11 +243,11 @@ namespace HLTVDiscordBridge.Modules
                         {
                             score3 = $"({score3.Split(' ')[0]}) {score3.Split(' ')[1].Replace(";", " |")} {score3.Split(' ')[2]}";
                         }
-                        mapsString += $"{getMapNameByAcronym(JObject.Parse(maps[3].ToString()).GetValue("name").ToString())} {score3}";
+                        mapsString += $"{getMapNameByAcronym(JObject.Parse(maps[3].ToString()).GetValue("name").ToString())} {score3}\n";
                     }
                     else
                     {
-                        mapsString += $"~~{getMapNameByAcronym(JObject.Parse(maps[3].ToString()).GetValue("name").ToString())}~~";
+                        mapsString += $"~~{getMapNameByAcronym(JObject.Parse(maps[3].ToString()).GetValue("name").ToString())}~~\n";
                     }
                     if (JObject.Parse(maps[4].ToString()).GetValue("result").ToString() != "-:- ")
                     {
@@ -268,28 +278,43 @@ namespace HLTVDiscordBridge.Modules
                     break;
                 case 1:
                     title0 = JObject.Parse(highlights[0].ToString()).GetValue("title").ToString().Split(" | ")[1];
-                    if (title0.Length > 35) { title0 = $"{title0.Substring(0, 35)}\n{title0.Substring(35)}"; }
+                    if (title0.Length > 35 && title0.Length <= 70) { title0 = $"{title0.Substring(0, title0.Substring(35).IndexOf(' ') + 35)}\n{title0.Substring(title0.Substring(35).IndexOf(' ') + 35)}"; }
+                    else if(title0.Length > 70) { title0 = $"{title0.Substring(0, title0.Substring(35).IndexOf(' ') + 35)}\n" +
+                            $"{title0.Substring(title0.Substring(35).IndexOf(' ') + 35, title0.Substring(70).IndexOf(' ') + title0.Substring(35).IndexOf(' ') + 35)}\n" +
+                            $"{title0.Substring(title0.Substring(70).IndexOf(' ') + title0.Substring(35).IndexOf(' ') + 35 + title0.Substring(35).IndexOf(' ') + 35)}"; }
                     builder.AddField("highlights:", $"[{title0}]({JObject.Parse(highlights[0].ToString()).GetValue("link")})");
                     break;
                 case 2:
                     title0 = JObject.Parse(highlights[0].ToString()).GetValue("title").ToString().Split(" | ")[1];
-                    if (title0.Length > 35) { title0 = $"{title0.Substring(0, 35)}\n{title0.Substring(35)}"; }
+                    if (title0.Length > 35 && title0.Length <= 70) { title0 = $"{title0.Substring(0, title0.Substring(35).IndexOf(' ') + 35)}\n{title0.Substring(title0.Substring(35).IndexOf(' ') + 35)}"; }
+                    else if(title0.Length > 70) { title0 = $"{title0.Substring(0, title0.Substring(35).IndexOf(' ') + 35)}\n" +
+                            $"{title0.Substring(title0.Substring(35).IndexOf(' ') + 35, title0.Substring(70).IndexOf(' ') + title0.Substring(35).IndexOf(' ') + 35)}\n" +
+                            $"{title0.Substring(title0.Substring(70).IndexOf(' ') + title0.Substring(35).IndexOf(' ') + 35 + title0.Substring(35).IndexOf(' ') + 35)}"; }
                     title1 = JObject.Parse(highlights[1].ToString()).GetValue("title").ToString().Split(" | ")[1];
-                    if (title1.Length > 35) { title1 = $"{title1.Substring(0, 35)}\n{title1.Substring(35)}"; }
-                    builder.AddField("highlights:", $"[{title0}]({JObject.Parse(highlights[0].ToString()).GetValue("link")})\n" +
+                    if (title1.Length > 35 && title1.Length <= 70) { title1 = $"{title1.Substring(0, title1.Substring(35).IndexOf(' ') + 35)}\n{title1.Substring(title1.Substring(35).IndexOf(' ') + 35)}"; }
+                    else if(title1.Length > 70) { title1 = $"{title1.Substring(0, title1.Substring(35).IndexOf(' ') + 35)}\n" +
+                            $"{title1.Substring(title1.Substring(35).IndexOf(' ') + 35, title1.Substring(70).IndexOf(' ') + title1.Substring(35).IndexOf(' ') + 35)}\n" +
+                            $"{title1.Substring(title1.Substring(70).IndexOf(' ') + title1.Substring(35).IndexOf(' ') + 35 + title1.Substring(35).IndexOf(' ') + 35)}"; }
+                    builder.AddField("highlights:", $"[{title0}]({JObject.Parse(highlights[0].ToString()).GetValue("link")})\n\n" +
                         $"[{title1}]({JObject.Parse(highlights[1].ToString()).GetValue("link")})");
                     break;
                 default:
                     title0 = JObject.Parse(highlights[0].ToString()).GetValue("title").ToString().Split(" | ")[1];
-                    if (title0.Length > 35) { title0 = $"{title0.Substring(0, 35)}\n{title0.Substring(35)}"; }
+                    if (title0.Length > 35 && title0.Length <= 70) { title0 = $"{title0.Substring(0, title0.Substring(35).IndexOf(' ') + 35)}\n{title0.Substring(title0.Substring(35).IndexOf(' ') + 35)}"; }
+                    else if(title0.Length > 70) { title0 = $"{title0.Substring(0, title0.Substring(35).IndexOf(' ') + 35)}\n" +
+                            $"{title0.Substring(title0.Substring(35).IndexOf(' ') + 35, title0.Substring(70).IndexOf(' ') + title0.Substring(35).IndexOf(' ') + 35)}\n" +
+                            $"{title0.Substring(title0.Substring(70).IndexOf(' ') + title0.Substring(35).IndexOf(' ') + 35 + title0.Substring(35).IndexOf(' ') + 35)}"; }
                     title1 = JObject.Parse(highlights[1].ToString()).GetValue("title").ToString().Split(" | ")[1];
-                    if (title1.Length > 35) { title1 = $"{title1.Substring(0, 35)}\n{title1.Substring(35)}"; }
-                    builder.AddField("highlights:", $"[{title0}]({JObject.Parse(highlights[0].ToString()).GetValue("link")})\n" +
+                    if (title1.Length > 35 && title1.Length <= 70) { title1 = $"{title1.Substring(0, title1.Substring(35).IndexOf(' ') + 35)}\n{title1.Substring(title1.Substring(35).IndexOf(' ') + 35)}"; }
+                    else if(title1.Length > 70) { title1 = $"{title1.Substring(0, title1.Substring(35).IndexOf(' ') + 35)}\n" +
+                            $"{title1.Substring(title1.Substring(35).IndexOf(' ') + 35, title1.Substring(70).IndexOf(' ') + title1.Substring(35).IndexOf(' ') + 35)}\n" +
+                            $"{title1.Substring(title1.Substring(70).IndexOf(' ') + title1.Substring(35).IndexOf(' ') + 35 + title1.Substring(35).IndexOf(' ') + 35)}"; }
+                    builder.AddField("highlights:", $"[{title0}]({JObject.Parse(highlights[0].ToString()).GetValue("link")})\n\n" +
                         $"[{title1}]({JObject.Parse(highlights[1].ToString()).GetValue("link")})\nand {highlights.Count - 2} more");
                     break;
             }
 
-            return builder.Build();
+            return (builder.Build(), req.Item2);
         }
         /// <summary>
         /// Send the latest match as Embed in a Discord SocketTextChannel
@@ -298,13 +323,13 @@ namespace HLTVDiscordBridge.Modules
         public async Task AktHLTV(List<SocketTextChannel> channels, DiscordSocketClient client)
         {
             //JObject res = await GetResults();
-            (JObject, ushort) res = (await getLatestMatch());
-            if (res.Item1 != null)
-            {
-                Embed embed = GetStats(res.Item1);
+            var req = await GetStats();
+            Embed embed = req.Item1;
+            if (req.Item1 != null)
+            {       
                 foreach(SocketTextChannel channel in channels)
                 {
-                    if (res.Item2 >= _cfg.GetServerConfig(channel).MinimumStars)
+                    if (req.Item2 >= _cfg.GetServerConfig(channel).MinimumStars)
                     {
 //#if RELEASE
                         try { RestUserMessage msg = await channel.SendMessageAsync("", false, embed); await msg.AddReactionAsync(await _cfg.GetEmote(client)); }
@@ -317,7 +342,6 @@ namespace HLTVDiscordBridge.Modules
                 }
             }
         }
-
 
         /// <summary>
         /// Gets stats of a match with given matchlink

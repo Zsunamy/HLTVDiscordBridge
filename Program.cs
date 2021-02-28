@@ -104,8 +104,9 @@ namespace HLTVDiscordBridge
                     req.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
                     await http.SendAsync(req);
                 } else if(DateTime.Now.Hour == 1) { updateTopGG = true; }
+                await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);
 #if RELEASE
-                await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);                    
+                                   
                 await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
                 await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
                 await _hltvevents.GetUpcomingEvents();

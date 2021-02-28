@@ -55,6 +55,10 @@
             "SFML.Net": {
               "target": "Package",
               "version": "[2.5.0, )"
+            },
+            "Svg": {
+              "target": "Package",
+              "version": "[3.2.3, )"
             }
           },
           "imports": [

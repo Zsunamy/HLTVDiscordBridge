@@ -8,6 +8,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Svg;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -16,7 +19,8 @@ namespace HLTVDiscordBridge.Modules
         [Command("team")] 
         public async Task SendTeamCard([Remainder]string name = "")
         {
-            await ReplyAsync("", false, await getTeamCard(name));
+            //var req = await getTeamCard(name);
+            //await Context.Channel.SendFileAsync(req.Item2, embed: req.Item1);
         }
 
         /// <summary>
@@ -29,7 +33,7 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/teamcards");
             if(!Directory.Exists($"./cache/teamcards/{name.ToLower()}"))
             {
-                Uri uri = new Uri($"http://localhost:3000/api/team/{name}");
+                Uri uri = new Uri($"https://hltv-api-steel.vercel.app/api/team/{name}");
                 HttpClient http = new HttpClient();
                 HttpResponseMessage res = await http.GetAsync(uri);
                 JObject fullTeamJObject;
@@ -37,8 +41,7 @@ namespace HLTVDiscordBridge.Modules
                 catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return (null, null, false); }
                 if (fullTeamJObject.ToString() == "{}") { return (null, null, true); }
 
-                Uri uri1 = new Uri($"http://localhost:3000/api/teamstats/{fullTeamJObject.GetValue("id")}");
-                HttpClient http1 = new HttpClient();
+                Uri uri1 = new Uri($"https://hltv-api-steel.vercel.app/api/teamstats/{fullTeamJObject.GetValue("id")}/false");
                 HttpResponseMessage res1 = await http.GetAsync(uri1);
                 JObject teamStats = JObject.Parse(await res1.Content.ReadAsStringAsync());
 
@@ -55,7 +58,7 @@ namespace HLTVDiscordBridge.Modules
             }            
         }
 
-        async Task<Embed> getTeamCard(string name)
+        async Task<(Embed, string)> getTeamCard(string name)
         {
             var res = await getTeamStats(name);
             EmbedBuilder builder = new EmbedBuilder();
@@ -64,20 +67,25 @@ namespace HLTVDiscordBridge.Modules
             if (teamJObj == null && teamStatsJObj == null && res.Item3) 
             {
                 builder.WithTitle("ERROR")
-                    .WithColor(Color.Red)
+                    .WithColor(Discord.Color.Red)
                     .WithDescription($"The team \"{name}\" does not exist!")
                     .WithCurrentTimestamp();
-                return builder.Build();
+                return (builder.Build(), "");
             } else if(!res.Item3){
-                builder.WithColor(Color.Red)
+                builder.WithColor(Discord.Color.Red)
                     .WithTitle($"SYSTEM ERROR")
                     .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).")
                     .WithCurrentTimestamp();
-                return builder.Build();
+                return (builder.Build(), "");
             }
 
-            builder.WithTitle(teamJObj.GetValue("name").ToString())
-                .WithThumbnailUrl(teamJObj.GetValue("logo").ToString());
+            builder.WithTitle(teamJObj.GetValue("name").ToString());            
+
+            //Thumbnail
+            HttpClient client = new HttpClient();
+            HttpResponseMessage httpRes = await client.GetAsync(new Uri(teamJObj.GetValue("logo").ToString()));
+            string thumbPath = ConvertSVGtoPNG(await httpRes.Content.ReadAsByteArrayAsync(), teamJObj.GetValue("name").ToString());
+            builder.WithThumbnailUrl($"attachment://{teamJObj.GetValue("name").ToString().ToLower()}_logo.png");
 
             //lineup
             JArray lineUp = JArray.Parse(teamStatsJObj.GetValue("currentLineup").ToString());
@@ -92,10 +100,33 @@ namespace HLTVDiscordBridge.Modules
 
             //recentResults
             JArray recentResults = JArray.Parse(teamJObj.GetValue("recentResults").ToString());
-            //string recentResultsString = "";
-            //foreach()
+            string recentResultsString = "";
+            int i = 0;
+            foreach(JToken jTok in recentResults)
+            {
+                if(i == 4) { recentResultsString += $"and {recentResults.Count - 4} more"; break; }
+                JObject jObj = JObject.Parse(jTok.ToString());
+                JObject enemyTeam = JObject.Parse(jObj.GetValue("enemyTeam").ToString());
+                string matchLink = $"https://www.hltv.org/matches/{jObj.GetValue("matchID")}/{teamJObj.GetValue("name").ToString().Replace(' ','-').ToLower()}-vs-" +
+                    $"{enemyTeam.GetValue("name").ToString().Replace(' ', '-').ToLower()}";
+                recentResultsString += $"[{teamJObj.GetValue("name")} vs. {enemyTeam.GetValue("name")}]({matchLink}) ({jObj.GetValue("result")})\n";
+                i++;
+            }
+            builder.AddField("recent results:", recentResultsString);
 
-            return builder.Build();
+            return (builder.Build(), thumbPath);
+        }
+
+        private string ConvertSVGtoPNG(byte[] svgFile, string teamname)
+        {
+            string resString = $"./cache/teamcards/{teamname.ToLower()}/{teamname.ToLower()}_logo.png";
+            File.WriteAllBytes($"./cache/teamcards/{teamname.ToLower()}/logo.svg", svgFile);
+            var svgDocument = Svg.SvgDocument.Open($"./cache/teamcards/{teamname.ToLower()}/logo.svg");
+            svgDocument.ShapeRendering = SvgShapeRendering.Auto;
+            Bitmap bmp = svgDocument.Draw(256, 256);
+            bmp.Save(resString, System.Drawing.Imaging.ImageFormat.Png);
+            File.Delete($"./cache/teamcards/{teamname.ToLower()}/logo.svg");
+            return resString;
         }
     }
 }
