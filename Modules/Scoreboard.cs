@@ -33,7 +33,7 @@ namespace HLTVDiscordBridge.Modules
             _teams = teams;
             _ = ConnectWebSocket();
         }
-        
+
         public async Task ConnectWebSocket()
         {
             OnKillfeedUpdate += KillFeedUpdate;
@@ -58,8 +58,8 @@ namespace HLTVDiscordBridge.Modules
             }
 
             await _webSocket.ConnectAsync(new Uri($"ws://revilum.com:3000/api/scoreboard/{_matchId}"), CancellationToken.None);
-            await Receive(channel);            
-        } 
+            await Receive(channel);
+        }
         private async Task Receive(RestTextChannel channel)
         {
             Console.WriteLine("a");
@@ -79,7 +79,7 @@ namespace HLTVDiscordBridge.Modules
                 return;
             }
             Array.Clear(buffer, 0, buffer.Length);
-            //await Receive(channel);            
+            //await Receive(channel);
         }
         private async Task KillFeedUpdate(string msg, RestTextChannel channel)
         {

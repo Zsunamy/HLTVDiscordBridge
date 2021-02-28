@@ -57,8 +57,8 @@ namespace HLTVDiscordBridge.Modules
             if (jArr.Count == 0)
             {
                 builder.WithDescription("there are no upcoming matches");
-            } 
-            else if(jArr.Count == 1) 
+            }
+            else if(jArr.Count == 1)
             {
                 JObject jObj = JObject.Parse(jArr[0].ToString());
                 string team1name = JObject.Parse(JObject.Parse(jObj.GetValue("team1").ToString()).ToString()).GetValue("name").ToString();
@@ -100,7 +100,7 @@ namespace HLTVDiscordBridge.Modules
                     .AddField("format:", format, true)
                     .AddField("\u200b", "\u200b", true)
                     .AddField("details:", $"[click here for more details]({link})");
-            } 
+            }
             else if(jArr.Count > 1)
             {
                 int i = 0;
@@ -135,7 +135,7 @@ namespace HLTVDiscordBridge.Modules
                         DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                         dtDateTime = dtDateTime.AddMilliseconds(time);
                         builder.AddField("time:", dtDateTime.ToString().Substring(0, 16) + " UTC", true);
-                    } 
+                    }
                     if(bool.Parse(JObject.Parse(jObj.ToString()).GetValue("live").ToString()))
                     {
                         builder.AddField("time:", "now live!", true);
@@ -144,10 +144,10 @@ namespace HLTVDiscordBridge.Modules
                     {
                         builder.AddField("time:", "n.A", true);
                     }
-                    
 
-                    
-                        
+
+
+
                     builder.AddField("\u200b", "\u200b", true)
                         .AddField("event:", eventname, true)
                         .AddField("format:", format, true)
@@ -156,7 +156,7 @@ namespace HLTVDiscordBridge.Modules
                     if (i == 0) {  }
                     i++;
                 }
-                
+
                 builder.WithFooter($"and {jArr.Count - 2} more");
             }
 
@@ -203,7 +203,7 @@ namespace HLTVDiscordBridge.Modules
 
                 JToken date = JObject.Parse(jTok.ToString()).GetValue("date");
                 DateTime dtDateTime;
-                if (date != null) 
+                if (date != null)
                 {
                     double time = double.Parse(date.ToString());
                     dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
@@ -211,10 +211,10 @@ namespace HLTVDiscordBridge.Modules
                 }
                 else { dtDateTime = new DateTime(2035, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc); }
 
-                
+
                 if (arg.ToLower() == eventname || arg.ToLower() == team1name || arg.ToLower() == team2name)
                 {
-                    if (dtDateTime.CompareTo(DateTime.Now.ToUniversalTime()) != -1) { result.Add(jTok); }                    
+                    if (dtDateTime.CompareTo(DateTime.Now.ToUniversalTime()) != -1) { result.Add(jTok); }
                 }
             }
             return result;
@@ -235,7 +235,7 @@ namespace HLTVDiscordBridge.Modules
                 if (dtDateTime.ToString().Substring(0, 10) == dateArg.ToString().Substring(0, 10))
                 {
                     if (dtDateTime.CompareTo(DateTime.Now.ToUniversalTime()) != -1) { result.Add(jTok); }
-                }                
+                }
             }
             return result;
         }

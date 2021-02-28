@@ -24,9 +24,9 @@ namespace HLTVDiscordBridge.Modules
             foreach (JToken jTok in jArr)
             {
                 JObject jObj = JObject.Parse(jTok.ToString());
-                if (bool.Parse(jObj.GetValue("live").ToString())) 
+                if (bool.Parse(jObj.GetValue("live").ToString()))
                 {
-                    uint matchId = uint.Parse(JObject.Parse(jTok.ToString()).GetValue("id").ToString());                    
+                    uint matchId = uint.Parse(JObject.Parse(jTok.ToString()).GetValue("id").ToString());
                     if(!File.Exists($"./cache/livematches/{matchId}.json"))
                     {
                         FileStream fs = File.Create($"./cache/livematches/{matchId}.json");
@@ -63,7 +63,7 @@ namespace HLTVDiscordBridge.Modules
                 string matchpageLink = $"https://www.hltv.org/matches/{jObj.GetValue("id")}/{team1.GetValue("name").ToString().Replace(' ', '-')}-vs-{team2.GetValue("name").ToString().Replace(' ', '-')}-" +
                     $"{eventObj.GetValue("name").ToString().Replace(' ', '-')}";
                 string eventLink = $"https://hltv.org/events/{eventObj.GetValue("id")}/{eventObj.GetValue("name").ToString().Replace(' ', '-')}";
-                builder.AddField($"{emote} {team1.GetValue("name")} vs. {team2.GetValue("name")}", 
+                builder.AddField($"{emote} {team1.GetValue("name")} vs. {team2.GetValue("name")}",
                     $"[livestream]({streamLink})\n" +
                     $"[matchpage]({matchpageLink})\n" +
                     $"event: [{eventObj.GetValue("name")}]({eventLink})\n");

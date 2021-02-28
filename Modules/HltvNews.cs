@@ -22,7 +22,7 @@ namespace HLTVDiscordBridge.Modules
 
     public class HltvNews : ModuleBase<SocketCommandContext>
     {
-        //official RSS Feed       
+        //official RSS Feed
         public async Task<News> GetNews()
         {
             HttpClient http = new HttpClient();
@@ -50,7 +50,7 @@ namespace HLTVDiscordBridge.Modules
         {
             EmbedBuilder builder = new EmbedBuilder();
             builder.WithTitle(news.title)
-                .WithColor(Color.Blue);       
+                .WithColor(Color.Blue);
 
             builder.AddField("description:", news.description);
             builder.WithAuthor("full story on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", news.link);
@@ -69,9 +69,9 @@ namespace HLTVDiscordBridge.Modules
                 {
 #if RELEASE
                     try { await channel.SendMessageAsync("", false, embed); }
-                    catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }   
+                    catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
 #endif
-                }                
+                }
             }
         }
     }

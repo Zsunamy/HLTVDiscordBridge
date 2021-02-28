@@ -29,7 +29,7 @@ namespace HLTVDiscordBridge.Modules
         [Command("update")]
         public async Task Update(string version, [Remainder] string message)
         {
-            if (Context.User.Id == 255000770707980289 || Context.User.Id == 224037892387766272 || Context.User.Id == 248110264610848778) 
+            if (Context.User.Id == 255000770707980289 || Context.User.Id == 224037892387766272 || Context.User.Id == 248110264610848778)
             {
                 _cfg = new Config();
                 EmbedBuilder builder = new EmbedBuilder();
@@ -46,7 +46,7 @@ namespace HLTVDiscordBridge.Modules
                         Console.WriteLine($"not enough permission in channel {channel}");
                     }
                 }
-            }            
+            }
         }
-    }    
+    }
 }

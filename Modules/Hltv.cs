@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace HLTVDiscordBridge.Modules
 {
     public class Hltv : ModuleBase<SocketCommandContext>
-    {        
+    {
         private Config _cfg = new Config();
 
         public async Task<JObject> GetMatchByMatchId(uint matchId)
@@ -162,7 +162,7 @@ namespace HLTVDiscordBridge.Modules
                     else
                     {
                         score1 = $"({score1.Split(' ')[0]}) {score1.Split(' ')[1].Replace(";", " |")} {score1.Split(' ')[2]}";
-                    }                    
+                    }
 
                     mapsString = $"{getMapNameByAcronym(JObject.Parse(maps[0].ToString()).GetValue("name").ToString())} {score0}\n" +
                         $"{getMapNameByAcronym(JObject.Parse(maps[1].ToString()).GetValue("name").ToString())} {score1}\n";
@@ -216,8 +216,8 @@ namespace HLTVDiscordBridge.Modules
                     {
                         score2 = $"({score1.Split(' ')[0]}) {score2.Split(' ')[1].Replace(";", " |")} {score2.Split(' ')[2]}";
                     }
-                    
-                    
+
+
                     mapsString = $"{getMapNameByAcronym(JObject.Parse(maps[0].ToString()).GetValue("name").ToString())} ({score0}\n" +
                         $"{getMapNameByAcronym(JObject.Parse(maps[1].ToString()).GetValue("name").ToString())} ({score1}\n" +
                         $"{getMapNameByAcronym(JObject.Parse(maps[2].ToString()).GetValue("name").ToString())} ({score2}\n";
@@ -261,7 +261,7 @@ namespace HLTVDiscordBridge.Modules
                     break;
             }
             string title0;
-            string title1;            
+            string title1;
             switch(highlights.Count)
             {
                 case 0:
@@ -313,7 +313,7 @@ namespace HLTVDiscordBridge.Modules
                             Console.WriteLine($"not enough permission in channel {channel}");
                         }
 //#endif
-                    } 
+                    }
                 }
             }
         }
@@ -350,7 +350,7 @@ namespace HLTVDiscordBridge.Modules
         {
             EmbedBuilder builder = new EmbedBuilder();
 
-            (JObject, uint) res = await GetPLMessage(matchlink.Substring(29, 7));            
+            (JObject, uint) res = await GetPLMessage(matchlink.Substring(29, 7));
 
             JObject matchStats = res.Item1;
             JObject team1 = JObject.Parse(matchStats.GetValue("team1").ToString());
@@ -401,6 +401,6 @@ namespace HLTVDiscordBridge.Modules
             await channel.SendMessageAsync("", false, await GetPLStats(matchlink));
         }
 
-        
+
     }
 }

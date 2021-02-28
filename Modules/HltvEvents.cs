@@ -13,8 +13,8 @@ using System.Threading.Tasks;
 namespace HLTVDiscordBridge.Modules
 {
     public class HltvEvents : ModuleBase<SocketCommandContext>
-    {        
-        public async Task AktEvents(List<SocketTextChannel> channels) 
+    {
+        public async Task AktEvents(List<SocketTextChannel> channels)
         {
             Config _cfg = new Config();
             var eventDif = await GetOngoingEvents();
@@ -22,21 +22,21 @@ namespace HLTVDiscordBridge.Modules
             if(res.Item1 != null)
             {
                 foreach (SocketTextChannel channel in channels)
-                {   
+                {
                     if(!_cfg.GetServerConfig(channel).OnlyFeaturedEvents || _cfg.GetServerConfig(channel).OnlyFeaturedEvents == res.Item2)
                     {
                         try { await channel.SendMessageAsync("", false, res.Item1); }
-                        catch(Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }                        
+                        catch(Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
                     }
                 }
-            }            
+            }
         }
 
         /// <summary>
         /// Gets new upcoming events and writes them into ./cache/events/upcoming.json
         /// </summary>
         /// <returns>new upcoming event as JObject</returns>
-        public async Task GetUpcomingEvents() 
+        public async Task GetUpcomingEvents()
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/upcommingevents");
             HttpClient http = new HttpClient();
@@ -53,11 +53,11 @@ namespace HLTVDiscordBridge.Modules
             {
                 FileStream fs = File.Create("./cache/events/upcoming.json");
                 fs.Close();
-                File.WriteAllText("./cache/events/upcoming.json", jArr.ToString()); 
+                File.WriteAllText("./cache/events/upcoming.json", jArr.ToString());
             }
             JArray cachedJArray = JArray.Parse(File.ReadAllText("./cache/events/upcoming.json"));
             if (cachedJArray != jArr)
-            {                
+            {
                 foreach (JToken jTok in jArr)
                 {
                     bool update = true;
@@ -130,7 +130,7 @@ namespace HLTVDiscordBridge.Modules
                 }
             }
             return (null, false);
-        }        
+        }
 
         /// <summary>
         /// Builds the Embed of started/ended events
@@ -144,7 +144,7 @@ namespace HLTVDiscordBridge.Modules
             if (eventObj == null) { return (null, false); }
             JObject eventStats = await GetEventStats(ushort.Parse(eventObj.GetValue("id").ToString()));
             if (eventStats == null) { return (null, false); }
-            
+
             JObject location = JObject.Parse(eventStats.GetValue("location").ToString());
             string eventLink = $"https://www.hltv.org/events/{eventObj.GetValue("id")}/{eventStats.GetValue("name").ToString().Replace(' ', '-')}";
             if(arg.Item2 == true)
@@ -155,7 +155,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 builder.WithTitle($"{eventStats.GetValue("name")} just ended!");
             }
-            
+
             builder.AddField("starting:", UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).ToString().Substring(0, 16) + " UTC", true)
                 .AddField("ending:", UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).ToString().Substring(0, 16) + " UTC", true)
                 .AddField("\u200b", "\u200b", true)
@@ -170,7 +170,7 @@ namespace HLTVDiscordBridge.Modules
                 {
                     try {
                         string teamLink = $"https://www.hltv.org/team/{JObject.Parse(teams[i].ToString()).GetValue("id")}/{JObject.Parse(teams[i].ToString()).GetValue("name").ToString().Replace(' ', '-')}";
-                        teamsString += $"[{JObject.Parse(teams[i].ToString()).GetValue("name")}]({teamLink})\n"; 
+                        teamsString += $"[{JObject.Parse(teams[i].ToString()).GetValue("name")}]({teamLink})\n";
                     }
                     catch (IndexOutOfRangeException) { break; }
                     if (i == 4) { teamsString += $"and {teams.Count - 5} more"; }
@@ -237,7 +237,7 @@ namespace HLTVDiscordBridge.Modules
 
         #region COMMANDS
         //User commands
-        [Command("events")] 
+        [Command("events")]
         public async Task GetAllOngoingEvents()
         {
             EmbedBuilder builder = new EmbedBuilder();
@@ -318,7 +318,7 @@ namespace HLTVDiscordBridge.Modules
                             builder.AddField("prize pool:", eventStats.GetValue("prizePool"), true)
                                 .AddField("location:", JObject.Parse(eventStats.GetValue("location").ToString()).GetValue("name").ToString(), true)
                                 .AddField("\u200b", "\u200b", true);
-                        }  
+                        }
                         builder.WithAuthor("click for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", eventLink);
                         await ReplyAsync("", false, builder.Build());
                         return;

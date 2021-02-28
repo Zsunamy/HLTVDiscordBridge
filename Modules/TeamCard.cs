@@ -13,7 +13,7 @@ namespace HLTVDiscordBridge.Modules
 {
     public class TeamCard : ModuleBase<SocketCommandContext>
     {
-        [Command("team")] 
+        [Command("team")]
         public async Task SendTeamCard([Remainder]string name = "")
         {
             await ReplyAsync("", false, await getTeamCard(name));
@@ -52,7 +52,7 @@ namespace HLTVDiscordBridge.Modules
                 JObject fullTeamJObject = JObject.Parse(File.ReadAllText($"./cache/teamcards/{name.ToLower()}/fullteam.json"));
                 JObject teamStats = JObject.Parse(File.ReadAllText($"./cache/teamcards/{name.ToLower()}/teamstats.json"));
                 return (teamStats, fullTeamJObject, true);
-            }            
+            }
         }
 
         async Task<Embed> getTeamCard(string name)
@@ -61,7 +61,7 @@ namespace HLTVDiscordBridge.Modules
             EmbedBuilder builder = new EmbedBuilder();
             JObject teamJObj = res.Item2;
             JObject teamStatsJObj = res.Item1;
-            if (teamJObj == null && teamStatsJObj == null && res.Item3) 
+            if (teamJObj == null && teamStatsJObj == null && res.Item3)
             {
                 builder.WithTitle("ERROR")
                     .WithColor(Color.Red)

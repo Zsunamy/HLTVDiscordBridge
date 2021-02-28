@@ -62,7 +62,7 @@ namespace HLTVDiscordBridge
             {
                 await _cfg.GuildJoined(guild, null, true);
             }
-            
+
 
             await RegisterCommandsAsync();
 
@@ -71,7 +71,7 @@ namespace HLTVDiscordBridge
 
             await _client.SetGameAsync("!help");
 
-            //await _scoreboard.ConnectWebSocket();            
+            //await _scoreboard.ConnectWebSocket();
 
             await BGTask();
 
@@ -94,8 +94,8 @@ namespace HLTVDiscordBridge
             bool updateTopGG = true;
             while (true)
             {
-                //top.gg API                
-                if(DateTime.Now.Hour == 0 && updateTopGG && _client.CurrentUser.Id == 807182830752628766) 
+                //top.gg API
+                if(DateTime.Now.Hour == 0 && updateTopGG && _client.CurrentUser.Id == 807182830752628766)
                 {
                     updateTopGG = false;
                     HttpClient http = new HttpClient();
@@ -105,7 +105,7 @@ namespace HLTVDiscordBridge
                     await http.SendAsync(req);
                 } else if(DateTime.Now.Hour == 1) { updateTopGG = true; }
 #if RELEASE
-                await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);                    
+                await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);
                 await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
                 await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
                 await _hltvevents.GetUpcomingEvents();
@@ -119,7 +119,7 @@ namespace HLTVDiscordBridge
 
         private async Task ReactionAdd(Cacheable<IUserMessage, ulong> cacheable, ISocketMessageChannel channel, SocketReaction reaction)
         {
-            IUserMessage msg;            
+            IUserMessage msg;
             try { msg = await cacheable.GetOrDownloadAsync(); }
             catch (Discord.Net.HttpException) { return; }
             if (!msg.Author.IsBot || reaction.User.Value.IsBot) { return; }
@@ -130,7 +130,7 @@ namespace HLTVDiscordBridge
                 if (emoteString == reaction.Emote.ToString()) { _hltvlive.startScoreboard(msg, new Emoji(reaction.Emote.ToString()), (channel as SocketGuildChannel).Guild); return; }
             }
 
-            if (reaction.Emote.Name != "hltvstats") { return; }            
+            if (reaction.Emote.Name != "hltvstats") { return; }
             IEmbed embedReac = null;
             foreach (IEmbed em in msg.Embeds)
             {
@@ -142,7 +142,7 @@ namespace HLTVDiscordBridge
             if (embedReac.Author.Value.Name.ToString().ToLower() == "click here for more details")
             {
                 await msg.RemoveAllReactionsAsync();
-                await _hltv.stats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);                
+                await _hltv.stats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);
             }
         }
 

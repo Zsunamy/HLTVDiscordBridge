@@ -67,7 +67,7 @@ namespace HLTVDiscordBridge
                     .WithDescription($"Please mind the syntax: {GetServerConfig(Context.Guild).Prefix}minstars [stars (number between 0-5)]")
                     .WithCurrentTimestamp();
                 await ReplyAsync("", false, builder.Build());
-            }            
+            }
             ServerConfig _config = new ServerConfig();
             _config = GetServerConfig(Context.Guild);
             _config.MinimumStars = starsNum;
@@ -121,8 +121,8 @@ namespace HLTVDiscordBridge
                         .WithCurrentTimestamp();
                 await ReplyAsync("", false, builder.Build());
                 return;
-            } 
-            
+            }
+
             ServerConfig _config = new ServerConfig();
             _config = GetServerConfig(Context.Guild);
             _config.Prefix = arg;
@@ -150,7 +150,7 @@ namespace HLTVDiscordBridge
         {
             EmbedBuilder builder = new EmbedBuilder();
             if (channel == null)
-            {                
+            {
                 channel = guild.DefaultChannel;
                 string guildName = "";
                 string channelMention = "";
@@ -171,7 +171,7 @@ namespace HLTVDiscordBridge
             }
             ServerConfig _config = new ServerConfig();
 
-            if(channel != null) { _config.NewsChannelID = channel.Id; }            
+            if(channel != null) { _config.NewsChannelID = channel.Id; }
             _config.guildID = guild.Id;
             _config.MinimumStars = 0;
             _config.OnlyFeaturedEvents = false;
@@ -180,8 +180,8 @@ namespace HLTVDiscordBridge
             _xml = new XmlSerializer(typeof(ServerConfig));
             Directory.CreateDirectory("./cache/serverconfig");
             if(File.Exists($"./cache/serverconfig/{guild.Id}.xml") && startup) { return; }
-            FileStream stream = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.Create);  
-            _xml.Serialize(stream, _config);            
+            FileStream stream = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.Create);
+            _xml.Serialize(stream, _config);
             stream.Close();
             try { await channel.SendMessageAsync("", false, builder.Build()); }
             catch(Discord.Net.HttpException)
@@ -193,7 +193,7 @@ namespace HLTVDiscordBridge
                 try { await guild.Owner.SendMessageAsync("", false, builder.Build()); }
                 catch (Discord.Net.HttpException) { }
             }
-               
+
         }
 
         public async Task<GuildEmote> GetEmote(DiscordSocketClient client)
@@ -203,7 +203,7 @@ namespace HLTVDiscordBridge
                 if (guild.Id == 748637221300732076)
                 {
                     return await guild.GetEmoteAsync(809082404324114522);
-                }                
+                }
             }
             return null;
         }
@@ -220,12 +220,12 @@ namespace HLTVDiscordBridge
             _xml = new XmlSerializer(typeof(ServerConfig));
             foreach (SocketGuild guild in client.Guilds)
             {
-                if (!File.Exists($"./cache/serverconfig/{guild.Id}.xml")) { await GuildJoined(guild); }                
+                if (!File.Exists($"./cache/serverconfig/{guild.Id}.xml")) { await GuildJoined(guild); }
                 FileStream fs = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.Open);
                 _config = (ServerConfig)_xml.Deserialize(fs);
                 fs.Close();
-                if ((SocketTextChannel)client.GetChannel(_config.NewsChannelID) != null) { channel.Add((SocketTextChannel)client.GetChannel(_config.NewsChannelID)); }                
-            }            
+                if ((SocketTextChannel)client.GetChannel(_config.NewsChannelID) != null) { channel.Add((SocketTextChannel)client.GetChannel(_config.NewsChannelID)); }
+            }
             return channel;
         }
         /// <summary>

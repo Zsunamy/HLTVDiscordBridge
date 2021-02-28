@@ -41,8 +41,8 @@ namespace HLTVDiscordBridge.Modules
                         .AddField("Syntax:", $"\"{prefix}minstars [stars (number betweeen 0-5)]\"")
                         .AddField("Summary:", $"Changes the minimum stars of a match to be displayed in your HLTV-News-Feed\nexample:\n\"{prefix}minstars 0\"")
                         .AddField("Permissions:", "Admin");
-                    break;          
-                case "ranking":  
+                    break;
+                case "ranking":
                     builder.WithTitle("HELP RANKING")
                         .AddField("Syntax:", $"\"{prefix}ranking [number from 1-30 (default = 10)] [country or region (default = GLOBAL)]\"")
                         .AddField("Summary:", $"Displays the team ranking of a specific country or region \nexample:\n\"{prefix}ranking 15 germany\"\n\"{prefix}ranking 3 united states\"")

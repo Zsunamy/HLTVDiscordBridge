@@ -24,9 +24,9 @@ namespace HLTVDiscordBridge.Modules
             if (arg == "GLOBAL")
             {
                 uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking");
-            } else if (DateTime.TryParse(arg, out time)) 
+            } else if (DateTime.TryParse(arg, out time))
             {
-                string[] months = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };                
+                string[] months = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
                 uri = new Uri($"https://hltv-api-steel.vercel.app/api/ranking/{time.Day}/{months[time.Month - 1]}/{time.Year}");
             } else
             {
@@ -51,7 +51,7 @@ namespace HLTVDiscordBridge.Modules
                     await ReplyAsync("", false, embed.Build());
                     return;
                 }
-                if (jArr.Count == 0) 
+                if (jArr.Count == 0)
                 {
                     embed.WithColor(Color.Red)
                     .WithTitle($"{arg} DOES NOT EXIST")
@@ -88,6 +88,6 @@ namespace HLTVDiscordBridge.Modules
                 .AddField("teams:", val)
                 .WithColor(Color.Blue);
             await ReplyAsync("", false, embed.Build());
-        }        
+        }
     }
 }

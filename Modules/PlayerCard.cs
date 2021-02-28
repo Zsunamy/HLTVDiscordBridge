@@ -15,7 +15,7 @@ namespace HLTVDiscordBridge.Modules
     public class PlayerCard : ModuleBase<SocketCommandContext>
     {
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="playername"></param>
         /// <returns>PlayerStats as JObject, PlayerID as ushort, Achievements as JArray</returns>
@@ -34,14 +34,14 @@ namespace HLTVDiscordBridge.Modules
                 return (statsJObj, playerID, achievements);
             } else
             {
-                //Get non cached Player                
+                //Get non cached Player
                 Uri uri = new Uri("https://hltv-api-steel.vercel.app/api/player/" + playername);
                 HttpClient _http = new HttpClient();
                 _http.BaseAddress = uri;
                 HttpResponseMessage httpRequest = await _http.GetAsync(uri);
 
                 try { idJObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync()); }
-                catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return (null, 0, null); }                    
+                catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return (null, 0, null); }
                 if (idJObj.Count == 0) { return (null, 0, JArray.Parse("[]")); }
 
                 Directory.CreateDirectory($"./cache/playercards/{playername.ToLower()}");
@@ -56,7 +56,7 @@ namespace HLTVDiscordBridge.Modules
                 statsJObj = JObject.Parse(await httpRequest1.Content.ReadAsStringAsync());
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/stats.json", statsJObj.ToString());
                 return (statsJObj, playerID, achievements);
-            }            
+            }
         }
 
         private async Task<Embed> GetPlayerCard(string playername = "")
@@ -73,7 +73,7 @@ namespace HLTVDiscordBridge.Modules
             var req = await GetPlayerStats(playername);
             JObject jObj = req.Item1;
             JArray achievements = req.Item3;
-            if (jObj == null && achievements != null) 
+            if (jObj == null && achievements != null)
             {
                 builder.WithColor(Color.Red)
                     .WithTitle("ERROR")
@@ -84,10 +84,10 @@ namespace HLTVDiscordBridge.Modules
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
                 builder.WithColor(Color.Red)
                     .WithTitle($"SYSTEM ERROR")
-                    .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");                
+                    .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");
                 return builder.Build();
             }
-            
+
 
             JObject stats = JObject.Parse(jObj.GetValue("statistics").ToString());
             JObject country = JObject.Parse(jObj.GetValue("country").ToString());
@@ -109,7 +109,7 @@ namespace HLTVDiscordBridge.Modules
             else { age = ageTok.ToString(); }
 
             if (PBUrlTok != null) { builder.WithThumbnailUrl(PBUrlTok.ToString()); }
-               
+
 
             builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://hltv.org/player/" + req.Item2.ToString() + "/" + jObj.GetValue("ign").ToString())
                .WithTitle(jObj.GetValue("ign").ToString() + $" :flag_{country.GetValue("code").ToString().ToLower()}:")
@@ -120,8 +120,8 @@ namespace HLTVDiscordBridge.Modules
                .AddField("\u200b", $"{stats.GetValue("mapsPlayed")}\n{stats.GetValue("kills")}/{stats.GetValue("deaths")} ({stats.GetValue("kdRatio")})\n" +
                $"{stats.GetValue("headshots")}\n{stats.GetValue("damagePerRound")}\n {stats.GetValue("killsPerRound")}\n {stats.GetValue("assistsPerRound")}\n {stats.GetValue("deathsPerRound")}", true)
                .WithCurrentTimestamp();
-            
-                
+
+
             JObject ach1;
             JObject ach2;
             JObject ach3;
