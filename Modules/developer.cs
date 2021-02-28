@@ -34,8 +34,8 @@ namespace HLTVDiscordBridge.Modules
                 _cfg = new Config();
                 EmbedBuilder builder = new EmbedBuilder();
                 builder.WithTitle($"UPDATE {version}")
-                    .WithDescription(message + "\nIf you are experiencing any issue feel free to write us an issue at:\n https://github.com/Zsunamy/HLTVDiscordBridge/issues \n" +
-                    "Also feel free to donate us a cup of coffee at:\n https://www.patreon.com/zsunamy")
+                    .WithDescription(message + "\nIf you are experiencing any issue feel free to write us an [issue](https://github.com/Zsunamy/HLTVDiscordBridge/issues)\n" +
+                    "Also feel free to [donate](https://www.patreon.com/zsunamy) us a cup of coffee")
                     .WithColor(Color.Green)
                     .WithCurrentTimestamp();
                 foreach (SocketTextChannel channel in await _cfg.GetChannels(Context.Client))
