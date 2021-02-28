@@ -179,22 +179,25 @@ namespace HLTVDiscordBridge.Modules
             } else
             {
                 JArray prizeDistribution = JArray.Parse(eventStats.GetValue("prizeDistribution").ToString());
-                string prizeString = "";
-                for (int i = 0; i < 4; i++)
+                if (prizeDistribution.ToString() != "[]")
                 {
-                    try
+                    string prizeString = "";
+                    for (int i = 0; i < 4; i++)
                     {
-                        string teamLink = $"https://www.hltv.org/team/{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("id")}/" +
-                            $"{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("name").ToString().Replace(' ', '-')}";
-                        prizeString += $"{JObject.Parse(prizeDistribution[i].ToString()).GetValue("place")} " +
-                          $"[{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("name")}]({teamLink}) " +
-                          $"({JObject.Parse(prizeDistribution[i].ToString()).GetValue("prize")})" + "\n";
+                        try
+                        {
+                            string teamLink = $"https://www.hltv.org/team/{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("id")}/" +
+                                $"{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("name").ToString().Replace(' ', '-')}";
+                            prizeString += $"{JObject.Parse(prizeDistribution[i].ToString()).GetValue("place")} " +
+                              $"[{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("name")}]({teamLink}) " +
+                              $"({JObject.Parse(prizeDistribution[i].ToString()).GetValue("prize")})" + "\n";
+                        }
+                        catch (IndexOutOfRangeException) { prizeString = "\u200b"; break; }
+                        catch (NullReferenceException) { prizeString = "\u200b"; break; }
+                        if (i == 4) { prizeString += $"and {prizeDistribution.Count - 4} more"; }
                     }
-                    catch (IndexOutOfRangeException) { break; }
-                    catch (NullReferenceException) { break; }
-                    if (i == 4) { prizeString += $"and {prizeDistribution.Count - 4} more"; }
+                    builder.AddField("results:", prizeString);
                 }
-                builder.AddField("results:", prizeString);
             }
 
             builder.WithColor(Color.Green)
