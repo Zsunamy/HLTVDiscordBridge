@@ -100,7 +100,7 @@ namespace HLTVDiscordBridge.Modules
             JArray cachedJArray = JArray.Parse(File.ReadAllText("./cache/events/ongoing.json"));
             if (cachedJArray != jArr)
             {
-                //get ended event
+                //get started event
                 foreach (JToken jTok in cachedJArray)
                 {
                     bool update = true;
@@ -111,10 +111,10 @@ namespace HLTVDiscordBridge.Modules
                     if (update)
                     {
                         File.WriteAllText("./cache/events/ongoing.json", jArr.ToString());
-                        return (JObject.Parse(jTok.ToString()), false);
+                        return (JObject.Parse(jTok.ToString()), true);
                     }
                 }
-                //get new started event
+                //get ended event
                 foreach (JToken jTok in jArr)
                 {
                     bool update = true;
@@ -125,7 +125,7 @@ namespace HLTVDiscordBridge.Modules
                     if (update)
                     {
                         File.WriteAllText("./cache/events/ongoing.json", jArr.ToString());
-                        return (JObject.Parse(jTok.ToString()), true);
+                        return (JObject.Parse(jTok.ToString()), false);
                     }
                 }
             }
