@@ -108,8 +108,8 @@ namespace HLTVDiscordBridge
 #if RELEASE
                                    
                 await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
-                await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
-                await _hltvevents.GetUpcomingEvents();
+                //await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
+                //await _hltvevents.GetUpcomingEvents();
                 await _upcoming.UpdateUpcomingMatches();
 #endif
                 _cl.Cleaner(_client);

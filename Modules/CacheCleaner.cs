@@ -42,6 +42,7 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/teamcards");
             foreach (string dir in Directory.GetDirectories("./cache/teamcards"))
             {
+                if (dir == "./cache/teamcards\\zsunamy") { continue; }
                 if (Directory.GetCreationTime(dir).AddDays(7).Date == DateTime.Now.Date)
                 {
                     foreach (string file in Directory.GetFiles(dir)) { File.Delete(file); }
