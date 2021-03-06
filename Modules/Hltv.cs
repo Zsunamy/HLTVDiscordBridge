@@ -13,9 +13,9 @@ namespace HLTVDiscordBridge.Modules
 {
     public class Hltv : ModuleBase<SocketCommandContext>
     {        
-        private Config _cfg = new Config();
+        private readonly Config _cfg = new Config();
 
-        public async Task<JObject> GetMatchByMatchId(uint matchId)
+        public static async Task<JObject> GetMatchByMatchId(uint matchId)
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/match/" + matchId);
             HttpClient http = new HttpClient();
@@ -25,7 +25,7 @@ namespace HLTVDiscordBridge.Modules
             return JObject.Parse(httpRes);
         }
 
-        private async Task<(JObject, ushort)> getLatestMatch()
+        private static async Task<(JObject, ushort)> GetLatestMatch()
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/results");
             HttpClient http = new HttpClient();
@@ -71,36 +71,28 @@ namespace HLTVDiscordBridge.Modules
             return (null, 0);
         }
 
-        private string getMapNameByAcronym(string arg)
+        private static string GetMapNameByAcronym(string arg)
         {
-            switch(arg)
+            return arg switch
             {
-                case "mrg":
-                    return "Mirage";
-                case "d2":
-                    return "Dust 2";
-                case "trn":
-                    return "Train";
-                case "ovp":
-                    return "Overpass";
-                case "inf":
-                    return "Inferno";
-                case "nuke":
-                    return "Nuke";
-                case "vertigo":
-                    return "Vertigo";
-                default:
-                    return arg[0].ToString().ToUpper() + arg.Substring(1);
-            }
+                "mrg" => "Mirage",
+                "d2" => "Dust 2",
+                "trn" => "Train",
+                "ovp" => "Overpass",
+                "inf" => "Inferno",
+                "nuke" => "Nuke",
+                "vertigo" => "Vertigo",
+                _ => arg[0].ToString().ToUpper() + arg.Substring(1),
+            };
         }
         /// <summary>
         /// Gets the stats of a match
         /// </summary>
         /// <param name="res">JObject containing the match</param>
         /// <returns>Embed</returns>
-        private async Task<(Embed, ushort)> GetStats()
+        private static async Task<(Embed, ushort)> GetStats()
         {
-            var req = await getLatestMatch();
+            var req = await GetLatestMatch();
             if(req.Item1 == null) { return (null, 0); }
             JObject res = req.Item1;
             JObject eventInfo = JObject.Parse(res.GetValue("event").ToString());
@@ -150,7 +142,7 @@ namespace HLTVDiscordBridge.Modules
                     {
                         score0 = $"({score0.Split(' ')[0]}) {score0.Split(' ')[1].Replace(";", " |")} {score0.Split(' ')[2]}";
                     }
-                    builder.AddField("maps:", $"{getMapNameByAcronym(JObject.Parse(maps[0].ToString()).GetValue("name").ToString())} {score0}");
+                    builder.AddField("maps:", $"{GetMapNameByAcronym(JObject.Parse(maps[0].ToString()).GetValue("name").ToString())} {score0}");
                     break;                
                 case 3:
                     score0 = JObject.Parse(maps[0].ToString()).GetValue("result").ToString();
@@ -174,8 +166,8 @@ namespace HLTVDiscordBridge.Modules
                         score1 = $"({score1.Split(' ')[0]}) {score1.Split(' ')[1].Replace(";", " |")} {score1.Split(' ')[2]}";
                     }                    
 
-                    mapsString = $"{getMapNameByAcronym(JObject.Parse(maps[0].ToString()).GetValue("name").ToString())} {score0}\n" +
-                        $"{getMapNameByAcronym(JObject.Parse(maps[1].ToString()).GetValue("name").ToString())} {score1}\n";
+                    mapsString = $"{GetMapNameByAcronym(JObject.Parse(maps[0].ToString()).GetValue("name").ToString())} {score0}\n" +
+                        $"{GetMapNameByAcronym(JObject.Parse(maps[1].ToString()).GetValue("name").ToString())} {score1}\n";
                     if (JObject.Parse(maps[2].ToString()).GetValue("result").ToString() != "-:- ")
                     {
                         score2 = JObject.Parse(maps[2].ToString()).GetValue("result").ToString();
@@ -188,10 +180,10 @@ namespace HLTVDiscordBridge.Modules
                         {
                             score2 = $"({score2.Split(' ')[0]}) {score2.Split(' ')[1].Replace(";", " |")} {score2.Split(' ')[2]}";
                         }
-                        mapsString += $"{getMapNameByAcronym(JObject.Parse(maps[2].ToString()).GetValue("name").ToString())} {score2}";
+                        mapsString += $"{GetMapNameByAcronym(JObject.Parse(maps[2].ToString()).GetValue("name").ToString())} {score2}";
                     } else
                     {
-                        mapsString += $"~~{getMapNameByAcronym(JObject.Parse(maps[2].ToString()).GetValue("name").ToString())}~~";
+                        mapsString += $"~~{GetMapNameByAcronym(JObject.Parse(maps[2].ToString()).GetValue("name").ToString())}~~";
                     }
                     builder.AddField("maps:", mapsString);
                     break;
@@ -228,9 +220,9 @@ namespace HLTVDiscordBridge.Modules
                     }
                     
                     
-                    mapsString = $"{getMapNameByAcronym(JObject.Parse(maps[0].ToString()).GetValue("name").ToString())} {score0}\n" +
-                        $"{getMapNameByAcronym(JObject.Parse(maps[1].ToString()).GetValue("name").ToString())} {score1}\n" +
-                        $"{getMapNameByAcronym(JObject.Parse(maps[2].ToString()).GetValue("name").ToString())} {score2}\n";
+                    mapsString = $"{GetMapNameByAcronym(JObject.Parse(maps[0].ToString()).GetValue("name").ToString())} {score0}\n" +
+                        $"{GetMapNameByAcronym(JObject.Parse(maps[1].ToString()).GetValue("name").ToString())} {score1}\n" +
+                        $"{GetMapNameByAcronym(JObject.Parse(maps[2].ToString()).GetValue("name").ToString())} {score2}\n";
                     if (JObject.Parse(maps[3].ToString()).GetValue("result").ToString() != "-:- ")
                     {
                         score3 = JObject.Parse(maps[3].ToString()).GetValue("result").ToString();
@@ -243,11 +235,11 @@ namespace HLTVDiscordBridge.Modules
                         {
                             score3 = $"({score3.Split(' ')[0]}) {score3.Split(' ')[1].Replace(";", " |")} {score3.Split(' ')[2]}";
                         }
-                        mapsString += $"{getMapNameByAcronym(JObject.Parse(maps[3].ToString()).GetValue("name").ToString())} {score3}\n";
+                        mapsString += $"{GetMapNameByAcronym(JObject.Parse(maps[3].ToString()).GetValue("name").ToString())} {score3}\n";
                     }
                     else
                     {
-                        mapsString += $"~~{getMapNameByAcronym(JObject.Parse(maps[3].ToString()).GetValue("name").ToString())}~~\n";
+                        mapsString += $"~~{GetMapNameByAcronym(JObject.Parse(maps[3].ToString()).GetValue("name").ToString())}~~\n";
                     }
                     if (JObject.Parse(maps[4].ToString()).GetValue("result").ToString() != "-:- ")
                     {
@@ -261,11 +253,11 @@ namespace HLTVDiscordBridge.Modules
                         {
                             score4 = $"({score4.Split(' ')[0]}) {score4.Split(' ')[1].Replace(";", " |")} {score4.Split(' ')[2]}";
                         }
-                        mapsString += $"{getMapNameByAcronym(JObject.Parse(maps[4].ToString()).GetValue("name").ToString())} {score4}";
+                        mapsString += $"{GetMapNameByAcronym(JObject.Parse(maps[4].ToString()).GetValue("name").ToString())} {score4}";
                     }
                     else
                     {
-                        mapsString += $"~~{getMapNameByAcronym(JObject.Parse(maps[4].ToString()).GetValue("name").ToString())}~~";
+                        mapsString += $"~~{GetMapNameByAcronym(JObject.Parse(maps[4].ToString()).GetValue("name").ToString())}~~";
                     }
                     builder.AddField("maps:", mapsString);
                     break;
@@ -331,13 +323,13 @@ namespace HLTVDiscordBridge.Modules
                 {
                     if (req.Item2 >= _cfg.GetServerConfig(channel).MinimumStars)
                     {
-//#if RELEASE
+#if RELEASE
                         try { RestUserMessage msg = await channel.SendMessageAsync("", false, embed); await msg.AddReactionAsync(await _cfg.GetEmote(client)); }
                         catch (Discord.Net.HttpException)
                         {
                             Console.WriteLine($"not enough permission in channel {channel}");
                         }
-//#endif
+#endif
                     } 
                 }
             }
@@ -348,7 +340,7 @@ namespace HLTVDiscordBridge.Modules
         /// </summary>
         /// <param name="matchlink">link of the match</param>
         /// <returns>MatchStats</returns>
-        private async Task<(JObject, uint)> GetPLMessage(string matchid)
+        private static async Task<(JObject, uint)> GetPLMessage(string matchid)
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/match/" + matchid);
             HttpClient http = new HttpClient();
@@ -370,7 +362,7 @@ namespace HLTVDiscordBridge.Modules
         /// </summary>
         /// <param name="matchlink"></param>
         /// <returns>Discord Embed</returns>
-        private async Task<Embed> GetPLStats(string matchlink)
+        private static async Task<Embed> GetPLStats(string matchlink)
         {
             EmbedBuilder builder = new EmbedBuilder();
 
@@ -420,7 +412,7 @@ namespace HLTVDiscordBridge.Modules
         /// Triggerd by reaction. Sends the Embed
         /// </summary>
         /// <returns></returns>
-        public async Task stats(string matchlink, ITextChannel channel)
+        public static async Task Stats(string matchlink, ITextChannel channel)
         {
             await channel.SendMessageAsync("", false, await GetPLStats(matchlink));
         }

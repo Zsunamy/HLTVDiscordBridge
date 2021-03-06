@@ -18,11 +18,11 @@ namespace HLTVDiscordBridge.Modules
         public delegate Task MessageReceivedDelegate(string message, RestTextChannel channel);
         public event MessageReceivedDelegate OnKillfeedUpdate;
 
-        ClientWebSocket _webSocket = new ClientWebSocket();
-        byte[] buffer;
-        uint _matchId;
-        SocketGuild _guild;
-        string _teams;
+        readonly ClientWebSocket _webSocket = new ClientWebSocket();
+        readonly byte[] buffer;
+        private readonly uint _matchId;
+        readonly SocketGuild _guild;
+        readonly string _teams;
         int i = 0;
 
         public Scoreboard(uint matchId, SocketGuild guild, string teams)
@@ -58,7 +58,7 @@ namespace HLTVDiscordBridge.Modules
             }
 
             await _webSocket.ConnectAsync(new Uri($"ws://revilum.com:3000/api/scoreboard/{_matchId}"), CancellationToken.None);
-            await Receive(channel);            
+            await Receive(channel);
         } 
         private async Task Receive(RestTextChannel channel)
         {
@@ -69,8 +69,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 string resultString = Encoding.UTF8.GetString(buffer);
                 JObject result = JObject.Parse(resultString);
-                JToken jTok;
-                if (result.TryGetValue("log", out jTok))
+                if (result.TryGetValue("log", out JToken jTok))
                 {
                     await OnKillfeedUpdate(jTok.ToString(), channel);
                 }

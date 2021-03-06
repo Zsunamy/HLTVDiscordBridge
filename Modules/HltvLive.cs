@@ -31,7 +31,7 @@ namespace HLTVDiscordBridge.Modules
                     {
                         FileStream fs = File.Create($"./cache/livematches/{matchId}.json");
                         fs.Close();
-                        JObject newLiveMatch = await _hltv.GetMatchByMatchId(matchId);
+                        JObject newLiveMatch = await Hltv.GetMatchByMatchId(matchId);
                         File.WriteAllText($"./cache/livematches/{matchId}.json", newLiveMatch.ToString());
                         matches.Add(newLiveMatch);
                     } else
@@ -58,21 +58,23 @@ namespace HLTVDiscordBridge.Modules
                 JObject team2 = JObject.Parse(jObj.GetValue("team2").ToString());
                 JObject eventObj = JObject.Parse(jObj.GetValue("event").ToString());
                 string streamLink;
-                try { streamLink = "https://www.hltv.org" + JObject.Parse(JArray.Parse(jObj.GetValue("streams").ToString())[0].ToString()).GetValue("link").ToString(); }
-                catch (IndexOutOfRangeException) { streamLink = "no livestream available"; }
+                if(JArray.Parse(jObj.GetValue("streams").ToString()).ToString() == "[]") { streamLink = "no livestream available"; }
+                else { streamLink = "[livestream](https://www.hltv.org" + JObject.Parse(JArray.Parse(jObj.GetValue("streams").ToString())[0].ToString()).GetValue("link").ToString() + ")"; }                
                 string matchpageLink = $"https://www.hltv.org/matches/{jObj.GetValue("id")}/{team1.GetValue("name").ToString().Replace(' ', '-')}-vs-{team2.GetValue("name").ToString().Replace(' ', '-')}-" +
                     $"{eventObj.GetValue("name").ToString().Replace(' ', '-')}";
                 string eventLink = $"https://hltv.org/events/{eventObj.GetValue("id")}/{eventObj.GetValue("name").ToString().Replace(' ', '-')}";
                 builder.AddField($"{emote} {team1.GetValue("name")} vs. {team2.GetValue("name")}", 
-                    $"[livestream]({streamLink})\n" +
+                    $"{streamLink}\n" +
                     $"[matchpage]({matchpageLink})\n" +
                     $"event: [{eventObj.GetValue("name")}]({eventLink})\n");
+#if DEBUG
                 builder.WithFooter("React with the matchnumber to add a live scoreboard to your server!");
+#endif
             }
             return (builder.Build(), ushort.Parse(matches.Count.ToString()));
         }
 
-        public void startScoreboard(IUserMessage msg, Emoji emote, SocketGuild guild)
+        public void StartScoreboard(IUserMessage msg, Emoji emote, SocketGuild guild)
         {
             foreach(EmbedField field in msg.Embeds.First().Fields)
             {
@@ -85,7 +87,7 @@ namespace HLTVDiscordBridge.Modules
         }
 
         #region COMMANDS
-        [Command("live")]
+        [Command("live"), Alias("stream", "streams")]
         public async Task DisplayLiveMatches()
         {
             (Embed, ushort) res = await GetLiveMatchesEmbed();

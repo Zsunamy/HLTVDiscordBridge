@@ -14,12 +14,13 @@ namespace HLTVDiscordBridge
     {
         public string BotToken { get; set; }
         public int CheckResultsTimeInterval { get; set; }
-        public string topGGApiKey { get; set; }
+        public string TopGGApiKey { get; set; }
+        public string BotsGGApiKey { get; set; }
     }
 
     public class ServerConfig
     {
-        public ulong guildID { get; set; }
+        public ulong GuildID { get; set; }
         public ulong NewsChannelID { get; set; }
         public ushort MinimumStars { get; set; }
         public bool OnlyFeaturedEvents { get; set; }
@@ -59,15 +60,14 @@ namespace HLTVDiscordBridge
         public async Task ChangeMinStars(string stars = "")
         {
             EmbedBuilder builder = new EmbedBuilder();
-            ushort starsNum;
-            if(!ushort.TryParse(stars, out starsNum) || stars == "" || starsNum < 0 || starsNum > 5)
+            if (!ushort.TryParse(stars, out ushort starsNum) || stars == "" || starsNum < 0 || starsNum > 5)
             {
                 builder.WithColor(Color.Red)
                     .WithTitle("SYNTAX ERROR")
                     .WithDescription($"Please mind the syntax: {GetServerConfig(Context.Guild).Prefix}minstars [stars (number between 0-5)]")
                     .WithCurrentTimestamp();
                 await ReplyAsync("", false, builder.Build());
-            }            
+            }
             ServerConfig _config = new ServerConfig();
             _config = GetServerConfig(Context.Guild);
             _config.MinimumStars = starsNum;
@@ -152,9 +152,9 @@ namespace HLTVDiscordBridge
             if (channel == null)
             {                
                 channel = guild.DefaultChannel;
-                string guildName = "";
-                string channelMention = "";
-                if(channel == null) { guildName = "n.A"; channelMention = "n.A"; }
+                string channelMention;
+                string guildName;
+                if (channel == null) { guildName = "n.A"; channelMention = "n.A"; }
                 else { guildName = guild.Name; channelMention = channel.Mention; }
                 builder.WithTitle("INIT")
                     .WithDescription($"Thanks for adding the HLTVDiscordBridge to {guildName}. {channelMention} is set as default output for HLTV-NEWS. " +
@@ -172,7 +172,7 @@ namespace HLTVDiscordBridge
             ServerConfig _config = new ServerConfig();
 
             if(channel != null) { _config.NewsChannelID = channel.Id; }            
-            _config.guildID = guild.Id;
+            _config.GuildID = guild.Id;
             _config.MinimumStars = 0;
             _config.OnlyFeaturedEvents = false;
             _config.Prefix = "!";

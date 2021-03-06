@@ -80,7 +80,7 @@ namespace HLTVDiscordBridge
 
         private async Task GuildLeft(SocketGuild arg)
         {
-            _cl.Cleaner(_client);
+            CacheCleaner.Cleaner(_client);
         }
 
         private async Task GuildJoined(SocketGuild guild)
@@ -91,28 +91,34 @@ namespace HLTVDiscordBridge
         private async Task BGTask()
         {
             await Task.Delay(3000);
-            bool updateTopGG = true;
+            bool updateServerCountGG = true;
             while (true)
             {
-                //top.gg API                
-                if(DateTime.Now.Hour == 0 && updateTopGG && _client.CurrentUser.Id == 807182830752628766) 
+                //top.gg API & bots.gg API             
+                if(DateTime.Now.Hour == 0 && updateServerCountGG && _client.CurrentUser.Id == 807182830752628766) 
                 {
-                    updateTopGG = false;
+                    updateServerCountGG = false;
                     HttpClient http = new HttpClient();
-                    http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(Botconfig.topGGApiKey);
+                    //top.gg
+                    http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(Botconfig.TopGGApiKey);
                     HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, "https://top.gg/api/bots/807182830752628766/stats");
                     req.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
                     await http.SendAsync(req);
-                } else if(DateTime.Now.Hour == 1) { updateTopGG = true; }
-                await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client);
+                    //bots.gg
+                    http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(Botconfig.BotsGGApiKey);
+                    req = new HttpRequestMessage(HttpMethod.Post, "https://discord.bots.gg/api/v1/bots/807182830752628766/stats");
+                    req.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+                    await http.SendAsync(req);
+                } else if(DateTime.Now.Hour == 1) { updateServerCountGG = true; }
+
 #if RELEASE
-                                   
+                await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client); 
                 await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
                 //await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
                 //await _hltvevents.GetUpcomingEvents();
                 await _upcoming.UpdateUpcomingMatches();
 #endif
-                _cl.Cleaner(_client);
+                CacheCleaner.Cleaner(_client);
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");
                 await Task.Delay(Botconfig.CheckResultsTimeInterval);
             }
@@ -128,7 +134,7 @@ namespace HLTVDiscordBridge
             string[] numberEmoteStrings = { "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣" };
             foreach (string emoteString in numberEmoteStrings)
             {
-                if (emoteString == reaction.Emote.ToString()) { _hltvlive.startScoreboard(msg, new Emoji(reaction.Emote.ToString()), (channel as SocketGuildChannel).Guild); return; }
+                if (emoteString == reaction.Emote.ToString()) { _hltvlive.StartScoreboard(msg, new Emoji(reaction.Emote.ToString()), (channel as SocketGuildChannel).Guild); return; }
             }
 
             if (reaction.Emote.Name != "hltvstats") { return; }            
@@ -143,7 +149,7 @@ namespace HLTVDiscordBridge
             if (embedReac.Author.Value.Name.ToString().ToLower() == "click here for more details")
             {
                 await msg.RemoveAllReactionsAsync();
-                await _hltv.stats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);                
+                await Hltv.Stats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);                
             }
         }
 

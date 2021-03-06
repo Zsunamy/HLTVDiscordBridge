@@ -19,7 +19,7 @@ namespace HLTVDiscordBridge.Modules
         /// </summary>
         /// <param name="playername"></param>
         /// <returns>PlayerStats as JObject, PlayerID as ushort, Achievements as JArray</returns>
-        private async Task<(JObject, ushort, JArray)> GetPlayerStats(string playername)
+        private static async Task<(JObject, ushort, JArray)> GetPlayerStats(string playername)
         {
             JObject idJObj;
             JObject statsJObj;

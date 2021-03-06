@@ -8,7 +8,7 @@ namespace HLTVDiscordBridge.Modules
 {
     public class CacheCleaner : ModuleBase<SocketCommandContext>
     {             
-        public void Cleaner(DiscordSocketClient client)
+        public static void Cleaner(DiscordSocketClient client)
         {
             //ServerConfigs
             Directory.CreateDirectory("./cache/serverconfig");
