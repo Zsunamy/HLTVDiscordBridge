@@ -11,7 +11,7 @@ namespace HLTVDiscordBridge.Modules
     public class HltvRanking : ModuleBase<SocketCommandContext>
     {
         [Command("ranking")]
-        public async Task GetRanking(string arg = "GLOBAL")
+        public async Task GetRanking([Remainder]string arg = "GLOBAL")
         {
             EmbedBuilder embed = new EmbedBuilder();
             Uri uri;
