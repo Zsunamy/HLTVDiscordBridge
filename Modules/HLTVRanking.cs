@@ -11,11 +11,10 @@ namespace HLTVDiscordBridge.Modules
     public class HltvRanking : ModuleBase<SocketCommandContext>
     {
         [Command("ranking")]
-        public async Task getRanking(string arg = "GLOBAL")
+        public async Task GetRanking(string arg = "GLOBAL")
         {
             EmbedBuilder embed = new EmbedBuilder();
             Uri uri;
-            DateTime time;
             if (arg.Contains('-'))
             {
                 arg = "";
@@ -24,11 +23,13 @@ namespace HLTVDiscordBridge.Modules
             if (arg == "GLOBAL")
             {
                 uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking");
-            } else if (DateTime.TryParse(arg, out time)) 
+            }
+            else if (DateTime.TryParse(arg, out DateTime time))
             {
-                string[] months = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };                
+                string[] months = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
                 uri = new Uri($"https://hltv-api-steel.vercel.app/api/ranking/{time.Day}/{months[time.Month - 1]}/{time.Year}");
-            } else
+            }
+            else
             {
                 uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking/" + arg);
             }
@@ -48,7 +49,7 @@ namespace HLTVDiscordBridge.Modules
                     embed.WithColor(Color.Red)
                         .WithTitle($"SYSTEM ERROR")
                         .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");
-                    await ReplyAsync("", false, embed.Build());
+                    await ReplyAsync(embed: embed.Build());
                     return;
                 }
                 if (jArr.Count == 0) 
@@ -56,7 +57,7 @@ namespace HLTVDiscordBridge.Modules
                     embed.WithColor(Color.Red)
                     .WithTitle($"{arg} DOES NOT EXIST")
                     .WithDescription("Please state a valid country!");
-                    await ReplyAsync("", false, embed.Build());
+                    await ReplyAsync(embed: embed.Build());
                     return;
                 } else
                 {
@@ -87,7 +88,7 @@ namespace HLTVDiscordBridge.Modules
             embed.WithTitle($"TOP {teamsDisplayed} {arg.ToUpper()}")
                 .AddField("teams:", val)
                 .WithColor(Color.Blue);
-            await ReplyAsync("", false, embed.Build());
+            await ReplyAsync(embed: embed.Build());
         }        
     }
 }

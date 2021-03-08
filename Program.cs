@@ -21,13 +21,7 @@ namespace HLTVDiscordBridge
         private DiscordSocketClient _client;
         private CommandService _commands;
         private IServiceProvider _services;
-        private Hltv _hltv;
-        private HltvNews _hltvNews;
-        private HltvEvents _hltvevents;
-        private HltvLive _hltvlive;
         private Config _cfg;
-        private CacheCleaner _cl;
-        private Upcoming _upcoming;
         private ConfigClass Botconfig;
 
         public async Task RunBotAsync()
@@ -35,13 +29,7 @@ namespace HLTVDiscordBridge
             DiscordSocketConfig _config = new DiscordSocketConfig() { };
             _client = new DiscordSocketClient();
             _commands = new CommandService();
-            _hltv = new Hltv();
-            _hltvNews = new HltvNews();
-            _hltvevents = new HltvEvents();
             _cfg = new Config();
-            _cl = new CacheCleaner();
-            _upcoming = new Upcoming();
-            _hltvlive = new HltvLive();
 
             _services = new ServiceCollection()
                 .AddSingleton(_client)
@@ -78,9 +66,10 @@ namespace HLTVDiscordBridge
             await Task.Delay(-1);
         }
 
-        private async Task GuildLeft(SocketGuild arg)
+        private Task GuildLeft(SocketGuild arg)
         {
             CacheCleaner.Cleaner(_client);
+            return Task.CompletedTask;
         }
 
         private async Task GuildJoined(SocketGuild guild)
@@ -95,7 +84,7 @@ namespace HLTVDiscordBridge
             while (true)
             {
                 //top.gg API & bots.gg API             
-                if(DateTime.Now.Hour == 0 && updateServerCountGG && _client.CurrentUser.Id == 807182830752628766) 
+                if(DateTime.Now.Hour == 20 && updateServerCountGG && _client.CurrentUser.Id == 807182830752628766) 
                 {
                     updateServerCountGG = false;
                     HttpClient http = new HttpClient();
@@ -109,14 +98,12 @@ namespace HLTVDiscordBridge
                     req = new HttpRequestMessage(HttpMethod.Post, "https://discord.bots.gg/api/v1/bots/807182830752628766/stats");
                     req.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
                     await http.SendAsync(req);
-                } else if(DateTime.Now.Hour == 1) { updateServerCountGG = true; }
-
+                } else if(DateTime.Now.Hour == 21) { updateServerCountGG = true; }
 #if RELEASE
-                await _hltv.AktHLTV(await _cfg.GetChannels(_client), _client); 
-                await _hltvNews.aktHLTVNews(await _cfg.GetChannels(_client));
-                //await _hltvevents.AktEvents(await _cfg.GetChannels(_client));
-                //await _hltvevents.GetUpcomingEvents();
-                await _upcoming.UpdateUpcomingMatches();
+                await Upcoming.UpdateUpcomingMatches();
+                await HltvEvents.AktEvents(await _cfg.GetChannels(_client));
+                await Hltv.AktHLTV(await _cfg.GetChannels(_client), _client); 
+                await HltvNews.AktHLTVNews(await _cfg.GetChannels(_client));                               
 #endif
                 CacheCleaner.Cleaner(_client);
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");
@@ -126,18 +113,19 @@ namespace HLTVDiscordBridge
 
         private async Task ReactionAdd(Cacheable<IUserMessage, ulong> cacheable, ISocketMessageChannel channel, SocketReaction reaction)
         {
+            string[] numberEmoteStrings = { "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣" };
+            if (!(reaction.Emote.Name == "hltvstats" || numberEmoteStrings.ToString().Contains(reaction.Emote.ToString()))) { return; }
+
             IUserMessage msg;            
             try { msg = await cacheable.GetOrDownloadAsync(); }
             catch (Discord.Net.HttpException) { return; }
             if (!msg.Author.IsBot || reaction.User.Value.IsBot) { return; }
-
-            string[] numberEmoteStrings = { "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣" };
+            
             foreach (string emoteString in numberEmoteStrings)
             {
-                if (emoteString == reaction.Emote.ToString()) { _hltvlive.StartScoreboard(msg, new Emoji(reaction.Emote.ToString()), (channel as SocketGuildChannel).Guild); return; }
+                if (emoteString == reaction.Emote.ToString()) { HltvLive.StartScoreboard(msg, new Emoji(reaction.Emote.ToString()), (channel as SocketGuildChannel).Guild); return; }
             }
-
-            if (reaction.Emote.Name != "hltvstats") { return; }            
+                      
             IEmbed embedReac = null;
             foreach (IEmbed em in msg.Embeds)
             {
@@ -167,31 +155,36 @@ namespace HLTVDiscordBridge
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         private async Task HandleCommandAsync(SocketMessage arg)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
-            SocketUserMessage Message = arg as SocketUserMessage;
-
-            if (Message is null || Message.Author.IsBot)
-                return;
-
-            int argPos = 0;
-            string prefix;
-            if (Message.Channel as SocketGuildChannel == null) { prefix = "!"; }
-            else { prefix = _cfg.GetServerConfig((Message.Channel as SocketGuildChannel).Guild).Prefix; }
-
-            if (Message.HasStringPrefix(prefix, ref argPos) || Message.HasStringPrefix($"{prefix} ", ref argPos) || Message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            var Handler = Task.Run(async ()=>
             {
-                SocketCommandContext context = new SocketCommandContext(_client, Message);
-                IResult Result = await _commands.ExecuteAsync(context, argPos, _services);
+                SocketUserMessage Message = arg as SocketUserMessage;
 
-                //Log Commands
-                FileStream fs = File.OpenWrite($"./cache/log/{DateTime.Now.ToShortDateString()}.txt"); fs.Close();
-                string ori = File.ReadAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt");
-                File.WriteAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt", ori + DateTime.Now.ToShortTimeString() + " " + Message.Channel.ToString() + " " + Message.ToString() + "\n");
+                if (Message is null || Message.Author.IsBot)
+                    return;
 
-                if (!Result.IsSuccess)
-                    Console.WriteLine(Result.ErrorReason);
-            }
+                int argPos = 0;
+                string prefix;
+                if (Message.Channel as SocketGuildChannel == null) { prefix = "!"; }
+                else { prefix = _cfg.GetServerConfig((Message.Channel as SocketGuildChannel).Guild).Prefix; }
+
+                if (Message.HasStringPrefix(prefix, ref argPos) || Message.HasStringPrefix($"{prefix} ", ref argPos) || Message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+                {
+                    SocketCommandContext context = new SocketCommandContext(_client, Message);
+                    IResult Result = await _commands.ExecuteAsync(context, argPos, _services);
+
+                    //Log Commands
+                    FileStream fs = File.OpenWrite($"./cache/log/{DateTime.Now.ToShortDateString()}.txt"); fs.Close();
+                    string ori = File.ReadAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt");
+                    File.WriteAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt", ori + DateTime.Now.ToShortTimeString() + " " + Message.Channel.ToString() + " " + Message.ToString() + "\n");
+
+                    if (!Result.IsSuccess)
+                        Console.WriteLine(Result.ErrorReason);
+                }                
+            });
         }
     }
 }

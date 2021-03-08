@@ -23,7 +23,7 @@ namespace HLTVDiscordBridge.Modules
     public class HltvNews : ModuleBase<SocketCommandContext>
     {
         //official RSS Feed       
-        public async Task<News> GetNews()
+        public static async Task<News> GetNews()
         {
             HttpClient http = new HttpClient();
             HttpRequestMessage req = new HttpRequestMessage();
@@ -46,7 +46,7 @@ namespace HLTVDiscordBridge.Modules
             return news;
         }
 
-        public Embed GetNews(News news)
+        public static Embed GetNews(News news)
         {
             EmbedBuilder builder = new EmbedBuilder();
             builder.WithTitle(news.title)
@@ -59,7 +59,7 @@ namespace HLTVDiscordBridge.Modules
             return builder.Build();
         }
 
-        public async Task aktHLTVNews(List<SocketTextChannel> channels)
+        public static async Task AktHLTVNews(List<SocketTextChannel> channels)
         {
             News bam = await GetNews();
             if (bam != null)
@@ -68,7 +68,7 @@ namespace HLTVDiscordBridge.Modules
                 foreach(SocketTextChannel channel in channels)
                 {
 #if RELEASE
-                    try { await channel.SendMessageAsync("", false, embed); }
+                    try { await channel.SendMessageAsync(embed: embed); }
                     catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }   
 #endif
                 }                

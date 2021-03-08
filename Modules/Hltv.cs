@@ -13,8 +13,6 @@ namespace HLTVDiscordBridge.Modules
 {
     public class Hltv : ModuleBase<SocketCommandContext>
     {        
-        private readonly Config _cfg = new Config();
-
         public static async Task<JObject> GetMatchByMatchId(uint matchId)
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/match/" + matchId);
@@ -312,9 +310,9 @@ namespace HLTVDiscordBridge.Modules
         /// Send the latest match as Embed in a Discord SocketTextChannel
         /// </summary>
         /// <param name="channel">List of all Channels in which the embed should be sent</param>
-        public async Task AktHLTV(List<SocketTextChannel> channels, DiscordSocketClient client)
+        public static async Task AktHLTV(List<SocketTextChannel> channels, DiscordSocketClient client)
         {
-            //JObject res = await GetResults();
+            Config _cfg = new Config();
             var req = await GetStats();
             Embed embed = req.Item1;
             if (req.Item1 != null)
@@ -324,7 +322,7 @@ namespace HLTVDiscordBridge.Modules
                     if (req.Item2 >= _cfg.GetServerConfig(channel).MinimumStars)
                     {
 #if RELEASE
-                        try { RestUserMessage msg = await channel.SendMessageAsync("", false, embed); await msg.AddReactionAsync(await _cfg.GetEmote(client)); }
+                        try { RestUserMessage msg = await channel.SendMessageAsync(embed: embed); await msg.AddReactionAsync(await Config.GetEmote(client)); }
                         catch (Discord.Net.HttpException)
                         {
                             Console.WriteLine($"not enough permission in channel {channel}");
@@ -414,7 +412,7 @@ namespace HLTVDiscordBridge.Modules
         /// <returns></returns>
         public static async Task Stats(string matchlink, ITextChannel channel)
         {
-            await channel.SendMessageAsync("", false, await GetPLStats(matchlink));
+            await channel.SendMessageAsync(embed: await GetPLStats(matchlink));
         }
 
         

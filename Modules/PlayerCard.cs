@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using Newtonsoft.Json.Linq;
 
 namespace HLTVDiscordBridge.Modules
@@ -59,17 +60,10 @@ namespace HLTVDiscordBridge.Modules
             }            
         }
 
-        private async Task<Embed> GetPlayerCard(string playername = "")
-        {
-            Config _cfg = new Config();
+        private static async Task<Embed> GetPlayerCard(string playername = "")
+        {            
             EmbedBuilder builder = new EmbedBuilder();
-            if (playername == "")
-            {
-                builder.WithColor(Color.Red)
-                    .WithTitle("SYNTAX ERROR")
-                    .WithDescription($"Please mind the syntax: \"{_cfg.GetServerConfig(Context.Guild).Prefix}player [name]\"");
-                return builder.Build();
-            }
+            
             var req = await GetPlayerStats(playername);
             JObject jObj = req.Item1;
             JArray achievements = req.Item3;
@@ -185,7 +179,34 @@ namespace HLTVDiscordBridge.Modules
         [Command("player")]
         public async Task Player([Remainder]string playername = "")
         {
-            await ReplyAsync("", false, await GetPlayerCard(playername));
+            EmbedBuilder builder = new EmbedBuilder();
+            Config _cfg = new Config();
+            if (playername == "")
+            {
+                string prefix;
+                if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) { prefix = "!"; }
+                else { prefix = _cfg.GetServerConfig(Context.Guild).Prefix; }
+                builder.WithColor(Color.Red)
+                    .WithTitle("SYNTAX ERROR")
+                    .WithDescription($"Please mind the syntax: \"{prefix}player [name]\"");
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+
+            if (!Directory.Exists($"./cache/playercards/{playername.ToLower()}"))
+            {                
+                builder.WithTitle("Your request is loading!")
+                    .WithDescription("This may take up to 30 seconds")
+                    .WithCurrentTimestamp();
+                var msg = await Context.Channel.SendMessageAsync(embed: builder.Build());
+                var req = await GetPlayerCard(playername);
+                await msg.DeleteAsync();                
+                await ReplyAsync(embed: req);
+            }
+            else
+            {
+                await ReplyAsync(embed: await GetPlayerCard(playername));
+            }            
         }
     }
 }

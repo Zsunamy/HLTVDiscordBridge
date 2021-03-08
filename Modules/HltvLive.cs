@@ -14,11 +14,8 @@ namespace HLTVDiscordBridge.Modules
 {
     public class HltvLive : ModuleBase<SocketCommandContext>
     {
-        private Scoreboard _scoreboard;
-        private Hltv _hltv;
-        private async Task<List<JObject>> GetLiveMatches()
-        {
-            _hltv = new Hltv();
+        private static async Task<List<JObject>> GetLiveMatches()
+        {            
             JArray jArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
             List<JObject> matches = new List<JObject>();
             foreach (JToken jTok in jArr)
@@ -44,7 +41,7 @@ namespace HLTVDiscordBridge.Modules
             }
             return matches;
         }
-        private async Task<(Embed, ushort)> GetLiveMatchesEmbed()
+        private static async Task<(Embed, ushort)> GetLiveMatchesEmbed()
         {
             List<JObject> matches = await GetLiveMatches();
             EmbedBuilder builder = new EmbedBuilder();
@@ -74,14 +71,14 @@ namespace HLTVDiscordBridge.Modules
             return (builder.Build(), ushort.Parse(matches.Count.ToString()));
         }
 
-        public void StartScoreboard(IUserMessage msg, Emoji emote, SocketGuild guild)
+        public static void StartScoreboard(IUserMessage msg, Emoji emote, SocketGuild guild)
         {
             foreach(EmbedField field in msg.Embeds.First().Fields)
             {
                 if(field.Name.Contains(emote.ToString()))
                 {
                     uint matchId = uint.Parse(field.Value.Split("\n")[1].Substring(41,7));
-                    _scoreboard = new Scoreboard(matchId, guild, field.Name.Substring(4));
+                    _ = new Scoreboard(matchId, guild, field.Name.Substring(4));
                 }
             }
         }
@@ -91,7 +88,7 @@ namespace HLTVDiscordBridge.Modules
         public async Task DisplayLiveMatches()
         {
             (Embed, ushort) res = await GetLiveMatchesEmbed();
-            RestUserMessage msg = (RestUserMessage)await ReplyAsync("", false, res.Item1);
+            RestUserMessage msg = (RestUserMessage)await ReplyAsync(embed: res.Item1);
             for(int i = 1; i <= res.Item2; i++)
             {
                 Emoji emote = new Emoji(i.ToString() + "️⃣");

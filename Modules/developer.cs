@@ -34,13 +34,13 @@ namespace HLTVDiscordBridge.Modules
                 _cfg = new Config();
                 EmbedBuilder builder = new EmbedBuilder();
                 builder.WithTitle($"UPDATE {version}")
-                    .WithDescription(message + "\nIf you are experiencing any issue feel free to write us an [issue](https://github.com/Zsunamy/HLTVDiscordBridge/issues)\n" +
+                    .WithDescription(message + "\nIf you are experiencing any issues feel free to write us an [issue](https://github.com/Zsunamy/HLTVDiscordBridge/issues)\n" +
                     "Also feel free to [donate](https://www.patreon.com/zsunamy) us a cup of coffee")
                     .WithColor(Color.Green)
                     .WithCurrentTimestamp();
                 foreach (SocketTextChannel channel in await _cfg.GetChannels(Context.Client))
                 {
-                    try { await channel.SendMessageAsync("", false, builder.Build()); }
+                    try { await channel.SendMessageAsync(embed: builder.Build()); }
                     catch (Discord.Net.HttpException)
                     {
                         Console.WriteLine($"not enough permission in channel {channel}");

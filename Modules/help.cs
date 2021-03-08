@@ -11,8 +11,9 @@ namespace HLTVDiscordBridge.Modules
         public async Task HelpCommand (string arg = "")
         {
             Config _cfg = new Config();
-            string prefix = "!";
-            if (Context.Guild != null) { prefix = _cfg.GetServerConfig(Context.Guild).Prefix; }
+            string prefix;
+            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) { prefix = "!"; }
+            else { prefix = _cfg.GetServerConfig(Context.Guild).Prefix; }
             EmbedBuilder builder = new EmbedBuilder();
             builder.WithColor(Color.DarkMagenta)
                 .WithCurrentTimestamp();
@@ -88,7 +89,7 @@ namespace HLTVDiscordBridge.Modules
                     break;
             }
 
-            await ReplyAsync("", false, builder.Build());
+            await ReplyAsync(embed: builder.Build());
         }
     }
 }

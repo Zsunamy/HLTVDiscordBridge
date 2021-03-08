@@ -46,27 +46,65 @@ namespace HLTVDiscordBridge
         }
 
         #region Commands
-        [Command("init"), RequireUserPermission(GuildPermission.ManageChannels)]
+        [Command("init")]
         public async Task InitTextChannel(SocketTextChannel channel = null)
         {
-            if(channel == null)
+            EmbedBuilder builder = new EmbedBuilder();
+            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
+            {
+                builder.WithTitle("ERROR")
+                    .WithColor(Color.Red)
+                    .WithDescription("Please use this command only on guilds!")
+                    .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                builder.WithTitle("ERROR")
+                    .WithColor(Color.Red)
+                    .WithDescription("You do not have enough permission to change the output-channel!")
+                    .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+            if (channel == null)
             {
                 channel = (SocketTextChannel)Context.Channel;
             }
             await GuildJoined(Context.Guild, channel);
         }
 
-        [Command("minstars"), RequireUserPermission(GuildPermission.Administrator)]
+        [Command("minstars")]
         public async Task ChangeMinStars(string stars = "")
         {
             EmbedBuilder builder = new EmbedBuilder();
+            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) 
+            {
+                builder.WithTitle("ERROR")
+                    .WithColor(Color.Red)
+                    .WithDescription("Please use this command only on guilds!")
+                    .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                builder.WithTitle("ERROR")
+                    .WithColor(Color.Red)
+                    .WithDescription("You do not have enough permission to change the minimum stars!")
+                    .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
             if (!ushort.TryParse(stars, out ushort starsNum) || stars == "" || starsNum < 0 || starsNum > 5)
             {
                 builder.WithColor(Color.Red)
                     .WithTitle("SYNTAX ERROR")
                     .WithDescription($"Please mind the syntax: {GetServerConfig(Context.Guild).Prefix}minstars [stars (number between 0-5)]")
                     .WithCurrentTimestamp();
-                await ReplyAsync("", false, builder.Build());
+                await ReplyAsync(embed: builder.Build());
+                return;
             }
             ServerConfig _config = new ServerConfig();
             _config = GetServerConfig(Context.Guild);
@@ -79,23 +117,41 @@ namespace HLTVDiscordBridge
                     .WithTitle("SUCCESS")
                     .WithDescription($"You successfully changed the minimum stars to output a HLTV match to \"{starsNum}\"")
                     .WithCurrentTimestamp();
-            await ReplyAsync("", false, builder.Build());
+            await ReplyAsync(embed: builder.Build());
         }
 
-        [Command("featuredevents"), RequireUserPermission(GuildPermission.Administrator)]
+        [Command("featuredevents")]
         public async Task ChangeFeaturedEvents(string arg = "")
         {
             EmbedBuilder builder = new EmbedBuilder();
             ServerConfig _config = new ServerConfig();
             _config = GetServerConfig(Context.Guild);
-            string description = "You successfully changed the event output ";
+            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
+            {
+                builder.WithTitle("ERROR")
+                    .WithColor(Color.Red)
+                    .WithDescription("Please use this command only on guilds!")
+                    .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                builder.WithTitle("ERROR")
+                    .WithColor(Color.Red)
+                    .WithDescription("You do not have enough permission to change the featured events!")
+                    .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+            string description = "You successfully changed the event output to ";
             if (arg.ToLower() != "true" && arg.ToLower() != "false")
             {
                 builder.WithColor(Color.Red)
                     .WithTitle("SYNTAX ERROR")
                     .WithDescription($"Please mind the syntax: {_config.Prefix}featuredevents [true/false]")
                     .WithCurrentTimestamp();
-                await ReplyAsync("", false, builder.Build());
+                await ReplyAsync(embed: builder.Build());
             }
             else if (arg.ToLower() == "true") { _config.OnlyFeaturedEvents = true; description += "ONLY FEATURED EVENTS"; }
             else { _config.OnlyFeaturedEvents = false; description += "SHOW ALL EVENTS"; }
@@ -108,18 +164,37 @@ namespace HLTVDiscordBridge
                     .WithTitle("SUCCESS")
                     .WithDescription(description)
                     .WithCurrentTimestamp();
-            await ReplyAsync("", false, builder.Build());
+            await ReplyAsync(embed: builder.Build());
         }
-        [Command("prefix"), RequireUserPermission(GuildPermission.Administrator)]
+
+        [Command("prefix")]
         public async Task ChangePrefix(string arg = "")
-        {
+        {            
             EmbedBuilder builder = new EmbedBuilder();
+            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
+            {
+                builder.WithTitle("ERROR")
+                    .WithColor(Color.Red)
+                    .WithDescription("Please use this command only on guilds!")
+                    .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                builder.WithTitle("ERROR")
+                    .WithColor(Color.Red)
+                    .WithDescription("You do not have enough permission to change the prefix!")
+                    .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
             if (arg == "") {
-                builder.WithColor(Color.Red)
-                        .WithTitle("SYNTAX ERROR")
-                        .WithDescription($"Please mind the syntax: \"{GetServerConfig(Context.Guild).Prefix}prefix [Prefix]\"")
+                builder.WithColor(Color.Green)
+                        .WithTitle("PREFIX")
+                        .WithDescription($"Your current prefix is: \"{GetServerConfig(Context.Guild).Prefix}\"")
                         .WithCurrentTimestamp();
-                await ReplyAsync("", false, builder.Build());
+                await ReplyAsync(embed: builder.Build());
                 return;
             } 
             
@@ -135,7 +210,7 @@ namespace HLTVDiscordBridge
                     .WithTitle("SUCCESS")
                     .WithDescription($"You successfully changed the command prefix to \"{arg}\"")
                     .WithCurrentTimestamp();
-            await ReplyAsync("", false, builder.Build());
+            await ReplyAsync(embed: builder.Build());
         }
         #endregion
 
@@ -183,20 +258,20 @@ namespace HLTVDiscordBridge
             FileStream stream = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.Create);  
             _xml.Serialize(stream, _config);            
             stream.Close();
-            try { await channel.SendMessageAsync("", false, builder.Build()); }
+            try { await channel.SendMessageAsync(embed: builder.Build()); }
             catch(Discord.Net.HttpException)
             {
                 builder.WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. To set a default HLTV-News output channel, type !init " +
                     $"in a channel of your choice, but make sure that the bot has enough permission to access and send messages in that channel. " +
                     $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
                     $"https://github.com/Zsunamy/HLTVDiscordBridge/issues \n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>");
-                try { await guild.Owner.SendMessageAsync("", false, builder.Build()); }
+                try { await guild.Owner.SendMessageAsync(embed: builder.Build()); }
                 catch (Discord.Net.HttpException) { }
             }
                
         }
 
-        public async Task<GuildEmote> GetEmote(DiscordSocketClient client)
+        public static async Task<GuildEmote> GetEmote(DiscordSocketClient client)
         {
             foreach (SocketGuild guild in client.Guilds)
             {

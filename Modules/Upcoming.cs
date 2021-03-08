@@ -14,7 +14,7 @@ namespace HLTVDiscordBridge.Modules
         /// Gets upcoming HLTV matches and their star rating and saves them in ./cache/upcoming.json
         /// </summary>
         /// <returns>All upcoming matches</returns>
-        public async Task UpdateUpcomingMatches()
+        public static async Task UpdateUpcomingMatches()
         {
             var URI = new Uri("https://hltv-api-steel.vercel.app/api/matches");
             HttpClient http = new HttpClient();
@@ -33,25 +33,17 @@ namespace HLTVDiscordBridge.Modules
                 return;
             }
             File.WriteAllText("./cache/upcoming.json", jArr.ToString());
-        }
-        [Command("upcoming")]
-        public async Task GetUpcoming([Remainder] string arg = "")
-        {
-            //Ausgabe nach Team oder Event oder Tag
-            await ReplyAsync("", false, BuildEmbed(arg));
-        }
-
-        private Embed BuildEmbed(string arg)
+        }        
+        private static Embed BuildEmbed(string arg)
         {
             JArray jArr;
             EmbedBuilder builder = new EmbedBuilder();
-            DateTime date;
-            if (DateTime.TryParse(arg, out date))
+            if (DateTime.TryParse(arg, out DateTime date))
             {
                 jArr = SearchUpcoming(date);
                 builder.WithTitle($"UPCOMING MATCHES FOR {date.Date.ToString().Substring(0, 10)}");
             }
-            else if(arg == "") { builder.WithTitle($"UPCOMING MATCHES"); jArr = SearchUpcoming(); }
+            else if (arg == "") { builder.WithTitle($"UPCOMING MATCHES"); jArr = SearchUpcoming(); }
             else { builder.WithTitle($"UPCOMING MATCHES FOR {arg.ToUpper()}"); jArr = SearchUpcoming(arg); }
 
             if (jArr.Count == 0)
@@ -164,8 +156,7 @@ namespace HLTVDiscordBridge.Modules
                 .WithColor(Color.Blue);
             return builder.Build();
         }
-
-        private JArray SearchUpcoming()
+        private static JArray SearchUpcoming()
         {
             JArray jArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
             JArray result = JArray.Parse("[]");
@@ -184,7 +175,7 @@ namespace HLTVDiscordBridge.Modules
             }
             return result;
         }
-        private JArray SearchUpcoming(string arg)
+        private static JArray SearchUpcoming(string arg)
         {
             JArray jArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
             JArray result = JArray.Parse("[]");
@@ -219,7 +210,7 @@ namespace HLTVDiscordBridge.Modules
             }
             return result;
         }
-        private JArray SearchUpcoming(DateTime dateArg)
+        private static JArray SearchUpcoming(DateTime dateArg)
         {
             JArray jArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
             JArray result = JArray.Parse("[]");
@@ -238,6 +229,13 @@ namespace HLTVDiscordBridge.Modules
                 }                
             }
             return result;
+        }
+
+        [Command("upcoming")]
+        public async Task GetUpcoming([Remainder] string arg = "")
+        {
+            //Ausgabe nach Team oder Event oder Tag
+            await ReplyAsync(embed: BuildEmbed(arg));
         }
     }
 }
