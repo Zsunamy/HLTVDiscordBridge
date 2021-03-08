@@ -199,7 +199,9 @@ namespace HLTVDiscordBridge.Modules
                     .WithDescription("This may take up to 30 seconds")
                     .WithCurrentTimestamp();
                 var msg = await Context.Channel.SendMessageAsync(embed: builder.Build());
+                IDisposable typingState = Context.Channel.EnterTypingState();
                 var req = await GetPlayerCard(playername);
+                typingState.Dispose();
                 await msg.DeleteAsync();                
                 await ReplyAsync(embed: req);
             }

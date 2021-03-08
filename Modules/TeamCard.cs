@@ -24,7 +24,9 @@ namespace HLTVDiscordBridge.Modules
                     .WithDescription("This may take up to 30 seconds")
                     .WithCurrentTimestamp();
                 var msg = await Context.Channel.SendMessageAsync(embed: builder.Build());
+                IDisposable typingState = Context.Channel.EnterTypingState();
                 var req = await GetTeamCard(name);
+                typingState.Dispose();
                 await msg.DeleteAsync();
                 if (req.Item2 == "") { await Context.Channel.SendMessageAsync(embed: req.Item1); }
                 await Context.Channel.SendFileAsync(req.Item2, embed: req.Item1);
