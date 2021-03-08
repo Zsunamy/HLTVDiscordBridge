@@ -3,7 +3,8 @@
 [![Discord Bots](https://top.gg/api/widget/servers/807182830752628766.svg)](https://top.gg/bot/807182830752628766)
 [![Discord Bots](https://top.gg/api/widget/upvotes/807182830752628766.svg)](https://top.gg/bot/807182830752628766)
 # HLTV
-## A bot that interacts with HLTV to inform you about the latest news and matches! Click [here](https://discord.com/oauth2/authorize?client_id=807182830752628766&permissions=1073785936&scope=bot) to add the bot to your server-
+## A bot that interacts with HLTV to inform you about the latest news and matches!
+## Click [here](https://discord.com/oauth2/authorize?client_id=807182830752628766&permissions=1073785936&scope=bot) to add the bot to your server.
 This bot automatically send messages for the latest results, news and started/ended events. For more information see [here](#setup-only-admins-can-use-these-commands).
 We also provide commands which scalps through HLTV and can provide you with information about players, teams and much more! For more details see [here](#Usage).
 ### Setup (only admins can use these commands)
