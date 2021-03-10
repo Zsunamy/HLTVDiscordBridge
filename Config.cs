@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.Rest;
 using Discord.WebSocket;
+using HLTVDiscordBridge.Modules;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -116,7 +117,8 @@ namespace HLTVDiscordBridge
             builder.WithColor(Color.Green)
                     .WithTitle("SUCCESS")
                     .WithDescription($"You successfully changed the minimum stars to output a HLTV match to \"{starsNum}\"")
-                    .WithCurrentTimestamp();
+                    .WithCurrentTimestamp()
+                    .WithFooter(Tools.GetRandomFooter());
             await ReplyAsync(embed: builder.Build());
         }
 
@@ -163,7 +165,8 @@ namespace HLTVDiscordBridge
             builder.WithColor(Color.Green)
                     .WithTitle("SUCCESS")
                     .WithDescription(description)
-                    .WithCurrentTimestamp();
+                    .WithCurrentTimestamp()
+                    .WithFooter(Tools.GetRandomFooter());
             await ReplyAsync(embed: builder.Build());
         }
 
@@ -209,7 +212,8 @@ namespace HLTVDiscordBridge
             builder.WithColor(Color.Green)
                     .WithTitle("SUCCESS")
                     .WithDescription($"You successfully changed the command prefix to \"{arg}\"")
-                    .WithCurrentTimestamp();
+                    .WithCurrentTimestamp()
+                    .WithFooter(Tools.GetRandomFooter());
             await ReplyAsync(embed: builder.Build());
         }
         #endregion

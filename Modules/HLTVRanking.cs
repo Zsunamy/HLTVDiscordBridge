@@ -87,7 +87,8 @@ namespace HLTVDiscordBridge.Modules
             }
             embed.WithTitle($"TOP {teamsDisplayed} {arg.ToUpper()}")
                 .AddField("teams:", val)
-                .WithColor(Color.Blue);
+                .WithColor(Color.Blue)
+                .WithFooter(Tools.GetRandomFooter());
             await ReplyAsync(embed: embed.Build());
         }        
     }

@@ -59,7 +59,7 @@ namespace HLTVDiscordBridge.Modules
                 if (jTokens.Count > 0)
                 {
                     File.WriteAllText("./cache/events/ongoing.json", OngoingEvents.ToString());
-                    return (JObject.Parse(jTokens[0].ToString()), true);
+                    if (DateTime.Now.Hour == 0) { return (JObject.Parse(jTokens[0].ToString()), true); }
                 }
 
                 //get ended events
@@ -234,7 +234,8 @@ namespace HLTVDiscordBridge.Modules
                 .WithColor(Color.Green)
                 .AddField("events:", eventString)
                 .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://www.hltv.org/events#tab-ALL")
-                .WithCurrentTimestamp();
+                .WithCurrentTimestamp()
+                .WithFooter(Tools.GetRandomFooter());
             await ReplyAsync(embed: builder.Build());
         }
 
@@ -261,11 +262,12 @@ namespace HLTVDiscordBridge.Modules
                 .WithColor(Color.Green)
                 .AddField("events:", eventString)
                 .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://www.hltv.org/events#tab-ALL")
-                .WithCurrentTimestamp();
+                .WithCurrentTimestamp()
+                .WithFooter(Tools.GetRandomFooter());
             await ReplyAsync(embed: builder.Build());
         }
 
-        [Command("event")]
+        //[Command("event")]
         public async Task GetEventByName([Remainder]string arg = "")
         {
             Config _cfg = new Config();

@@ -153,7 +153,8 @@ namespace HLTVDiscordBridge.Modules
             }
 
             builder.WithCurrentTimestamp()
-                .WithColor(Color.Blue);
+                .WithColor(Color.Blue)
+                .WithFooter(Tools.GetRandomFooter());
             return builder.Build();
         }
         private static JArray SearchUpcoming()

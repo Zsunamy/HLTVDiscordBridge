@@ -173,6 +173,8 @@ namespace HLTVDiscordBridge.Modules
                     break;
             }
 
+            builder.WithFooter(Tools.GetRandomFooter());
+
             return builder.Build();
         }
 
