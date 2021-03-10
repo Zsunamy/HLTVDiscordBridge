@@ -118,7 +118,7 @@ namespace HLTVDiscordBridge
                     .WithTitle("SUCCESS")
                     .WithDescription($"You successfully changed the minimum stars to output a HLTV match to \"{starsNum}\"")
                     .WithCurrentTimestamp()
-                    .WithFooter(Tools.GetRandomFooter());
+                    .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
             await ReplyAsync(embed: builder.Build());
         }
 
@@ -166,7 +166,7 @@ namespace HLTVDiscordBridge
                     .WithTitle("SUCCESS")
                     .WithDescription(description)
                     .WithCurrentTimestamp()
-                    .WithFooter(Tools.GetRandomFooter());
+                    .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
             await ReplyAsync(embed: builder.Build());
         }
 
@@ -213,7 +213,7 @@ namespace HLTVDiscordBridge
                     .WithTitle("SUCCESS")
                     .WithDescription($"You successfully changed the command prefix to \"{arg}\"")
                     .WithCurrentTimestamp()
-                    .WithFooter(Tools.GetRandomFooter());
+                    .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
             await ReplyAsync(embed: builder.Build());
         }
         #endregion

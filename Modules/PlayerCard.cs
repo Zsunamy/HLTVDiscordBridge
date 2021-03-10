@@ -60,7 +60,7 @@ namespace HLTVDiscordBridge.Modules
             }            
         }
 
-        private static async Task<Embed> GetPlayerCard(string playername = "")
+        private static async Task<Embed> GetPlayerCard(SocketCommandContext context, string playername = "")
         {            
             EmbedBuilder builder = new EmbedBuilder();
             
@@ -173,8 +173,7 @@ namespace HLTVDiscordBridge.Modules
                     break;
             }
 
-            builder.WithFooter(Tools.GetRandomFooter());
-
+            builder.WithFooter(Tools.GetRandomFooter(context.Guild, context.Client));            
             return builder.Build();
         }
 
@@ -202,14 +201,14 @@ namespace HLTVDiscordBridge.Modules
                     .WithCurrentTimestamp();
                 var msg = await Context.Channel.SendMessageAsync(embed: builder.Build());
                 IDisposable typingState = Context.Channel.EnterTypingState();
-                var req = await GetPlayerCard(playername);
+                var req = await GetPlayerCard(Context, playername);
                 typingState.Dispose();
                 await msg.DeleteAsync();                
                 await ReplyAsync(embed: req);
             }
             else
             {
-                await ReplyAsync(embed: await GetPlayerCard(playername));
+                await ReplyAsync(embed: await GetPlayerCard(Context, playername));
             }            
         }
     }

@@ -235,7 +235,7 @@ namespace HLTVDiscordBridge.Modules
                 .AddField("events:", eventString)
                 .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://www.hltv.org/events#tab-ALL")
                 .WithCurrentTimestamp()
-                .WithFooter(Tools.GetRandomFooter());
+                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
             await ReplyAsync(embed: builder.Build());
         }
 
@@ -263,7 +263,7 @@ namespace HLTVDiscordBridge.Modules
                 .AddField("events:", eventString)
                 .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://www.hltv.org/events#tab-ALL")
                 .WithCurrentTimestamp()
-                .WithFooter(Tools.GetRandomFooter());
+                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
             await ReplyAsync(embed: builder.Build());
         }
 

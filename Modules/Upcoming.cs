@@ -34,7 +34,7 @@ namespace HLTVDiscordBridge.Modules
             }
             File.WriteAllText("./cache/upcoming.json", jArr.ToString());
         }        
-        private static Embed BuildEmbed(string arg)
+        private static Embed BuildEmbed(string arg, SocketCommandContext Context)
         {
             JArray jArr;
             EmbedBuilder builder = new EmbedBuilder();
@@ -154,7 +154,7 @@ namespace HLTVDiscordBridge.Modules
 
             builder.WithCurrentTimestamp()
                 .WithColor(Color.Blue)
-                .WithFooter(Tools.GetRandomFooter());
+                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
             return builder.Build();
         }
         private static JArray SearchUpcoming()
@@ -236,7 +236,7 @@ namespace HLTVDiscordBridge.Modules
         public async Task GetUpcoming([Remainder] string arg = "")
         {
             //Ausgabe nach Team oder Event oder Tag
-            await ReplyAsync(embed: BuildEmbed(arg));
+            await ReplyAsync(embed: BuildEmbed(arg, Context));
         }
     }
 }
