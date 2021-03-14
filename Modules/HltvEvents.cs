@@ -76,7 +76,7 @@ namespace HLTVDiscordBridge.Modules
                 if(jTokens.Count > 0) 
                 {
                     File.WriteAllText("./cache/events/ongoing.json", OngoingEvents.ToString());
-                    File.WriteAllText(DateTime.Now.ToString(), JObject.Parse(jTokens[0].ToString()).ToString());
+                    File.WriteAllText("./cache/log/event/" + DateTime.Now.ToString() + ".txt", JObject.Parse(jTokens[0].ToString()).ToString());
                     return (JObject.Parse(jTokens[0].ToString()), false);
                 }
 
