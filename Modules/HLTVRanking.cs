@@ -37,7 +37,7 @@ namespace HLTVDiscordBridge.Modules
             //cache
             JArray jArr;
             Directory.CreateDirectory("./cache/ranking");
-            if(!File.Exists($"./cache/ranking/ranking_{arg.ToLower()}.json"))
+            if(!File.Exists($"./cache/ranking/ranking_{arg.ToLower().Replace(' ','-')}.json"))
             {
                 HttpClient httpClient = new HttpClient();
                 httpClient.BaseAddress = uri;
@@ -61,14 +61,14 @@ namespace HLTVDiscordBridge.Modules
                     return;
                 } else
                 {
-                    FileStream fs = File.Create($"./cache/ranking/ranking_{arg.ToLower()}.json");
+                    FileStream fs = File.Create($"./cache/ranking/ranking_{arg.ToLower().Replace(' ', '-')}.json");
                     fs.Close();
-                    File.WriteAllText($"./cache/ranking/ranking_{arg.ToLower()}.json", jArr.ToString());
+                    File.WriteAllText($"./cache/ranking/ranking_{arg.ToLower().Replace(' ', '-')}.json", jArr.ToString());
                 }
             }
             else
             {
-                jArr = JArray.Parse(File.ReadAllText($"./cache/ranking/ranking_{arg.ToLower()}.json"));
+                jArr = JArray.Parse(File.ReadAllText($"./cache/ranking/ranking_{arg.ToLower().Replace(' ', '-')}.json"));
             }
 
             int teamsDisplayed = jArr.Count;
