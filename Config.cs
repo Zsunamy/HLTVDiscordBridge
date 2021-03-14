@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using HLTVDiscordBridge.Modules;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -304,7 +305,7 @@ namespace HLTVDiscordBridge
                 _config = (ServerConfig)_xml.Deserialize(fs);
                 fs.Close();
                 if ((SocketTextChannel)client.GetChannel(_config.NewsChannelID) != null) { channel.Add((SocketTextChannel)client.GetChannel(_config.NewsChannelID)); }                
-            }            
+            }
             return channel;
         }
         /// <summary>

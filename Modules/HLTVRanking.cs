@@ -31,7 +31,7 @@ namespace HLTVDiscordBridge.Modules
             }
             else
             {
-                uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking/" + arg);
+                uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking/" + arg.ToLower());
             }
 
             //cache

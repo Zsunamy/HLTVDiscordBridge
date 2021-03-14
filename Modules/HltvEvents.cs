@@ -20,11 +20,12 @@ namespace HLTVDiscordBridge.Modules
             var res = await GetEventEmbed();
             if(res.Item1 != null)
             {
+                /*
                 foreach (SocketTextChannel channel in channels)
                 {
                     try { await channel.SendMessageAsync(embed: res.Item1); }
                     catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }   
-                }
+                }*/
             }            
         }
 
@@ -58,8 +59,9 @@ namespace HLTVDiscordBridge.Modules
                 }
                 if (jTokens.Count > 0)
                 {
-                    File.WriteAllText("./cache/events/ongoing.json", OngoingEvents.ToString());
-                    if (DateTime.Now.Hour == 0) { return (JObject.Parse(jTokens[0].ToString()), true); }
+                    File.WriteAllText("./cache/events/ongoing.json", OngoingEvents.ToString());                    
+                    if (DateTime.Now.Hour == 0) { File.WriteAllText(DateTime.Now.ToString(), JObject.Parse(jTokens[0].ToString()).ToString()); 
+                        return (JObject.Parse(jTokens[0].ToString()), true); }
                 }
 
                 //get ended events
@@ -74,6 +76,7 @@ namespace HLTVDiscordBridge.Modules
                 if(jTokens.Count > 0) 
                 {
                     File.WriteAllText("./cache/events/ongoing.json", OngoingEvents.ToString());
+                    File.WriteAllText(DateTime.Now.ToString(), JObject.Parse(jTokens[0].ToString()).ToString());
                     return (JObject.Parse(jTokens[0].ToString()), false);
                 }
 
@@ -84,7 +87,11 @@ namespace HLTVDiscordBridge.Modules
         private static async Task<(Embed, bool)> GetEventEmbed()
         {
             var req = await GetOngoingEvents();
+            //Debug Reasons
+            return (null, true);
+#pragma warning disable CS0162 // Unreachable code detected
             JObject eventObj = req.Item1;
+#pragma warning restore CS0162 // Unreachable code detected
             EmbedBuilder builder = new EmbedBuilder();
             if (eventObj == null) { return (null, false); }
             JObject eventStats = await GetEventStats(ushort.Parse(eventObj.GetValue("id").ToString()));
