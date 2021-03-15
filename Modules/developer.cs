@@ -16,11 +16,18 @@ namespace HLTVDiscordBridge.Modules
             if(Context.User.Id == 248110264610848778 || Context.User.Id == 224037892387766272 || Context.User.Id == 255000770707980289)
             {
                 int totalUser = 0;
+                int guildUsers = 0;
                 string servernames = "";
                 foreach (SocketGuild guild in Context.Client.Guilds)
                 {
-                    totalUser += guild.Users.Count;
-                    servernames += $"{guild.Name} | {guild.Users.Count}\n";
+                    guildUsers = 0;
+                    foreach(SocketGuildUser user in guild.Users)
+                    {
+                        if(user.IsBot) { continue; }
+                        guildUsers++;
+                        totalUser++;
+                    }
+                    servernames += $"{guild.Name} | {guildUsers}\n";
                 }
                 await ReplyAsync($"{Context.Client.Guilds.Count} server and {totalUser} user \n\n{servernames}");
             }
