@@ -87,7 +87,15 @@ namespace HLTVDiscordBridge.Modules
         [Command("live"), Alias("stream", "streams")]
         public async Task DisplayLiveMatches()
         {
+            EmbedBuilder builder = new();
+            builder.WithTitle("Your request is loading!")
+                   .WithDescription("This may take up to 30 seconds")
+                   .WithCurrentTimestamp();
+            var LoadingMsg = await Context.Channel.SendMessageAsync(embed: builder.Build());
+            IDisposable typingState = Context.Channel.EnterTypingState();
             (Embed, ushort) res = await GetLiveMatchesEmbed();
+            typingState.Dispose();
+            await LoadingMsg.DeleteAsync();
             RestUserMessage msg = (RestUserMessage)await ReplyAsync(embed: res.Item1);
             for(int i = 1; i <= res.Item2; i++)
             {
