@@ -5,7 +5,7 @@
 # HLTV
 ## A bot that interacts with HLTV to inform you about the latest news and matches!
 ## Click [here](https://discord.com/oauth2/authorize?client_id=807182830752628766&permissions=1073785936&scope=bot) to add the bot to your server.
-This bot automatically sends messages for the latest results, news and started/ended events on HLTV.
+This bot can automatically send messages for the latest match results, news and started/ended events on HLTV.
 We also provide commands which search HLTV and provide you with information about players, teams and much more!
 ### Setup (only admins can use these commands)
 | Command | Parameters | Description |
