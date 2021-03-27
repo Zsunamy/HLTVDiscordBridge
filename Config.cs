@@ -27,6 +27,8 @@ namespace HLTVDiscordBridge
         public ushort MinimumStars { get; set; }
         public bool OnlyFeaturedEvents { get; set; }
         public string Prefix { get; set; }
+        public bool NewsOutput { get; set; }
+        public bool ResultOutput { get; set; }
     }
 
     public class Config : ModuleBase<SocketCommandContext>
@@ -217,7 +219,59 @@ namespace HLTVDiscordBridge
                     .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
             await ReplyAsync(embed: builder.Build());
         }
+        public async Task ChangeResultOutput(string arg = "")
+        {
+            EmbedBuilder builder = new EmbedBuilder();
+            ServerConfig cfg = GetServerConfig(Context.Guild);
+            string state = GetServerConfig(Context.Guild).ResultOutput ? "disabled" : "enabled";
+            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
+            {
+                builder.WithTitle("ERROR")
+                    .WithColor(Color.Red)
+                    .WithDescription("Please use this command only on guilds!")
+                    .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                builder.WithTitle("ERROR")
+                    .WithColor(Color.Red)
+                    .WithDescription("You do not have enough permission to change the ResultOutput!")
+                    .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+            if (arg == "")
+            {                
+                builder.WithColor(Color.Green)
+                        .WithTitle("PREFIX")
+                        .WithDescription($"The automated ResultOutput is: \"{state}\"")
+                        .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            } else if(bool.TryParse(arg, out bool res)) { cfg.ResultOutput = res; }
+            else {
+                builder.WithTitle("SYNTAX ERROR")
+                 .WithColor(Color.Red)
+                 .WithDescription($"Please mind the syntax: {GetServerConfig(Context.Guild).Prefix}ResultOutput [true / false]")
+                 .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+            FileStream fs = new FileStream("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
+            XmlSerializer _xml = new XmlSerializer(typeof(ServerConfig));
+            _xml.Serialize(fs, cfg);
+            fs.Close();
+            builder.WithColor(Color.Green)
+                    .WithTitle("SUCCESS")
+                    .WithDescription($"You successfully changed the automated result output to: {state}")
+                    .WithCurrentTimestamp()
+                    .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+            await ReplyAsync(embed: builder.Build());
+        }
         #endregion
+
 
         /// <summary>
         /// Creates channel and sets it as output for HLTVNews and HLTVMatches
