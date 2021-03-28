@@ -189,7 +189,8 @@ namespace HLTVDiscordBridge.Modules
                 else { prefix = _cfg.GetServerConfig(Context.Guild).Prefix; }
                 builder.WithColor(Color.Red)
                     .WithTitle("SYNTAX ERROR")
-                    .WithDescription($"Please mind the syntax: \"{prefix}player [name]\"");
+                    .WithDescription($"Please mind the syntax: \"{prefix}player [name]\"")
+                    .WithFooter($"Example: \'{prefix}player s1mple\'");
                 await ReplyAsync(embed: builder.Build());
                 return;
             }
