@@ -190,7 +190,7 @@ namespace HLTVDiscordBridge.Modules
                 builder.WithColor(Color.Red)
                     .WithTitle("SYNTAX ERROR")
                     .WithDescription($"Please mind the syntax: \"{prefix}player [name]\"")
-                    .WithFooter($"Example: \'{prefix}player s1mple\'");
+                    .WithFooter($"Example: \"{prefix}player s1mple\"");
                 await ReplyAsync(embed: builder.Build());
                 return;
             }
