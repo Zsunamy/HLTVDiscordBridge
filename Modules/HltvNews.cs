@@ -30,8 +30,7 @@ namespace HLTVDiscordBridge.Modules
             HttpRequestMessage req = new HttpRequestMessage();
             req.RequestUri = new Uri("https://www.hltv.org/rss/news");
             HttpResponseMessage res = await http.SendAsync(req);
-            //string result = await res.Content.ReadAsStringAsync();
-            string result = File.ReadAllText("./cache/news/fake.xml");
+            string result = await res.Content.ReadAsStringAsync();
             if (!File.Exists("./cache/news/news.xml")) { var fs = File.Create("./cache/news/news.xml");  fs.Close(); }
 
             if (File.ReadAllText("./cache/news/news.xml") == result) { return null; }
