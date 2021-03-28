@@ -17,6 +17,7 @@ namespace HLTVDiscordBridge.Modules
         public string title { get; set; }
         public string description { get; set; }
         public string link { get; set; }
+        public ushort id { get; set; }
     }
 
 
@@ -29,24 +30,27 @@ namespace HLTVDiscordBridge.Modules
             HttpRequestMessage req = new HttpRequestMessage();
             req.RequestUri = new Uri("https://www.hltv.org/rss/news");
             HttpResponseMessage res = await http.SendAsync(req);
-            string result = await res.Content.ReadAsStringAsync();
-            if (!File.Exists("./cache/news.xml")) { var fs = File.Create("./cache/news.xml");  fs.Close(); }
-            if (File.ReadAllText("./cache/news.xml") == result) { return null; }
-            File.WriteAllText("./cache/news.xml", await res.Content.ReadAsStringAsync());
+            //string result = await res.Content.ReadAsStringAsync();
+            string result = File.ReadAllText("./cache/news/fake.xml");
+            if (!File.Exists("./cache/news/news.xml")) { var fs = File.Create("./cache/news/news.xml");  fs.Close(); }
+
+            if (File.ReadAllText("./cache/news/news.xml") == result) { return null; }
+            File.WriteAllText("./cache/news/news.xml", result);
 
             XmlDocument doc = new XmlDocument();
-            doc.Load("./cache/news.xml");
+            doc.Load("./cache/news/news.xml");
             XmlNodeList nodes = doc.GetElementsByTagName("item");
             XmlNodeList latestNews = nodes[0].ChildNodes;
-
             News news = new News();
             news.title = latestNews[0].InnerText;
             news.description = latestNews[1].InnerText;
             news.link = latestNews[2].InnerText;
+            news.id = ushort.Parse(news.link.Substring(26, 5));
+            
             return news;
         }
 
-        public static Embed GetNews(News news)
+        public static Embed GetNewsEmbed(News news)
         {
             EmbedBuilder builder = new EmbedBuilder();
             builder.WithTitle(news.title)
@@ -61,11 +65,18 @@ namespace HLTVDiscordBridge.Modules
 
         public static async Task AktHLTVNews(List<SocketTextChannel> channels)
         {
-            News bam = await GetNews();
-            if (bam != null)
+            News bam = await GetNews(); 
+            if(bam == null) { return; }
+
+            string[] ids = File.ReadAllLines("./cache/news/ids.txt");
+            bool sent = false;
+            foreach (string id in ids) { if(id == bam.id.ToString()) { sent = true; } }
+
+            if (!sent)
             {
-                Embed embed = GetNews(bam);
-                foreach(SocketTextChannel channel in channels)
+                Embed embed = GetNewsEmbed(bam);
+                File.WriteAllText("./cache/news/ids.txt", File.ReadAllText("./cache/news/ids.txt") + "\n" + bam.id);
+                foreach (SocketTextChannel channel in channels)
                 {
 #if RELEASE
                     try { await channel.SendMessageAsync(embed: embed); }

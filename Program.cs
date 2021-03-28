@@ -103,7 +103,7 @@ namespace HLTVDiscordBridge
                 await Upcoming.UpdateUpcomingMatches();
                 await HltvEvents.AktEvents(await _cfg.GetChannels(_client));
                 await Hltv.AktHLTV(await _cfg.GetChannels(_client), _client); 
-                await HltvNews.AktHLTVNews(await _cfg.GetChannels(_client));                               
+                await HltvNews.AktHLTVNews(await _cfg.GetChannels(_client));                           
 #endif
                 CacheCleaner.Cleaner(_client);
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)} HLTV\t\tFeed aktualisiert");

@@ -2,6 +2,8 @@
 using Discord.WebSocket;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 
 namespace HLTVDiscordBridge.Modules
@@ -38,6 +40,7 @@ namespace HLTVDiscordBridge.Modules
                     Directory.Delete(dir); 
                 }                
             }
+
             //delete teamcards after 7 days
             Directory.CreateDirectory("./cache/teamcards");
             foreach (string dir in Directory.GetDirectories("./cache/teamcards"))
@@ -49,6 +52,7 @@ namespace HLTVDiscordBridge.Modules
                     Directory.Delete(dir);
                 }
             }
+
             //ranking
             Directory.CreateDirectory("./cache/ranking");
             if (DateTime.Now.DayOfWeek == DayOfWeek.Tuesday)
@@ -58,6 +62,7 @@ namespace HLTVDiscordBridge.Modules
                     File.Delete(file);
                 }
             }
+
             //live matches
             Directory.CreateDirectory("./cache/livematches");
             foreach(string matchFile in Directory.GetFiles("./cache/livematches"))
@@ -67,6 +72,14 @@ namespace HLTVDiscordBridge.Modules
                     File.Delete(matchFile);
                 }
             }
+
+            //News ids
+            Directory.CreateDirectory("./cache/news");
+            if(!File.Exists("./cache/news/ids.txt")) { FileStream fs = File.Create("./cache/news/ids.txt"); fs.Close(); }
+            string[] ids = File.ReadAllLines("./cache/news/ids.txt");
+            string newIds = "";
+            for (int i = 0; i < 10; i++) { newIds += $"{ids[i]}\n"; }
+            File.WriteAllText("./cache/news/ids.txt", newIds);
         }
     }
 }
