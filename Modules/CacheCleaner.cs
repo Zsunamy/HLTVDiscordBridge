@@ -78,7 +78,7 @@ namespace HLTVDiscordBridge.Modules
             if(!File.Exists("./cache/news/ids.txt")) { FileStream fs = File.Create("./cache/news/ids.txt"); fs.Close(); }
             string[] ids = File.ReadAllLines("./cache/news/ids.txt");
             string newIds = "";
-            for (int i = 0; i < 10; i++) { newIds += $"{ids[i]}\n"; }
+            for (int i = 0; i < 10; i++) { try { newIds += $"{ids[i]}\n"; } catch (IndexOutOfRangeException) { break; } }
             File.WriteAllText("./cache/news/ids.txt", newIds);
         }
     }
