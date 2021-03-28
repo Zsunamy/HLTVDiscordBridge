@@ -76,9 +76,18 @@ namespace HLTVDiscordBridge.Modules
             int maxTeams = 10;
             for (int i = 0; i < jArr.Count; i++)
             {
-                JObject jObj = JObject.Parse(JObject.Parse(jArr[i].ToString()).GetValue("team").ToString());
-                string teamLink = $"https://www.hltv.org/team/{jObj.GetValue("id")}/{jObj.GetValue("name").ToString().Replace(' ', '-')}";
-                val += $"{i + 1}.\t[{jObj.GetValue("name")}]({teamLink})\n";
+                JObject jObj = JObject.Parse(jArr[i].ToString());
+                short change = short.Parse(jObj.GetValue("change").ToString());
+                string development = change switch
+                {
+                    < 0 => "(⬇️ " + Math.Abs(change) + ")",
+                    > 0 => "(⬆️ " + Math.Abs(change) + ")",
+                    _ => "(⏺️ 0)",
+                };
+                if(bool.Parse(jObj.GetValue("isNew").ToString())) { development = "(🆕)"; }
+                JObject teamJObj = JObject.Parse(JObject.Parse(jArr[i].ToString()).GetValue("team").ToString());
+                string teamLink = $"https://www.hltv.org/team/{teamJObj.GetValue("id")}/{teamJObj.GetValue("name").ToString().Replace(' ', '-')}";
+                val += $"{i + 1}.\t[{teamJObj.GetValue("name")}]({teamLink}) {development}\n";
                 if(i + 1 == maxTeams)
                 {
                     teamsDisplayed = i + 1;

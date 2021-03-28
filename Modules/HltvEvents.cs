@@ -60,7 +60,7 @@ namespace HLTVDiscordBridge.Modules
                 if (jTokens.Count > 0)
                 {
                     File.WriteAllText("./cache/events/ongoing.json", OngoingEvents.ToString());                    
-                    if (DateTime.Now.Hour == 0) { File.WriteAllText(DateTime.Now.ToString(), JObject.Parse(jTokens[0].ToString()).ToString()); 
+                    if (DateTime.Now.Hour == 0) { File.WriteAllText("./cache/log/event/started/" + DateTime.Now.ToString() + ".txt", JObject.Parse(jTokens[0].ToString()).ToString()); 
                         return (JObject.Parse(jTokens[0].ToString()), true); }
                 }
 
@@ -76,7 +76,7 @@ namespace HLTVDiscordBridge.Modules
                 if(jTokens.Count > 0) 
                 {
                     File.WriteAllText("./cache/events/ongoing.json", OngoingEvents.ToString());
-                    File.WriteAllText("./cache/log/event/" + DateTime.Now.ToString() + ".txt", JObject.Parse(jTokens[0].ToString()).ToString());
+                    File.WriteAllText("./cache/log/event/ended/" + DateTime.Now.ToString() + ".txt", JObject.Parse(jTokens[0].ToString()).ToString());
                     return (JObject.Parse(jTokens[0].ToString()), false);
                 }
 
