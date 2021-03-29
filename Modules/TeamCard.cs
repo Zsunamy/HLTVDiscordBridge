@@ -14,7 +14,7 @@ namespace HLTVDiscordBridge.Modules
 {
     public class TeamCard : ModuleBase<SocketCommandContext>
     {
-        //[Command("team")] 
+        [Command("team")] 
         public async Task SendTeamCard([Remainder]string name = "")
         {
             if(!Directory.Exists($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}"))
