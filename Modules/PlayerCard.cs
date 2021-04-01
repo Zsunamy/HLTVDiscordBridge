@@ -83,7 +83,7 @@ namespace HLTVDiscordBridge.Modules
             }
             
 
-            JObject stats = JObject.Parse(jObj.GetValue("overviewStatistics").ToString());
+            JObject stats = JObject.Parse(jObj.GetValue("statistics").ToString());
             JObject country = JObject.Parse(jObj.GetValue("country").ToString());
             jObj.TryGetValue("team", out JToken teamTok);
             jObj.TryGetValue("name", out JToken nameTok);
