@@ -99,10 +99,12 @@ namespace HLTVDiscordBridge
                     req.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
                     await http.SendAsync(req);
                 } else if(DateTime.Now.Hour == 21) { updateServerCountGG = true; }
+
+
 #if RELEASE
-                await Upcoming.UpdateUpcomingMatches();
                 //await HltvEvents.AktEvents(await _cfg.GetChannels(_client));
-                await Hltv.AktHLTV(await _cfg.GetChannels(_client), _client); 
+                await Upcoming.UpdateUpcomingMatches();
+                await HltvResults.AktResults(_client);
                 await HltvNews.AktHLTVNews(await _cfg.GetChannels(_client));                           
 #endif
                 CacheCleaner.Cleaner(_client);

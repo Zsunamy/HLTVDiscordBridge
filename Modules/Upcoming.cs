@@ -16,7 +16,8 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>All upcoming matches</returns>
         public static async Task UpdateUpcomingMatches()
         {
-            var URI = new Uri("https://hltv-api-steel.vercel.app/api/matches");
+            //var URI = new Uri("https://hltv-api-steel.vercel.app/api/matches");
+            var URI = new Uri("http://revilum.com:3000/api/matches");
             HttpClient http = new HttpClient();
             http.BaseAddress = URI;
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
@@ -176,7 +177,7 @@ namespace HLTVDiscordBridge.Modules
             }
             return result;
         }
-        private static JArray SearchUpcoming(string arg)
+        public static JArray SearchUpcoming(string arg)
         {
             JArray jArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
             JArray result = JArray.Parse("[]");

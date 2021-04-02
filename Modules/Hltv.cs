@@ -414,7 +414,5 @@ namespace HLTVDiscordBridge.Modules
         {
             await channel.SendMessageAsync(embed: await GetPLStats(matchlink));
         }
-
-        
     }
 }

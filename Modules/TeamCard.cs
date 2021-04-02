@@ -14,7 +14,7 @@ namespace HLTVDiscordBridge.Modules
 {
     public class TeamCard : ModuleBase<SocketCommandContext>
     {
-        //[Command("team")] 
+        [Command("team")] 
         public async Task SendTeamCard([Remainder]string name = "")
         {
             if(!Directory.Exists($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}"))
@@ -43,14 +43,15 @@ namespace HLTVDiscordBridge.Modules
         /// gets all available stats of a team
         /// </summary>
         /// <param name="name">name of the team</param>
-        /// <returns>Teamstats as JObject; FullTeam as JObject; returns false if the API is down and true if the request was successful; 
+        /// <returns>Teamstats as JObject; FullTeam as JObject; latestResults as JArray; returns false if the API is down and true if the request was successful; 
         /// returns the path of the teamlogo as string</returns>
         static async Task<(JObject, JObject, bool, string)> GetTeamStats(string name)
         {
             Directory.CreateDirectory("./cache/teamcards");
             if(!Directory.Exists($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}"))
             {
-                Uri uri = new Uri($"https://hltv-api-steel.vercel.app/api/team/{name}");
+                //Uri uri = new Uri($"https://hltv-api-steel.vercel.app/api/team/{name}");
+                Uri uri = new Uri($"http://revilum.com:3000/api/team/{name}");
                 HttpClient http = new HttpClient();
                 HttpResponseMessage res = await http.GetAsync(uri);
                 JObject fullTeamJObject;
@@ -58,8 +59,9 @@ namespace HLTVDiscordBridge.Modules
                 catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return (null, null, false, ""); }
                 if (fullTeamJObject.ToString() == "{}") { return (null, null, true, ""); }
 
-                Uri uri1 = new Uri($"https://hltv-api-steel.vercel.app/api/teamstats/{fullTeamJObject.GetValue("id")}/false");
-                HttpResponseMessage res1 = await http.GetAsync(uri1);
+                //Uri uri1 = new Uri($"https://hltv-api-steel.vercel.app/api/teamstats/{fullTeamJObject.GetValue("id")}");
+                uri = new Uri($"http://revilum.com:3000/api/teamstats/{fullTeamJObject.GetValue("id")}");
+                HttpResponseMessage res1 = await http.GetAsync(uri);
                 JObject teamStats = JObject.Parse(await res1.Content.ReadAsStringAsync());
 
                 Directory.CreateDirectory($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}");
@@ -127,7 +129,7 @@ namespace HLTVDiscordBridge.Modules
                 string rank = "--";
                 if(teamJObj.GetValue("rank") != null) { rank = teamJObj.GetValue("rank").ToString(); }
                 if (development < 0) { emote = new Emoji("⬆️"); rankDevString = $"{rank} ({emote} {Math.Abs(development)})"; }
-                else if (development == 0) { rankDevString = $"{rank}"; }
+                else if (development == 0) { rankDevString = $"{rank} (⏺️ 0)"; }
                 else { emote = new Emoji("⬇️"); rankDevString = $"{rank} ({emote} {Math.Abs(development)})"; }                
                 
             }
@@ -196,30 +198,27 @@ namespace HLTVDiscordBridge.Modules
             builder.AddField("\u200b", "\u200b", true);
 
             //recentResults
-            List<JObject> upcomingMatches = new List<JObject>();
-            JArray recentResults = JArray.Parse(teamJObj.GetValue("recentResults").ToString());
+            JArray recentResults = await HltvResults.GetResults(ushort.Parse(teamStatsJObj.GetValue("id").ToString()));
             string recentResultsString = "";
-            if(recentResults.ToString() == "[]") { recentResultsString = "n.A"; }
-            else
+            for(int i = 0; i < recentResults.Count; i++)
             {
-                int i = 0;
-                foreach (JToken jTok in recentResults)
-                {
-                    if (i == recentResults.Count || i == 4) { break; }
-                    JObject jObj = JObject.Parse(jTok.ToString());
-                    if (jObj.GetValue("result").ToString() == "-:-") { upcomingMatches.Add(jObj); continue; }
-                    JObject enemyTeam = JObject.Parse(jObj.GetValue("enemyTeam").ToString());
-                    string matchLink = $"https://www.hltv.org/matches/{jObj.GetValue("matchID")}/{teamJObj.GetValue("name").ToString().Replace(' ', '-').ToLower()}-vs-" +
-                        $"{enemyTeam.GetValue("name").ToString().Replace(' ', '-').ToLower()}";
-                    recentResultsString += $"[vs. {enemyTeam.GetValue("name")}]({matchLink}) ({jObj.GetValue("result")})\n";
-                    i++;
-                }
+                if(i == 4) { break; }
+                JObject result = JObject.Parse(recentResults[i].ToString());
+                string opponentTeam;
+                JObject team1 = JObject.Parse(result.GetValue("team1").ToString());
+                JObject team2 = JObject.Parse(result.GetValue("team2").ToString());
+                if (team1.GetValue("name").ToString() == teamJObj.GetValue("name").ToString()) 
+                { opponentTeam = team2.GetValue("name").ToString(); }
+                else { opponentTeam = JObject.Parse(result.GetValue("team1").ToString()).GetValue("name").ToString(); }
+                string link = $"https://www.hltv.org/matches/{result.GetValue("id")}/{team1.GetValue("name").ToString().Replace(' ', '-')}-vs-" +
+                $"{team2.GetValue("name").ToString().Replace(' ', '-')}";
+                recentResultsString += $"[vs. {opponentTeam}]({link})\n";
             }
-            
             builder.AddField("recent results:", recentResultsString, true);
 
             //upcoming matches
             string upcomingMatchesString = "";
+            JArray upcomingMatches = Upcoming.SearchUpcoming(teamJObj.GetValue("name").ToString());
             if(upcomingMatches.Count == 0) { upcomingMatchesString = "no upcoming matches"; }
             else
             {
@@ -227,10 +226,15 @@ namespace HLTVDiscordBridge.Modules
                 foreach(JObject jObj in upcomingMatches)
                 {
                     if(j == 4) { break; }
-                    JObject enemyTeam = JObject.Parse(jObj.GetValue("enemyTeam").ToString());
-                    string matchLink = $"https://www.hltv.org/matches/{jObj.GetValue("matchID")}/{teamJObj.GetValue("name").ToString().Replace(' ', '-').ToLower()}-vs-" +
-                    $"{enemyTeam.GetValue("name").ToString().Replace(' ', '-').ToLower()}";
-                    upcomingMatchesString += $"[vs. {enemyTeam.GetValue("name")}]({matchLink})\n";
+                    string opponentTeam;
+                    JObject team1 = JObject.Parse(jObj.GetValue("team1").ToString());
+                    JObject team2 = JObject.Parse(jObj.GetValue("team2").ToString());
+                    if (team1.GetValue("name").ToString() == teamJObj.GetValue("name").ToString())
+                    { opponentTeam = team2.GetValue("name").ToString(); }
+                    else { opponentTeam = JObject.Parse(jObj.GetValue("team1").ToString()).GetValue("name").ToString(); }
+                    string matchLink = $"https://www.hltv.org/matches/{jObj.GetValue("matchID")}/{team1.GetValue("name").ToString().Replace(' ', '-').ToLower()}-vs-" +
+                    $"{team2.GetValue("name").ToString().Replace(' ', '-').ToLower()}";
+                    upcomingMatchesString += $"[vs. {opponentTeam}]({matchLink})\n";
                     j++;
                 }                
             }
@@ -242,6 +246,8 @@ namespace HLTVDiscordBridge.Modules
             return (builder.Build(), res.Item4);
         }
 
+
+        #region tools
         /// <summary>
         /// Converts a SVGImage to an Image
         /// </summary>
@@ -263,20 +269,25 @@ namespace HLTVDiscordBridge.Modules
             bmp.Save(resString, System.Drawing.Imaging.ImageFormat.Png);            
             return resString;
         }
-
         private static string GetMapNameByAcronym(string arg)
         {
             return arg switch
             {
-                "mrg" => "Mirage",
-                "d2" => "Dust 2",
-                "trn" => "Train",
-                "ovp" => "Overpass",
-                "inf" => "Inferno",
-                "nuke" => "Nuke",
-                "vertigo" => "Vertigo",
+                "tba" => "to be announced",
+                "de_train" => "Train",
+                "de_cbble" => "Cobble",
+                "de_inferno" => "Inferno",
+                "de_cache" => "Cache",
+                "de_mirage" => "Mirage",
+                "de_overpass" => "Overpass",
+                "de_dust2" => "Dust 2",
+                "de_nuke" => "Nuke",
+                "de_tuscan" => "Tuscan",
+                "de_vertigo" => "Vertigo",
+                "de_season" => "Season",
                 _ => arg[0].ToString().ToUpper() + arg.Substring(1),
             };
         }
+        #endregion
     }
 }
