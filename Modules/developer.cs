@@ -29,7 +29,7 @@ namespace HLTVDiscordBridge.Modules
                     }
                     servernames += $"{guild.Name} | {guildUsers}\n";
                 }
-                await ReplyAsync($"{Context.Client.Guilds.Count} server and {totalUser} user \n\n{servernames}");
+                await ReplyAsync($"{Context.Client.Guilds.Count} server and {totalUser} user");
             }
         }
 
