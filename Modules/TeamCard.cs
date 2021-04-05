@@ -59,7 +59,8 @@ namespace HLTVDiscordBridge.Modules
                 catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return (null, null, false, ""); }
                 if (fullTeamJObject.ToString() == "{}") { return (null, null, true, ""); }
 
-                Uri uri1 = new Uri($"https://hltv-api-steel.vercel.app/api/teamstats/{fullTeamJObject.GetValue("id")}");
+                await Task.Delay(3000);
+                uri = new Uri($"https://hltv-api-steel.vercel.app/api/teamstats/{fullTeamJObject.GetValue("id")}");
                 res = await http.GetAsync(uri);
                 JObject teamStats = JObject.Parse(await res.Content.ReadAsStringAsync());
 
@@ -196,6 +197,7 @@ namespace HLTVDiscordBridge.Modules
             builder.AddField("\u200b", "\u200b", true);
 
             //recentResults
+            await Task.Delay(3000);
             JArray recentResults = await HltvResults.GetResults(ushort.Parse(teamStatsJObj.GetValue("id").ToString()));
             string recentResultsString = "";
             for(int i = 0; i < recentResults.Count; i++)
