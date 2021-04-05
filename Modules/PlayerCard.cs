@@ -65,15 +65,15 @@ namespace HLTVDiscordBridge.Modules
             if (jObj == null && achievements != null) 
             {
                 builder.WithColor(Color.Red)
-                    .WithTitle("ERROR")
+                    .WithTitle("error")
                     .WithDescription($"The player \"{playername}\" does not exist");
                 return builder.Build();
             } else if(jObj == null && achievements == null)
             {
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
                 builder.WithColor(Color.Red)
-                    .WithTitle($"SYSTEM ERROR")
-                    .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");                
+                    .WithTitle($"error")
+                    .WithDescription("Our API is currently not available! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues). We're sorry for the inconvience");                
                 return builder.Build();
             }
             
@@ -183,7 +183,7 @@ namespace HLTVDiscordBridge.Modules
                 if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) { prefix = "!"; }
                 else { prefix = _cfg.GetServerConfig(Context.Guild).Prefix; }
                 builder.WithColor(Color.Red)
-                    .WithTitle("SYNTAX ERROR")
+                    .WithTitle("syntax error")
                     .WithDescription($"Please mind the syntax: \"{prefix}player [name]\"")
                     .WithFooter($"Example: \"{prefix}player s1mple\"");
                 await ReplyAsync(embed: builder.Build());

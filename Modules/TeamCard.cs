@@ -98,15 +98,15 @@ namespace HLTVDiscordBridge.Modules
             JObject teamStatsJObj = res.Item1;
             if (teamJObj == null && teamStatsJObj == null && res.Item3) 
             {
-                builder.WithTitle("ERROR")
+                builder.WithTitle("error")
                     .WithColor(Discord.Color.Red)
                     .WithDescription($"The team \"{name}\" does not exist!")
                     .WithCurrentTimestamp();
                 return (builder.Build(), "");
             } else if(!res.Item3){
                 builder.WithColor(Discord.Color.Red)
-                    .WithTitle($"SYSTEM ERROR")
-                    .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).")
+                    .WithTitle($"error")
+                    .WithDescription("Our API is currently not available! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues). We're sorry for the inconvience")
                     .WithCurrentTimestamp();
                 return (builder.Build(), "");
             }

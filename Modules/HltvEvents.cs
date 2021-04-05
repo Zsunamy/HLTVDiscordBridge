@@ -14,6 +14,7 @@ namespace HLTVDiscordBridge.Modules
     {        
         public static async Task AktEvents(List<SocketTextChannel> channels) 
         {
+            Config _cfg = new();
             List<ushort> startedEvents = await GetStartedEvents();            
             if (startedEvents != null) 
             {
@@ -22,8 +23,12 @@ namespace HLTVDiscordBridge.Modules
                     JObject eventStats = await GetEventStats(eventId);
                     foreach (SocketTextChannel channel in channels)
                     {
-                        try { await channel.SendMessageAsync(embed: GetEventStartedEmbed(eventStats)); }
-                        catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                        ServerConfig config = _cfg.GetServerConfig(channel);
+                        if(config.EventOutput)
+                        {
+                            try { await channel.SendMessageAsync(embed: GetEventStartedEmbed(eventStats)); }
+                            catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                        }
                     }
                 }
             }   
@@ -36,8 +41,12 @@ namespace HLTVDiscordBridge.Modules
                     JObject eventStats = await GetEventStats(eventId);
                     foreach (SocketTextChannel channel in channels)
                     {
-                        try { await channel.SendMessageAsync(embed: GetEventEndedEmbed(eventStats)); }
-                        catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                        ServerConfig config = _cfg.GetServerConfig(channel);
+                        if(config.EventOutput)
+                        {
+                            try { await channel.SendMessageAsync(embed: GetEventEndedEmbed(eventStats)); }
+                            catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                        }
                     }
                 }
             }
@@ -138,7 +147,6 @@ namespace HLTVDiscordBridge.Modules
 
             return jArr;
         }
-
         #endregion
 
         #region started events
@@ -344,7 +352,7 @@ namespace HLTVDiscordBridge.Modules
             if(arg == "")
             {
                 builder.WithColor(Color.Red)
-                    .WithTitle("SYNTAX ERROR")
+                    .WithTitle("syntax error")
                     .WithCurrentTimestamp();                
                 builder.WithDescription($"Please mind the syntax: {prefix}event [eventname]");
                     
@@ -357,7 +365,7 @@ namespace HLTVDiscordBridge.Modules
             else if(eventStats.ToString() == "{}")
             {
                 builder.WithColor(Color.Red)
-                    .WithTitle("ERROR")
+                    .WithTitle("error")
                     .WithCurrentTimestamp();
                 builder.WithDescription($"The event {arg} does not exist or is not scheduled yet.");
                 await ReplyAsync(embed: builder.Build());

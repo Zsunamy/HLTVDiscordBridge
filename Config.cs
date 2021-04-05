@@ -29,6 +29,7 @@ namespace HLTVDiscordBridge
         public string Prefix { get; set; }
         public bool NewsOutput { get; set; }
         public bool ResultOutput { get; set; }
+        public bool EventOutput { get; set; }
     }
 
     public class Config : ModuleBase<SocketCommandContext>
@@ -50,13 +51,204 @@ namespace HLTVDiscordBridge
         }
 
         #region Commands
+        [Command("set")]
+        public async Task ChangeServerConfig(string option = "", [Remainder]string arg = "")
+        {
+            ServerConfig _cfg = GetServerConfig(Context.Guild);
+            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
+            XmlSerializer _xml = new(typeof(ServerConfig));
+            EmbedBuilder builder = new();
+            if(Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
+            {
+                builder.WithTitle("error")
+                    .WithColor(Color.Red)
+                    .WithDescription("Please use this command only on guilds!")
+                    .WithCurrentTimestamp();
+                _xml.Serialize(fs, _cfg);
+                fs.Close();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+            if(!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                builder.WithTitle("error")
+                    .WithColor(Color.Red)
+                    .WithDescription("You do not have enough permission to change the output-channel!")
+                    .WithCurrentTimestamp();
+                _xml.Serialize(fs, _cfg);
+                fs.Close();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+            if(option == "")
+            {
+                builder.WithTitle("SYNTAX")
+                    .WithColor(Color.Green)
+                    .WithDescription($"You can change the following options by using {_cfg.Prefix}set [option] [new state]:")
+                    .AddField("options:", "`stars`\n`featuredevents`\n`prefix`\n`newsoutput`\n`resultoutput`\n`eventoutput`", true)
+                    .AddField("possible states:", "number between 0-5\ntrue/false\nany string\ntrue/false\ntrue/false\ntrue/false", true)
+                    .WithCurrentTimestamp();
+                _xml.Serialize(fs, _cfg);
+                fs.Close();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            } else if(arg == "")
+            {
+                builder.WithTitle("syntax error")
+                    .WithColor(Color.Red)
+                    .WithDescription($"You can't change {option} to nothing! Please use a valid state: {_cfg.Prefix}set [option] [new state]!")
+                    .WithCurrentTimestamp();
+                _xml.Serialize(fs, _cfg);
+                fs.Close();
+                await ReplyAsync(embed: builder.Build());
+                return;
+            } 
+            else
+            {
+                switch (option.ToLower())
+                {
+                    case "stars":
+                    case "minstars":
+                        if (ushort.TryParse(arg, out ushort newStars))
+                        {
+                            if (newStars >= 0 && newStars <= 5)
+                            {
+                                _cfg.MinimumStars = newStars;
+                                builder.WithColor(Color.Green)
+                                    .WithTitle("SUCCESS")
+                                    .WithDescription($"You successfully changed the minimum stars to output a HLTV match to `{newStars}`")
+                                    .WithCurrentTimestamp()
+                                    .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                            }
+                            else
+                            {
+                                builder.WithColor(Color.Red)
+                                .WithTitle("error")
+                                .WithDescription($"{arg} is not valid! Please state a number between 0-5")
+                                .WithCurrentTimestamp()
+                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                            }
+                        }
+                        else
+                        {
+                            builder.WithColor(Color.Red)
+                                .WithTitle("error")
+                                .WithDescription($"{arg} is not valid! Please state a number between 0-5")
+                                .WithCurrentTimestamp()
+                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                        }
+                        break;
+                    case "featuredevents":
+                        if (bool.TryParse(arg, out bool featuredevents))
+                        {
+                            _cfg.OnlyFeaturedEvents = featuredevents;
+                            string featured;
+                            if (featuredevents) { featured = "only featured events"; }
+                            else { featured = "all events"; }
+                            builder.WithColor(Color.Green)
+                                .WithTitle("SUCCESS")
+                                .WithDescription($"You successfully changed the automatic event output to `{featured}`")
+                                .WithCurrentTimestamp()
+                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                        }
+                        else
+                        {
+                            builder.WithColor(Color.Red)
+                                .WithTitle("error")
+                                .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
+                                .WithCurrentTimestamp()
+                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                        }
+                        break;
+                    case "prefix":
+                        _cfg.Prefix = arg;
+                        builder.WithColor(Color.Green)
+                            .WithTitle("SUCCESS")
+                            .WithDescription($"You successfully changed the prefix to `{arg}`")
+                            .WithCurrentTimestamp()
+                            .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                        break;
+                    case "newsoutput":
+                        if (bool.TryParse(arg, out bool newsoutput))
+                        {
+                            _cfg.NewsOutput = newsoutput;
+                            builder.WithColor(Color.Green)
+                                .WithTitle("SUCCESS")
+                                .WithDescription($"You successfully changed the automatic news output to `{newsoutput}`")
+                                .WithCurrentTimestamp()
+                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                        }
+                        else
+                        {
+                            builder.WithColor(Color.Red)
+                                .WithTitle("error")
+                                .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
+                                .WithCurrentTimestamp()
+                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                        }
+                        break;
+                    case "resultoutput":
+                        if (bool.TryParse(arg, out bool resultoutput))
+                        {
+                            _cfg.ResultOutput = resultoutput;
+                            builder.WithColor(Color.Green)
+                                .WithTitle("SUCCESS")
+                                .WithDescription($"You successfully changed the automatic result output to `{resultoutput}`")
+                                .WithCurrentTimestamp()
+                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                        }
+                        else
+                        {
+                            builder.WithColor(Color.Red)
+                                .WithTitle("error")
+                                .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
+                                .WithCurrentTimestamp()
+                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                        }
+                        break;
+                    case "eventoutput":
+                        if (bool.TryParse(arg, out bool eventoutput))
+                        {
+                            _cfg.EventOutput = eventoutput;
+                            builder.WithColor(Color.Green)
+                                .WithTitle("SUCCESS")
+                                .WithDescription($"You successfully changed the automatic event output to `{eventoutput}`")
+                                .WithCurrentTimestamp()
+                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                        }
+                        else
+                        {
+                            builder.WithColor(Color.Red)
+                                .WithTitle("error")
+                                .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
+                                .WithCurrentTimestamp()
+                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                        }
+                        break;
+                    default:
+                        builder.WithColor(Color.Red)
+                                .WithTitle("error")
+                                .WithDescription($"{option.ToLower()} is not valid! Please state one of the following options:\n`minstars`\n`featuredevents`\n`prefix`\n" +
+                                $"`newsoutput`\n`resultoutput`\n`eventoutput`")
+                                .WithCurrentTimestamp()
+                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                        break;
+                }
+            }
+            
+            _xml.Serialize(fs, _cfg);
+            fs.Close();
+            await ReplyAsync(embed: builder.Build());
+        }
+
+
         [Command("init")]
         public async Task InitTextChannel(SocketTextChannel channel = null)
         {
             EmbedBuilder builder = new();
             if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
             {
-                builder.WithTitle("ERROR")
+                builder.WithTitle("error")
                     .WithColor(Color.Red)
                     .WithDescription("Please use this command only on guilds!")
                     .WithCurrentTimestamp();
@@ -65,7 +257,7 @@ namespace HLTVDiscordBridge
             }
             if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
             {
-                builder.WithTitle("ERROR")
+                builder.WithTitle("error")
                     .WithColor(Color.Red)
                     .WithDescription("You do not have enough permission to change the output-channel!")
                     .WithCurrentTimestamp();
@@ -77,198 +269,6 @@ namespace HLTVDiscordBridge
                 channel = (SocketTextChannel)Context.Channel;
             }
             await GuildJoined(Context.Guild, channel);
-        }
-
-        [Command("minstars")]
-        public async Task ChangeMinStars(string stars = "")
-        {
-            EmbedBuilder builder = new();
-            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) 
-            {
-                builder.WithTitle("ERROR")
-                    .WithColor(Color.Red)
-                    .WithDescription("Please use this command only on guilds!")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
-            {
-                builder.WithTitle("ERROR")
-                    .WithColor(Color.Red)
-                    .WithDescription("You do not have enough permission to change the minimum stars!")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-            if (!ushort.TryParse(stars, out ushort starsNum) || stars == "" || starsNum < 0 || starsNum > 5)
-            {
-                builder.WithColor(Color.Red)
-                    .WithTitle("SYNTAX ERROR")
-                    .WithDescription($"Please mind the syntax: {GetServerConfig(Context.Guild).Prefix}minstars [stars (number between 0-5)]")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-            ServerConfig _config = new();
-            _config = GetServerConfig(Context.Guild);
-            _config.MinimumStars = starsNum;
-            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
-            XmlSerializer _xml = new(typeof(ServerConfig));
-            _xml.Serialize(fs, _config);
-            fs.Close();
-            builder.WithColor(Color.Green)
-                    .WithTitle("SUCCESS")
-                    .WithDescription($"You successfully changed the minimum stars to output a HLTV match to \"{starsNum}\"")
-                    .WithCurrentTimestamp()
-                    .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
-            await ReplyAsync(embed: builder.Build());
-        }
-
-        [Command("featuredevents")]
-        public async Task ChangeFeaturedEvents(string arg = "")
-        {
-            EmbedBuilder builder = new();
-            ServerConfig _config = new();
-            _config = GetServerConfig(Context.Guild);
-            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
-            {
-                builder.WithTitle("ERROR")
-                    .WithColor(Color.Red)
-                    .WithDescription("Please use this command only on guilds!")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
-            {
-                builder.WithTitle("ERROR")
-                    .WithColor(Color.Red)
-                    .WithDescription("You do not have enough permission to change the featured events!")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-            string description = "You successfully changed the event output to ";
-            if (arg.ToLower() != "true" && arg.ToLower() != "false")
-            {
-                builder.WithColor(Color.Red)
-                    .WithTitle("SYNTAX ERROR")
-                    .WithDescription($"Please mind the syntax: {_config.Prefix}featuredevents [true/false]")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-            }
-            else if (arg.ToLower() == "true") { _config.OnlyFeaturedEvents = true; description += "ONLY FEATURED EVENTS"; }
-            else { _config.OnlyFeaturedEvents = false; description += "SHOW ALL EVENTS"; }
-
-            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
-            XmlSerializer _xml = new(typeof(ServerConfig));
-            _xml.Serialize(fs, _config);
-            fs.Close();
-            builder.WithColor(Color.Green)
-                    .WithTitle("SUCCESS")
-                    .WithDescription(description)
-                    .WithCurrentTimestamp()
-                    .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
-            await ReplyAsync(embed: builder.Build());
-        }
-
-        [Command("prefix")]
-        public async Task ChangePrefix(string arg = "")
-        {            
-            EmbedBuilder builder = new();
-            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
-            {
-                builder.WithTitle("ERROR")
-                    .WithColor(Color.Red)
-                    .WithDescription("Please use this command only on guilds!")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
-            {
-                builder.WithTitle("ERROR")
-                    .WithColor(Color.Red)
-                    .WithDescription("You do not have enough permission to change the prefix!")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-            if (arg == "") {
-                builder.WithColor(Color.Green)
-                        .WithTitle("PREFIX")
-                        .WithDescription($"Your current prefix is: \"{GetServerConfig(Context.Guild).Prefix}\"")
-                        .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            } 
-            
-            ServerConfig _config = new();
-            _config = GetServerConfig(Context.Guild);
-            _config.Prefix = arg;
-
-            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
-            XmlSerializer _xml = new(typeof(ServerConfig));
-            _xml.Serialize(fs, _config);
-            fs.Close();
-            builder.WithColor(Color.Green)
-                    .WithTitle("SUCCESS")
-                    .WithDescription($"You successfully changed the command prefix to \"{arg}\"")
-                    .WithCurrentTimestamp()
-                    .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
-            await ReplyAsync(embed: builder.Build());
-        }
-        public async Task ChangeResultOutput(string arg = "")
-        {
-            EmbedBuilder builder = new();
-            ServerConfig cfg = GetServerConfig(Context.Guild);
-            string state = GetServerConfig(Context.Guild).ResultOutput ? "disabled" : "enabled";
-            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
-            {
-                builder.WithTitle("ERROR")
-                    .WithColor(Color.Red)
-                    .WithDescription("Please use this command only on guilds!")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
-            {
-                builder.WithTitle("ERROR")
-                    .WithColor(Color.Red)
-                    .WithDescription("You do not have enough permission to change the ResultOutput!")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-            if (arg == "")
-            {                
-                builder.WithColor(Color.Green)
-                        .WithTitle("PREFIX")
-                        .WithDescription($"The automated ResultOutput is: \"{state}\"")
-                        .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            } else if(bool.TryParse(arg, out bool res)) { cfg.ResultOutput = res; }
-            else {
-                builder.WithTitle("SYNTAX ERROR")
-                 .WithColor(Color.Red)
-                 .WithDescription($"Please mind the syntax: {GetServerConfig(Context.Guild).Prefix}ResultOutput [true / false]")
-                 .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
-            XmlSerializer _xml = new(typeof(ServerConfig));
-            _xml.Serialize(fs, cfg);
-            fs.Close();
-            builder.WithColor(Color.Green)
-                    .WithTitle("SUCCESS")
-                    .WithDescription($"You successfully changed the automated result output to: {state}")
-                    .WithCurrentTimestamp()
-                    .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
-            await ReplyAsync(embed: builder.Build());
         }
         #endregion
 
@@ -310,6 +310,9 @@ namespace HLTVDiscordBridge
             _config.MinimumStars = 0;
             _config.OnlyFeaturedEvents = false;
             _config.Prefix = "!";
+            _config.EventOutput = true;
+            _config.NewsOutput = true;
+            _config.ResultOutput = true;
 
             _xml = new XmlSerializer(typeof(ServerConfig));
             Directory.CreateDirectory("./cache/serverconfig");

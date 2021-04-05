@@ -50,15 +50,15 @@ namespace HLTVDiscordBridge.Modules
                 {
                     Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
                     embed.WithColor(Color.Red)
-                        .WithTitle($"SYSTEM ERROR")
-                        .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");
+                        .WithTitle($"error")
+                        .WithDescription("Our API is currently not available! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues). We're sorry for the inconvience");
                     await ReplyAsync(embed: embed.Build());
                     return;
                 }
                 if (jArr.Count == 0) 
                 {
                     embed.WithColor(Color.Red)
-                    .WithTitle($"{arg} DOES NOT EXIST")
+                    .WithTitle($"{arg} does not exist")
                     .WithDescription("Please state a valid country!");
                     await ReplyAsync(embed: embed.Build());
                     return;
