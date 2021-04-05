@@ -1,9 +1,6 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 
 namespace HLTVDiscordBridge.Modules
@@ -55,13 +52,15 @@ namespace HLTVDiscordBridge.Modules
 
             //ranking
             Directory.CreateDirectory("./cache/ranking");
-            if (DateTime.Now.DayOfWeek == DayOfWeek.Tuesday)
+            bool rankingDeleted = false;
+            if (DateTime.Now.DayOfWeek == DayOfWeek.Tuesday && !rankingDeleted)
             {
+                rankingDeleted = true;
                 foreach(string file in Directory.GetFiles("./cache/ranking"))
                 {
                     File.Delete(file);
                 }
-            }
+            } else if(DateTime.Now.DayOfWeek == DayOfWeek.Wednesday) { rankingDeleted = false; }
 
             //live matches
             Directory.CreateDirectory("./cache/livematches");

@@ -1,5 +1,9 @@
 *.txt
 cache/
 Debug/
+net5.0/
 config.xml
 GlobalSuppressions.cs
+Properties/
+obj/
+*.user

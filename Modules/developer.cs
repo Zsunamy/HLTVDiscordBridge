@@ -8,7 +8,7 @@ namespace HLTVDiscordBridge.Modules
 {
     public class Developer : ModuleBase<SocketCommandContext>
     {
-        Config _cfg = new Config();
+        Config _cfg = new();
 
         [Command("servercount")]
         public async Task ServerCount()
@@ -16,18 +16,13 @@ namespace HLTVDiscordBridge.Modules
             if(Context.User.Id == 248110264610848778 || Context.User.Id == 224037892387766272 || Context.User.Id == 255000770707980289)
             {
                 int totalUser = 0;
-                int guildUsers = 0;
-                string servernames = "";
                 foreach (SocketGuild guild in Context.Client.Guilds)
                 {
-                    guildUsers = 0;
                     foreach(SocketGuildUser user in guild.Users)
                     {
                         if(user.IsBot) { continue; }
-                        guildUsers++;
                         totalUser++;
                     }
-                    servernames += $"{guild.Name} | {guildUsers}\n";
                 }
                 await ReplyAsync($"{Context.Client.Guilds.Count} server and {totalUser} user");
             }
@@ -39,14 +34,18 @@ namespace HLTVDiscordBridge.Modules
             if (Context.User.Id == 255000770707980289 || Context.User.Id == 224037892387766272 || Context.User.Id == 248110264610848778) 
             {
                 _cfg = new Config();
-                EmbedBuilder builder = new EmbedBuilder();
-                builder.WithTitle($"UPDATE {version}")
-                    .WithDescription(message + "\nIf you are experiencing any issues feel free to write us an [issue](https://github.com/Zsunamy/HLTVDiscordBridge/issues)\n" +
-                    "Also feel free to [donate](https://www.patreon.com/zsunamy) us a cup of coffee")
-                    .WithColor(Color.Green)
-                    .WithCurrentTimestamp();
+                EmbedBuilder builder = new();
+                
+                
                 foreach (SocketTextChannel channel in await _cfg.GetChannels(Context.Client))
                 {
+                    ServerConfig config = _cfg.GetServerConfig(channel);
+                    message = message.Replace("<prefix>", config.Prefix);
+                    builder.WithTitle($"Update: {version}")
+                        .WithDescription(message + $"\nDo you have any inquiries or issues? [Contact us!](https://github.com/Zsunamy/HLTVDiscordBridge/issues)\n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>\n" +
+                $"Also feel free to [donate](https://www.patreon.com/zsunamy) us to support this project.\n Another quick and easy way to show us your support is by [voting](https://top.gg/bot/807182830752628766/vote) for this bot on [top.gg](https://top.gg/bot/807182830752628766) to increase awareness.")
+                        .WithColor(Color.Green)
+                        .WithCurrentTimestamp();
                     try { await channel.SendMessageAsync(embed: builder.Build()); }
                     catch (Discord.Net.HttpException)
                     {

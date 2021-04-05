@@ -13,7 +13,7 @@ namespace HLTVDiscordBridge.Modules
         [Command("ranking")]
         public async Task GetRanking([Remainder]string arg = "GLOBAL")
         {
-            EmbedBuilder embed = new EmbedBuilder();
+            EmbedBuilder embed = new();
             Uri uri;
             if (arg.Contains('-'))
             {
@@ -39,7 +39,7 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/ranking");
             if(!File.Exists($"./cache/ranking/ranking_{arg.ToLower().Replace(' ','-')}.json"))
             {
-                HttpClient httpClient = new HttpClient();
+                HttpClient httpClient = new();
                 httpClient.BaseAddress = uri;
                 HttpResponseMessage response = await httpClient.GetAsync(uri);
                 try { jArr = JArray.Parse(await response.Content.ReadAsStringAsync()); }
@@ -47,15 +47,15 @@ namespace HLTVDiscordBridge.Modules
                 {
                     Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
                     embed.WithColor(Color.Red)
-                        .WithTitle($"SYSTEM ERROR")
-                        .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");
+                        .WithTitle($"error")
+                        .WithDescription("Our API is currently not available! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues). We're sorry for the inconvience");
                     await ReplyAsync(embed: embed.Build());
                     return;
                 }
                 if (jArr.Count == 0) 
                 {
                     embed.WithColor(Color.Red)
-                    .WithTitle($"{arg} DOES NOT EXIST")
+                    .WithTitle($"{arg} does not exist")
                     .WithDescription("Please state a valid country!");
                     await ReplyAsync(embed: embed.Build());
                     return;

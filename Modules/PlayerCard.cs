@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -36,9 +32,8 @@ namespace HLTVDiscordBridge.Modules
             } else
             {
                 //Get non cached Player                
-                Uri uri = new Uri("https://hltv-api-steel.vercel.app/api/player/" + playername);
-                HttpClient _http = new HttpClient();
-                _http.BaseAddress = uri;
+                Uri uri = new("https://hltv-api-steel.vercel.app/api/player/" + playername);
+                HttpClient _http = new();
                 HttpResponseMessage httpRequest = await _http.GetAsync(uri);
 
                 try { idJObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync()); }
@@ -50,11 +45,9 @@ namespace HLTVDiscordBridge.Modules
                 ushort playerID = ushort.Parse(idJObj.GetValue("id").ToString());
                 JArray achievements = JArray.Parse(idJObj.GetValue("achievements").ToString());
 
-                Uri uri1 = new Uri("https://hltv-api-steel.vercel.app/api/playerstats/" + playerID.ToString());
-                HttpClient _http1 = new HttpClient();
-                _http1.BaseAddress = uri1;
-                HttpResponseMessage httpRequest1 = await _http1.GetAsync(uri1);
-                statsJObj = JObject.Parse(await httpRequest1.Content.ReadAsStringAsync());
+                uri = new("https://hltv-api-steel.vercel.app/api/playerstats/" + playerID.ToString());
+                httpRequest = await _http.GetAsync(uri);
+                statsJObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync());
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/stats.json", statsJObj.ToString());
                 return (statsJObj, playerID, achievements);
             }            
@@ -62,7 +55,7 @@ namespace HLTVDiscordBridge.Modules
 
         private static async Task<Embed> GetPlayerCard(SocketCommandContext context, string playername = "")
         {            
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             
             var req = await GetPlayerStats(playername);
             JObject jObj = req.Item1;
@@ -70,20 +63,20 @@ namespace HLTVDiscordBridge.Modules
             if (jObj == null && achievements != null) 
             {
                 builder.WithColor(Color.Red)
-                    .WithTitle("ERROR")
+                    .WithTitle("error")
                     .WithDescription($"The player \"{playername}\" does not exist");
                 return builder.Build();
             } else if(jObj == null && achievements == null)
             {
                 Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
                 builder.WithColor(Color.Red)
-                    .WithTitle($"SYSTEM ERROR")
-                    .WithDescription("Our API is down! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues).");                
+                    .WithTitle($"error")
+                    .WithDescription("Our API is currently not available! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues). We're sorry for the inconvience");                
                 return builder.Build();
             }
             
 
-            JObject stats = JObject.Parse(jObj.GetValue("statistics").ToString());
+            JObject stats = JObject.Parse(jObj.GetValue("overviewStatistics").ToString());
             JObject country = JObject.Parse(jObj.GetValue("country").ToString());
             jObj.TryGetValue("team", out JToken teamTok);
             jObj.TryGetValue("name", out JToken nameTok);
@@ -180,15 +173,15 @@ namespace HLTVDiscordBridge.Modules
         [Command("player")]
         public async Task Player([Remainder]string playername = "")
         {
-            EmbedBuilder builder = new EmbedBuilder();
-            Config _cfg = new Config();
+            EmbedBuilder builder = new();
+            Config _cfg = new();
             if (playername == "")
             {
                 string prefix;
                 if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) { prefix = "!"; }
                 else { prefix = _cfg.GetServerConfig(Context.Guild).Prefix; }
                 builder.WithColor(Color.Red)
-                    .WithTitle("SYNTAX ERROR")
+                    .WithTitle("syntax error")
                     .WithDescription($"Please mind the syntax: \"{prefix}player [name]\"")
                     .WithFooter($"Example: \"{prefix}player s1mple\"");
                 await ReplyAsync(embed: builder.Build());

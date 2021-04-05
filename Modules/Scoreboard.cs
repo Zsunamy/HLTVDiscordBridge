@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,7 +7,6 @@ using Newtonsoft.Json.Linq;
 using System.IO;
 using Discord.WebSocket;
 using Discord.Rest;
-using Discord;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -18,7 +15,7 @@ namespace HLTVDiscordBridge.Modules
         public delegate Task MessageReceivedDelegate(string message, RestTextChannel channel);
         public event MessageReceivedDelegate OnKillfeedUpdate;
 
-        readonly ClientWebSocket _webSocket = new ClientWebSocket();
+        readonly ClientWebSocket _webSocket = new();
         readonly byte[] buffer;
         private readonly uint _matchId;
         readonly SocketGuild _guild;
