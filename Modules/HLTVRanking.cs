@@ -13,7 +13,7 @@ namespace HLTVDiscordBridge.Modules
         [Command("ranking")]
         public async Task GetRanking([Remainder]string arg = "GLOBAL")
         {
-            EmbedBuilder embed = new EmbedBuilder();
+            EmbedBuilder embed = new();
             Uri uri;
             if (arg.Contains('-'))
             {
@@ -22,16 +22,19 @@ namespace HLTVDiscordBridge.Modules
             }
             if (arg == "GLOBAL")
             {
-                uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking");
+                //uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking");
+                uri = new Uri("http://revilum.com:3000/api/ranking");
             }
             else if (DateTime.TryParse(arg, out DateTime time))
             {
                 string[] months = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
-                uri = new Uri($"https://hltv-api-steel.vercel.app/api/ranking/{time.Day}/{months[time.Month - 1]}/{time.Year}");
+                //uri = new Uri($"https://hltv-api-steel.vercel.app/api/ranking/{time.Day}/{months[time.Month - 1]}/{time.Year}");
+                uri = new Uri($"http://revilum.com:3000/api/ranking/{time.Day}/{months[time.Month - 1]}/{time.Year}");
             }
             else
             {
-                uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking/" + arg.ToLower());
+                //uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking/" + arg.ToLower());
+                uri = new Uri("http://revilum.com:3000/api/ranking/" + arg.ToLower());
             }
 
             //cache
@@ -39,7 +42,7 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/ranking");
             if(!File.Exists($"./cache/ranking/ranking_{arg.ToLower().Replace(' ','-')}.json"))
             {
-                HttpClient httpClient = new HttpClient();
+                HttpClient httpClient = new();
                 httpClient.BaseAddress = uri;
                 HttpResponseMessage response = await httpClient.GetAsync(uri);
                 try { jArr = JArray.Parse(await response.Content.ReadAsStringAsync()); }

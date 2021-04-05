@@ -18,8 +18,7 @@ namespace HLTVDiscordBridge.Modules
         {
             //var URI = new Uri("https://hltv-api-steel.vercel.app/api/matches");
             var URI = new Uri("http://revilum.com:3000/api/matches");
-            HttpClient http = new HttpClient();
-            http.BaseAddress = URI;
+            HttpClient http = new();
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
             string httpResult = await httpResponse.Content.ReadAsStringAsync();
             JArray jArr;
@@ -38,7 +37,7 @@ namespace HLTVDiscordBridge.Modules
         private static Embed BuildEmbed(string arg, SocketCommandContext Context)
         {
             JArray jArr;
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             if (DateTime.TryParse(arg, out DateTime date))
             {
                 jArr = SearchUpcoming(date);
@@ -54,13 +53,31 @@ namespace HLTVDiscordBridge.Modules
             else if(jArr.Count == 1) 
             {
                 JObject jObj = JObject.Parse(jArr[0].ToString());
-                string team1name = JObject.Parse(JObject.Parse(jObj.GetValue("team1").ToString()).ToString()).GetValue("name").ToString();
-                if (team1name == "") { team1name = "TBD"; }
-                string team2name = JObject.Parse(JObject.Parse(jObj.GetValue("team2").ToString()).ToString()).GetValue("name").ToString();
-                if (team2name == "") { team2name = "TBD"; }
-                string format = jObj.GetValue("format").ToString();
-                string eventname = JObject.Parse(JObject.Parse(jObj.GetValue("event").ToString()).ToString()).GetValue("name").ToString();
-                if (eventname == "") { eventname = "n.A"; }
+                string team1name;
+                string team1link = "";
+                string team2name;
+                string team2link = "";
+                string eventname;
+                string eventlink;
+                try {
+                    JObject team1 = JObject.Parse(JObject.Parse(jObj.GetValue("team1").ToString()).ToString());
+                    team1name = team1.GetValue("name").ToString();
+                    team1link = $"https://www.hltv.org/team/{team1.GetValue("id")}/{team1name.ToLower().Replace(" ", "-")}";
+                }
+                catch(NullReferenceException) { team1name = "TBD"; }
+                try {
+                    JObject team2 = JObject.Parse(JObject.Parse(jObj.GetValue("team2").ToString()).ToString());
+                    team2name = team2.GetValue("name").ToString();
+                    team2link = $"https://www.hltv.org/team/{team2.GetValue("id")}/{team2name.ToLower().Replace(" ", "-")}";
+                }
+                catch(NullReferenceException) { team2name = "TBD"; }
+                string format = jObj.GetValue("format").ToString();                
+                try {
+                    JObject eventObj = JObject.Parse(JObject.Parse(jObj.GetValue("event").ToString()).ToString());
+                    eventname = eventObj.GetValue("name").ToString();
+                    eventlink = $"https://www.hltv.org/events/{eventObj.GetValue("id")}/{eventname.ToLower().Replace(" ", "-")}";
+                }
+                catch (NullReferenceException) { eventname = "n.A"; }
                 string link;
                 if (team1name != "" && team2name != "" && eventname != "")
                 {
@@ -71,12 +88,12 @@ namespace HLTVDiscordBridge.Modules
                     link = "n.A";
                 }
 
-                builder.AddField("match:", $"{team1name} vs. {team2name}", true);
+                builder.AddField("match:", $"[{team1name}]({team1link}) vs. [{team2name}]({team2link})", true);
                 JToken dateTok = JObject.Parse(jObj.ToString()).GetValue("date");
                 if (dateTok != null)
                 {
                     double time = double.Parse(JObject.Parse(jObj.ToString()).GetValue("date").ToString());
-                    DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                    DateTime dtDateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                     dtDateTime = dtDateTime.AddMilliseconds(time);
                     builder.AddField("time:", dtDateTime.ToString().Substring(0, 16) + " UTC", true);
                 }
@@ -90,24 +107,43 @@ namespace HLTVDiscordBridge.Modules
                 }
                 builder.AddField("\u200b", "\u200b", true)
                     .AddField("event:", eventname, true)
-                    .AddField("format:", format, true)
+                    .AddField("format:", GetFormatFromAcronym(format), true)
                     .AddField("\u200b", "\u200b", true)
                     .AddField("details:", $"[click here for more details]({link})");
             } 
             else if(jArr.Count > 1)
             {
                 int i = 0;
-                foreach (JToken jTok in jArr)
+                foreach (JObject jObj in jArr)
                 {
                     if (i == 2) { break; }
-                    JObject jObj = JObject.Parse(jTok.ToString());
-                    string team1name = JObject.Parse(JObject.Parse(jObj.GetValue("team1").ToString()).ToString()).GetValue("name").ToString();
-                    if (team1name == "") { team1name = "TBD"; }
-                    string team2name = JObject.Parse(JObject.Parse(jObj.GetValue("team2").ToString()).ToString()).GetValue("name").ToString();
-                    if (team2name == "") { team2name = "TBD"; }
+                    string team1name;
+                    string team1link = "";
+                    string team2name;
+                    string team2link = "";
+                    string eventname;
+                    string eventlink = "";
+                    try
+                    {
+                        JObject team1 = JObject.Parse(JObject.Parse(jObj.GetValue("team1").ToString()).ToString());
+                        team1name = team1.GetValue("name").ToString();
+                        team1link = $"https://www.hltv.org/team/{team1.GetValue("id")}/{team1name.ToLower().Replace(" ", "-")}";
+                    }
+                    catch (NullReferenceException) { team1name = "TBD"; }
+                    try
+                    {
+                        JObject team2 = JObject.Parse(JObject.Parse(jObj.GetValue("team2").ToString()).ToString());
+                        team2name = team2.GetValue("name").ToString();
+                        team2link = $"https://www.hltv.org/team/{team2.GetValue("id")}/{team2name.ToLower().Replace(" ", "-")}";
+                    }
+                    catch (NullReferenceException) { team2name = "TBD"; }
                     string format = jObj.GetValue("format").ToString();
-                    string eventname = JObject.Parse(JObject.Parse(jObj.GetValue("event").ToString()).ToString()).GetValue("name").ToString();
-                    if (eventname == "") { eventname = "n.A"; }
+                    try {
+                        JObject eventObj = JObject.Parse(JObject.Parse(jObj.GetValue("event").ToString()).ToString());
+                        eventname = eventObj.GetValue("name").ToString();
+                        eventlink = $"https://www.hltv.org/events/{eventObj.GetValue("id")}/{eventname.ToLower().Replace(" ", "-")}";
+                    }
+                    catch (NullReferenceException) { eventname = "n.A"; }
                     string link;
                     if (team1name != "" && team2name != "" && eventname != "")
                     {
@@ -119,13 +155,13 @@ namespace HLTVDiscordBridge.Modules
                         link = "n.A";
                     }
 
-                    builder.AddField("match:", $"{team1name} vs. {team2name}", true);
+                    builder.AddField("match:", $"[{team1name}]({team1link}) vs. [{team2name}]({team2link})", true);
 
                     JToken dateTok = JObject.Parse(jObj.ToString()).GetValue("date");
                     if(dateTok != null)
                     {
                         double time = double.Parse(JObject.Parse(jObj.ToString()).GetValue("date").ToString());
-                        DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                        DateTime dtDateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                         dtDateTime = dtDateTime.AddMilliseconds(time);
                         builder.AddField("time:", dtDateTime.ToString().Substring(0, 16) + " UTC", true);
                     } 
@@ -142,8 +178,8 @@ namespace HLTVDiscordBridge.Modules
                     
                         
                     builder.AddField("\u200b", "\u200b", true)
-                        .AddField("event:", eventname, true)
-                        .AddField("format:", format, true)
+                        .AddField("event:", $"[{eventname}]({eventlink})", true)
+                        .AddField("format:", GetFormatFromAcronym(format), true)
                         .AddField("\u200b", "\u200b", true)
                         .AddField("details:", $"[click here for more details]({link})");
                     if (i == 0) {  }
@@ -158,7 +194,7 @@ namespace HLTVDiscordBridge.Modules
                 .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
             return builder.Build();
         }
-        private static JArray SearchUpcoming()
+        public static JArray SearchUpcoming()
         {
             JArray jArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
             JArray result = JArray.Parse("[]");
@@ -168,7 +204,7 @@ namespace HLTVDiscordBridge.Modules
                 if (date == null) { result.Add(jTok); continue; }
 
                 double time = double.Parse(date.ToString());
-                DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                DateTime dtDateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 dtDateTime = dtDateTime.AddMilliseconds(time);
                 if (dtDateTime.CompareTo(DateTime.Now.ToUniversalTime()) != -1)
                 {
@@ -212,7 +248,7 @@ namespace HLTVDiscordBridge.Modules
             }
             return result;
         }
-        private static JArray SearchUpcoming(DateTime dateArg)
+        public static JArray SearchUpcoming(DateTime dateArg)
         {
             JArray jArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
             JArray result = JArray.Parse("[]");
@@ -223,7 +259,7 @@ namespace HLTVDiscordBridge.Modules
 
                 double time = double.Parse(date.ToString());
 
-                DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                DateTime dtDateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 dtDateTime = dtDateTime.AddMilliseconds(time);
                 if (dtDateTime.ToString().Substring(0, 10) == dateArg.ToString().Substring(0, 10))
                 {
@@ -231,6 +267,17 @@ namespace HLTVDiscordBridge.Modules
                 }                
             }
             return result;
+        }
+        private static string GetFormatFromAcronym(string req)
+        {
+            return req switch
+            {
+                "bo1" => "Best of 1",
+                "bo3" => "Best of 3",
+                "bo5" => "Best of 5",
+                "bo7" => "Best of 7",
+                _ => "n.A",
+            };
         }
 
         [Command("upcoming")]

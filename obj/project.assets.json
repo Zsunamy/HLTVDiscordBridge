@@ -2,257 +2,20 @@
   "version": 3,
   "targets": {
     "net5.0": {
-      "CSFML/2.5.0": {
-        "type": "package",
-        "runtimeTargets": {
-          "runtimes/alpine-x64/native/libcsfml-audio.so": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libcsfml-graphics.so": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libcsfml-system.so": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libcsfml-window.so": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-audio.so": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-audio.so.2.5": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-audio.so.2.5.1": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-graphics.so": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-graphics.so.2.5": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-graphics.so.2.5.1": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-system.so": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-system.so.2.5": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-system.so.2.5.1": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-window.so": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-window.so.2.5": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/alpine-x64/native/libsfml-window.so.2.5.1": {
-            "assetType": "native",
-            "rid": "alpine-x64"
-          },
-          "runtimes/debian-x64/native/libcsfml-audio.so": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libcsfml-graphics.so": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libcsfml-system.so": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libcsfml-window.so": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-audio.so": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-audio.so.2.5": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-audio.so.2.5.1": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-graphics.so": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-graphics.so.2.5": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-graphics.so.2.5.1": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-system.so": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-system.so.2.5": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-system.so.2.5.1": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-window.so": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-window.so.2.5": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/debian-x64/native/libsfml-window.so.2.5.1": {
-            "assetType": "native",
-            "rid": "debian-x64"
-          },
-          "runtimes/fedora-x64/native/libcsfml-audio.so": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libcsfml-graphics.so": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libcsfml-system.so": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libcsfml-window.so": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-audio.so": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-audio.so.2.5": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-audio.so.2.5.1": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-graphics.so": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-graphics.so.2.5": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-graphics.so.2.5.1": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-system.so": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-system.so.2.5": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-system.so.2.5.1": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-window.so": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-window.so.2.5": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/fedora-x64/native/libsfml-window.so.2.5.1": {
-            "assetType": "native",
-            "rid": "fedora-x64"
-          },
-          "runtimes/win-x64/native/csfml-Audio.dll": {
-            "assetType": "native",
-            "rid": "win-x64"
-          },
-          "runtimes/win-x64/native/csfml-Graphics.dll": {
-            "assetType": "native",
-            "rid": "win-x64"
-          },
-          "runtimes/win-x64/native/csfml-System.dll": {
-            "assetType": "native",
-            "rid": "win-x64"
-          },
-          "runtimes/win-x64/native/csfml-Window.dll": {
-            "assetType": "native",
-            "rid": "win-x64"
-          },
-          "runtimes/win-x64/native/openal32.dll": {
-            "assetType": "native",
-            "rid": "win-x64"
-          },
-          "runtimes/win-x86/native/csfml-Audio.dll": {
-            "assetType": "native",
-            "rid": "win-x86"
-          },
-          "runtimes/win-x86/native/csfml-Graphics.dll": {
-            "assetType": "native",
-            "rid": "win-x86"
-          },
-          "runtimes/win-x86/native/csfml-System.dll": {
-            "assetType": "native",
-            "rid": "win-x86"
-          },
-          "runtimes/win-x86/native/csfml-Window.dll": {
-            "assetType": "native",
-            "rid": "win-x86"
-          },
-          "runtimes/win-x86/native/openal32.dll": {
-            "assetType": "native",
-            "rid": "win-x86"
-          }
-        }
-      },
-      "Discord.Net/2.3.0": {
+      "Discord.Net/2.3.1": {
         "type": "package",
         "dependencies": {
-          "Discord.Net.Commands": "2.3.0",
-          "Discord.Net.Core": "2.3.0",
-          "Discord.Net.Rest": "2.3.0",
-          "Discord.Net.WebSocket": "2.3.0",
-          "Discord.Net.Webhook": "2.3.0"
+          "Discord.Net.Commands": "2.3.1",
+          "Discord.Net.Core": "2.3.1",
+          "Discord.Net.Rest": "2.3.1",
+          "Discord.Net.WebSocket": "2.3.1",
+          "Discord.Net.Webhook": "2.3.1"
         }
       },
-      "Discord.Net.Commands/2.3.0": {
+      "Discord.Net.Commands/2.3.1": {
         "type": "package",
         "dependencies": {
-          "Discord.Net.Core": "2.3.0"
+          "Discord.Net.Core": "2.3.1"
         },
         "compile": {
           "lib/netstandard2.1/Discord.Net.Commands.dll": {}
@@ -261,7 +24,7 @@
           "lib/netstandard2.1/Discord.Net.Commands.dll": {}
         }
       },
-      "Discord.Net.Core/2.3.0": {
+      "Discord.Net.Core/2.3.1": {
         "type": "package",
         "dependencies": {
           "Newtonsoft.Json": "12.0.2",
@@ -275,10 +38,10 @@
           "lib/netstandard2.1/Discord.Net.Core.dll": {}
         }
       },
-      "Discord.Net.Rest/2.3.0": {
+      "Discord.Net.Rest/2.3.1": {
         "type": "package",
         "dependencies": {
-          "Discord.Net.Core": "2.3.0"
+          "Discord.Net.Core": "2.3.1"
         },
         "compile": {
           "lib/netstandard2.1/Discord.Net.Rest.dll": {}
@@ -287,11 +50,11 @@
           "lib/netstandard2.1/Discord.Net.Rest.dll": {}
         }
       },
-      "Discord.Net.Webhook/2.3.0": {
+      "Discord.Net.Webhook/2.3.1": {
         "type": "package",
         "dependencies": {
-          "Discord.Net.Core": "2.3.0",
-          "Discord.Net.Rest": "2.3.0"
+          "Discord.Net.Core": "2.3.1",
+          "Discord.Net.Rest": "2.3.1"
         },
         "compile": {
           "lib/netstandard2.1/Discord.Net.Webhook.dll": {}
@@ -300,11 +63,11 @@
           "lib/netstandard2.1/Discord.Net.Webhook.dll": {}
         }
       },
-      "Discord.Net.WebSocket/2.3.0": {
+      "Discord.Net.WebSocket/2.3.1": {
         "type": "package",
         "dependencies": {
-          "Discord.Net.Core": "2.3.0",
-          "Discord.Net.Rest": "2.3.0"
+          "Discord.Net.Core": "2.3.1",
+          "Discord.Net.Rest": "2.3.1"
         },
         "compile": {
           "lib/netstandard2.1/Discord.Net.WebSocket.dll": {}
@@ -449,69 +212,6 @@
             "assetType": "native",
             "rid": "osx-x64"
           }
-        }
-      },
-      "SFML.Audio/2.5.0": {
-        "type": "package",
-        "dependencies": {
-          "CSFML": "2.5.0",
-          "SFML.Graphics": "2.5.0",
-          "SFML.System": "2.5.0",
-          "SFML.Window": "2.5.0"
-        },
-        "compile": {
-          "lib/netstandard2.0/SFML.Audio.dll": {}
-        },
-        "runtime": {
-          "lib/netstandard2.0/SFML.Audio.dll": {}
-        }
-      },
-      "SFML.Graphics/2.5.0": {
-        "type": "package",
-        "dependencies": {
-          "CSFML": "2.5.0",
-          "SFML.System": "2.5.0",
-          "SFML.Window": "2.5.0"
-        },
-        "compile": {
-          "lib/netstandard2.0/SFML.Graphics.dll": {}
-        },
-        "runtime": {
-          "lib/netstandard2.0/SFML.Graphics.dll": {}
-        }
-      },
-      "SFML.Net/2.5.0": {
-        "type": "package",
-        "dependencies": {
-          "SFML.Audio": "2.5.0",
-          "SFML.Graphics": "2.5.0",
-          "SFML.System": "2.5.0",
-          "SFML.Window": "2.5.0"
-        }
-      },
-      "SFML.System/2.5.0": {
-        "type": "package",
-        "dependencies": {
-          "CSFML": "2.5.0"
-        },
-        "compile": {
-          "lib/netstandard2.0/SFML.System.dll": {}
-        },
-        "runtime": {
-          "lib/netstandard2.0/SFML.System.dll": {}
-        }
-      },
-      "SFML.Window/2.5.0": {
-        "type": "package",
-        "dependencies": {
-          "CSFML": "2.5.0",
-          "SFML.System": "2.5.0"
-        },
-        "compile": {
-          "lib/netstandard2.0/SFML.Window.dll": {}
-        },
-        "runtime": {
-          "lib/netstandard2.0/SFML.Window.dll": {}
         }
       },
       "Svg/3.2.3": {
@@ -786,94 +486,25 @@
     }
   },
   "libraries": {
-    "CSFML/2.5.0": {
-      "sha512": "A3X+zyjAtvIQkpwCSS/F5fDOFRWeT+USIAK+DhGujNufF+qV1ty5cYGJihmmGeokX3yd89uZoNH8mcsmXCY/yw==",
+    "Discord.Net/2.3.1": {
+      "sha512": "/FDWz3GeTxrjNRaKnwTgCzmVnYbxoKoXBWHvUXy/lSthQi1mL3dQZedLSLEg2mhfH8x6bDtscSeGIyLCDXgPWw==",
       "type": "package",
-      "path": "csfml/2.5.0",
+      "path": "discord.net/2.3.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "csfml.2.5.0.nupkg.sha512",
-        "csfml.nuspec",
-        "runtimes/alpine-x64/native/libcsfml-audio.so",
-        "runtimes/alpine-x64/native/libcsfml-graphics.so",
-        "runtimes/alpine-x64/native/libcsfml-system.so",
-        "runtimes/alpine-x64/native/libcsfml-window.so",
-        "runtimes/alpine-x64/native/libsfml-audio.so",
-        "runtimes/alpine-x64/native/libsfml-audio.so.2.5",
-        "runtimes/alpine-x64/native/libsfml-audio.so.2.5.1",
-        "runtimes/alpine-x64/native/libsfml-graphics.so",
-        "runtimes/alpine-x64/native/libsfml-graphics.so.2.5",
-        "runtimes/alpine-x64/native/libsfml-graphics.so.2.5.1",
-        "runtimes/alpine-x64/native/libsfml-system.so",
-        "runtimes/alpine-x64/native/libsfml-system.so.2.5",
-        "runtimes/alpine-x64/native/libsfml-system.so.2.5.1",
-        "runtimes/alpine-x64/native/libsfml-window.so",
-        "runtimes/alpine-x64/native/libsfml-window.so.2.5",
-        "runtimes/alpine-x64/native/libsfml-window.so.2.5.1",
-        "runtimes/debian-x64/native/libcsfml-audio.so",
-        "runtimes/debian-x64/native/libcsfml-graphics.so",
-        "runtimes/debian-x64/native/libcsfml-system.so",
-        "runtimes/debian-x64/native/libcsfml-window.so",
-        "runtimes/debian-x64/native/libsfml-audio.so",
-        "runtimes/debian-x64/native/libsfml-audio.so.2.5",
-        "runtimes/debian-x64/native/libsfml-audio.so.2.5.1",
-        "runtimes/debian-x64/native/libsfml-graphics.so",
-        "runtimes/debian-x64/native/libsfml-graphics.so.2.5",
-        "runtimes/debian-x64/native/libsfml-graphics.so.2.5.1",
-        "runtimes/debian-x64/native/libsfml-system.so",
-        "runtimes/debian-x64/native/libsfml-system.so.2.5",
-        "runtimes/debian-x64/native/libsfml-system.so.2.5.1",
-        "runtimes/debian-x64/native/libsfml-window.so",
-        "runtimes/debian-x64/native/libsfml-window.so.2.5",
-        "runtimes/debian-x64/native/libsfml-window.so.2.5.1",
-        "runtimes/fedora-x64/native/libcsfml-audio.so",
-        "runtimes/fedora-x64/native/libcsfml-graphics.so",
-        "runtimes/fedora-x64/native/libcsfml-system.so",
-        "runtimes/fedora-x64/native/libcsfml-window.so",
-        "runtimes/fedora-x64/native/libsfml-audio.so",
-        "runtimes/fedora-x64/native/libsfml-audio.so.2.5",
-        "runtimes/fedora-x64/native/libsfml-audio.so.2.5.1",
-        "runtimes/fedora-x64/native/libsfml-graphics.so",
-        "runtimes/fedora-x64/native/libsfml-graphics.so.2.5",
-        "runtimes/fedora-x64/native/libsfml-graphics.so.2.5.1",
-        "runtimes/fedora-x64/native/libsfml-system.so",
-        "runtimes/fedora-x64/native/libsfml-system.so.2.5",
-        "runtimes/fedora-x64/native/libsfml-system.so.2.5.1",
-        "runtimes/fedora-x64/native/libsfml-window.so",
-        "runtimes/fedora-x64/native/libsfml-window.so.2.5",
-        "runtimes/fedora-x64/native/libsfml-window.so.2.5.1",
-        "runtimes/win-x64/native/csfml-Audio.dll",
-        "runtimes/win-x64/native/csfml-Graphics.dll",
-        "runtimes/win-x64/native/csfml-System.dll",
-        "runtimes/win-x64/native/csfml-Window.dll",
-        "runtimes/win-x64/native/openal32.dll",
-        "runtimes/win-x86/native/csfml-Audio.dll",
-        "runtimes/win-x86/native/csfml-Graphics.dll",
-        "runtimes/win-x86/native/csfml-System.dll",
-        "runtimes/win-x86/native/csfml-Window.dll",
-        "runtimes/win-x86/native/openal32.dll"
-      ]
-    },
-    "Discord.Net/2.3.0": {
-      "sha512": "YILjBwqYdvich6v1rfO/OhdBrdhPQB/AKEohYISdOJ+LiwfMPCafAo3YN/VutmeAGpvmrdv1fP/D0T3rHo2JrQ==",
-      "type": "package",
-      "path": "discord.net/2.3.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "discord.net.2.3.0.nupkg.sha512",
+        "discord.net.2.3.1.nupkg.sha512",
         "discord.net.nuspec"
       ]
     },
-    "Discord.Net.Commands/2.3.0": {
-      "sha512": "D7/kpseW53Hmni0/Vr22VElIoitFFUa0XDaIiU+HwijObBf6+rfgquWNYF9hePV+xVyY0+eQ8FOtRmBMG7Cy4A==",
+    "Discord.Net.Commands/2.3.1": {
+      "sha512": "m7LXE4d+veYl9sR81Rpy0hwMaYxa2gAeh5shzCXr69VhcAjLVUK4UHf1tAOQtEhySrvqjhld00qtFALPJ0mlgA==",
       "type": "package",
-      "path": "discord.net.commands/2.3.0",
+      "path": "discord.net.commands/2.3.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "discord.net.commands.2.3.0.nupkg.sha512",
+        "discord.net.commands.2.3.1.nupkg.sha512",
         "discord.net.commands.nuspec",
         "lib/net461/Discord.Net.Commands.dll",
         "lib/net461/Discord.Net.Commands.xml",
@@ -883,14 +514,14 @@
         "lib/netstandard2.1/Discord.Net.Commands.xml"
       ]
     },
-    "Discord.Net.Core/2.3.0": {
-      "sha512": "W5mmQ7fzlQMPmKW/sJx9CrBjdSnC/V2Ao/OukpEr4L42NgyYJUjjs5wRoxKoOLU/b6hj3Q8g0FJ5IYrmt6KSnQ==",
+    "Discord.Net.Core/2.3.1": {
+      "sha512": "/6wOZ8HVunSA1DHWGv3XxBZDxdCpF1zjyfDIKtXoTtP3Ot7d4jcf6RksqRlw1vLVmchBd56GR/UoDG6/0mbeAQ==",
       "type": "package",
-      "path": "discord.net.core/2.3.0",
+      "path": "discord.net.core/2.3.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "discord.net.core.2.3.0.nupkg.sha512",
+        "discord.net.core.2.3.1.nupkg.sha512",
         "discord.net.core.nuspec",
         "lib/net461/Discord.Net.Core.dll",
         "lib/net461/Discord.Net.Core.xml",
@@ -900,14 +531,14 @@
         "lib/netstandard2.1/Discord.Net.Core.xml"
       ]
     },
-    "Discord.Net.Rest/2.3.0": {
-      "sha512": "5m2nV4A9QIBtRsc7yIu9rQpc4Q7GpL6AaZ+xeAFdPx9dkUhikHIVZ0l1qqmn+pFSAUZ9e9fTsKzMfr7Loqz4aQ==",
+    "Discord.Net.Rest/2.3.1": {
+      "sha512": "t1aczyRbLpvKGQGOnFskcCteg0CwxefSuUJAuVkRZyHPDTRvk60IdJYh6cyYtKcGwJuCynNIIKrlSVNwDcY9Qw==",
       "type": "package",
-      "path": "discord.net.rest/2.3.0",
+      "path": "discord.net.rest/2.3.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "discord.net.rest.2.3.0.nupkg.sha512",
+        "discord.net.rest.2.3.1.nupkg.sha512",
         "discord.net.rest.nuspec",
         "lib/net461/Discord.Net.Rest.dll",
         "lib/net461/Discord.Net.Rest.xml",
@@ -917,14 +548,14 @@
         "lib/netstandard2.1/Discord.Net.Rest.xml"
       ]
     },
-    "Discord.Net.Webhook/2.3.0": {
-      "sha512": "6DSRbYVLPDUbD7wBmMesaUbHkYud+WKxt8OeWTkifR6iR1DzSZX5i1GubmWaPsVjGYr1TA8usTepshla7Fiu9w==",
+    "Discord.Net.Webhook/2.3.1": {
+      "sha512": "I/sPU3Ag1XdognQmdc+FmhwSdyv7YsMVhaamJ0h0QzlhwgX+8542esKxhuDSwVTloWkbO4sFlEOYZjyJVoDWjg==",
       "type": "package",
-      "path": "discord.net.webhook/2.3.0",
+      "path": "discord.net.webhook/2.3.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "discord.net.webhook.2.3.0.nupkg.sha512",
+        "discord.net.webhook.2.3.1.nupkg.sha512",
         "discord.net.webhook.nuspec",
         "lib/netstandard2.0/Discord.Net.Webhook.dll",
         "lib/netstandard2.0/Discord.Net.Webhook.xml",
@@ -932,14 +563,14 @@
         "lib/netstandard2.1/Discord.Net.Webhook.xml"
       ]
     },
-    "Discord.Net.WebSocket/2.3.0": {
-      "sha512": "mktzQvXy9oKF3j7F8/f3v9xcUmYxXb8oMBGD4czZRn0P/BOM4cz0OdmCHr5wVyMb0W7q0VxmnfKYNsN0kGzFNA==",
+    "Discord.Net.WebSocket/2.3.1": {
+      "sha512": "yBw2gTinqvuSIvI8YxlM05W4Cx/lW5yA8PaUCs3Jqpv+Xm9DqrjgRgvM39aqCI3Cip3Z1kyMgnwvJZBsi/+GBQ==",
       "type": "package",
-      "path": "discord.net.websocket/2.3.0",
+      "path": "discord.net.websocket/2.3.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "discord.net.websocket.2.3.0.nupkg.sha512",
+        "discord.net.websocket.2.3.1.nupkg.sha512",
         "discord.net.websocket.nuspec",
         "lib/net461/Discord.Net.WebSocket.dll",
         "lib/net461/Discord.Net.WebSocket.xml",
@@ -1122,69 +753,6 @@
         "runtimes/osx-x64/native/libpixman-1.0.dylib",
         "runtimes/osx-x64/native/libpng16.16.dylib",
         "runtimes/osx-x64/native/libtiff.5.dylib"
-      ]
-    },
-    "SFML.Audio/2.5.0": {
-      "sha512": "M5EIksRefT3nsLT32oEpESStsnlixR+YjKS6fUMl+vDQ3gdMaV4jc84pg3kbfM9w4RYKAyH6OWV4bzDU5FNZyA==",
-      "type": "package",
-      "path": "sfml.audio/2.5.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "lib/netstandard2.0/SFML.Audio.dll",
-        "lib/netstandard2.0/SFML.Audio.xml",
-        "sfml.audio.2.5.0.nupkg.sha512",
-        "sfml.audio.nuspec"
-      ]
-    },
-    "SFML.Graphics/2.5.0": {
-      "sha512": "77Nuz0qmK2q2+901J0439LC6qFNw5VT0qjqqA7zSaM0WrV7K/UozBjfO/ROCY0iW+w7IEqPYiXBK4A7xO5nvsQ==",
-      "type": "package",
-      "path": "sfml.graphics/2.5.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "lib/netstandard2.0/SFML.Graphics.dll",
-        "lib/netstandard2.0/SFML.Graphics.xml",
-        "sfml.graphics.2.5.0.nupkg.sha512",
-        "sfml.graphics.nuspec"
-      ]
-    },
-    "SFML.Net/2.5.0": {
-      "sha512": "XVxrtNX6FJOpI7OzsTlKUKI92C8CKVe1rYtNbyj9fdIdZgidwpK/kExhxH5XYxpJ5C1/EUsGdOrGx4BCfsQvbw==",
-      "type": "package",
-      "path": "sfml.net/2.5.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "sfml.net.2.5.0.nupkg.sha512",
-        "sfml.net.nuspec"
-      ]
-    },
-    "SFML.System/2.5.0": {
-      "sha512": "vdlmLjPRhOD25WX/L2wP3F9dg/3mTj6hhyHkqtleC0fA5WNr71F0ijLbvs32BBpow5OoyU7BryKMjy1WNmU0GQ==",
-      "type": "package",
-      "path": "sfml.system/2.5.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "lib/netstandard2.0/SFML.System.dll",
-        "lib/netstandard2.0/SFML.System.xml",
-        "sfml.system.2.5.0.nupkg.sha512",
-        "sfml.system.nuspec"
-      ]
-    },
-    "SFML.Window/2.5.0": {
-      "sha512": "KuQvC0TrsxzhFJw9hDvMAzKD8/12jvXjP7sC3UO5MSM0sy5sfYNTqQktnQ3ELAV+rP1cqRKLsvosBfMfl1HkRw==",
-      "type": "package",
-      "path": "sfml.window/2.5.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "lib/netstandard2.0/SFML.Window.dll",
-        "lib/netstandard2.0/SFML.Window.xml",
-        "sfml.window.2.5.0.nupkg.sha512",
-        "sfml.window.nuspec"
       ]
     },
     "Svg/3.2.3": {
@@ -2383,9 +1951,8 @@
   },
   "projectFileDependencyGroups": {
     "net5.0": [
-      "Discord.Net >= 2.3.0",
+      "Discord.Net >= 2.3.1",
       "Microsoft.Extensions.DependencyInjection >= 5.0.1",
-      "SFML.Net >= 2.5.0",
       "Svg >= 3.2.3"
     ]
   },
@@ -2438,15 +2005,11 @@
         "dependencies": {
           "Discord.Net": {
             "target": "Package",
-            "version": "[2.3.0, )"
+            "version": "[2.3.1, )"
           },
           "Microsoft.Extensions.DependencyInjection": {
             "target": "Package",
             "version": "[5.0.1, )"
-          },
-          "SFML.Net": {
-            "target": "Package",
-            "version": "[2.5.0, )"
           },
           "Svg": {
             "target": "Package",
@@ -2468,7 +2031,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.200\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.201\\RuntimeIdentifierGraph.json"
       }
     }
   }

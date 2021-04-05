@@ -4,11 +4,9 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Svg;
 using System.Drawing;
-using System.Collections.Generic;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -19,7 +17,7 @@ namespace HLTVDiscordBridge.Modules
         {
             if(!Directory.Exists($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}"))
             {
-                EmbedBuilder builder = new EmbedBuilder();
+                EmbedBuilder builder = new();
                 builder.WithTitle("Your request is loading!")
                     .WithDescription("This may take up to 30 seconds")
                     .WithCurrentTimestamp();
@@ -51,8 +49,8 @@ namespace HLTVDiscordBridge.Modules
             if(!Directory.Exists($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}"))
             {
                 //Uri uri = new Uri($"https://hltv-api-steel.vercel.app/api/team/{name}");
-                Uri uri = new Uri($"http://revilum.com:3000/api/team/{name}");
-                HttpClient http = new HttpClient();
+                Uri uri = new($"http://revilum.com:3000/api/team/{name}");
+                HttpClient http = new();
                 HttpResponseMessage res = await http.GetAsync(uri);
                 JObject fullTeamJObject;
                 try { fullTeamJObject = JObject.Parse(await res.Content.ReadAsStringAsync()); }
@@ -69,7 +67,7 @@ namespace HLTVDiscordBridge.Modules
                 File.WriteAllText($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/teamstats.json", teamStats.ToString());
 
                 //Thumbnail
-                HttpClient client = new HttpClient();
+                HttpClient client = new();
                 HttpResponseMessage httpRes = await client.GetAsync(new Uri(fullTeamJObject.GetValue("logo").ToString()));
                 string thumbPath;
                 try { thumbPath = ConvertSVGtoPNG(await httpRes.Content.ReadAsByteArrayAsync(), fullTeamJObject.GetValue("name").ToString()); }
@@ -91,7 +89,7 @@ namespace HLTVDiscordBridge.Modules
         private static async Task<(Embed, string)> GetTeamCard(string name)
         {
             var res = await GetTeamStats(name);
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             JObject teamJObj = res.Item2;
             JObject teamStatsJObj = res.Item1;
             if (teamJObj == null && teamStatsJObj == null && res.Item3) 
@@ -147,21 +145,19 @@ namespace HLTVDiscordBridge.Modules
                 $"{statsJObject.GetValue("totalKills")}/{statsJObject.GetValue("totalDeaths")} (K/D: {statsJObject.GetValue("kdRatio")})", true);
             builder.AddField("\u200b", "\u200b", true);
 
-            //lineup
-            JArray lineUp = JArray.Parse(teamStatsJObj.GetValue("currentLineup").ToString());
+            //teammember
+            JArray lineUp = JArray.Parse(teamJObj.GetValue("players").ToString());
             string lineUpString = "";
             if(lineUp.ToString() == "[]") { lineUpString = "n.A"; }
             else 
             {
-                foreach (JToken jTok in lineUp)
-                {
-                    JObject pl = JObject.Parse(jTok.ToString());
+                foreach (JObject pl in lineUp)
+                {                    
                     string plLink = $"https://www.hltv.org/player/{pl.GetValue("id")}/{pl.GetValue("name").ToString().Replace(' ', '-')}";
-                    lineUpString += $"[{pl.GetValue("name")}]({plLink})\n";
+                    lineUpString += $"[{pl.GetValue("name")}]({plLink}) ({pl.GetValue("type")})\n";
                 }
-            }
-            
-            builder.AddField("lineup:", lineUpString, true);
+            }            
+            builder.AddField("member:", lineUpString, true);
 
             //mapstats
             JObject mapStats = JObject.Parse(teamStatsJObj.GetValue("mapStats").ToString());
@@ -190,7 +186,7 @@ namespace HLTVDiscordBridge.Modules
                     else { break; }
                     h++;
                 }
-                mapsStatsString = $"**{GetMapNameByAcronym(map0Name)}** ({map0.GetValue("winRate")}% winrate):\n{map0.GetValue("wins")} wins, {map0.GetValue("losses")} losses\n\n" +
+                mapsStatsString = $"\n**{GetMapNameByAcronym(map0Name)}** ({map0.GetValue("winRate")}% winrate):\n{map0.GetValue("wins")} wins, {map0.GetValue("losses")} losses\n\n" +
                     $"**{GetMapNameByAcronym(map1Name)}** ({map1.GetValue("winRate")}% winrate):\n{map1.GetValue("wins")} wins, {map1.GetValue("losses")} losses";
             }            
             

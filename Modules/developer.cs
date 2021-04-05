@@ -8,7 +8,7 @@ namespace HLTVDiscordBridge.Modules
 {
     public class Developer : ModuleBase<SocketCommandContext>
     {
-        Config _cfg = new Config();
+        Config _cfg = new();
 
         [Command("servercount")]
         public async Task ServerCount()
@@ -16,7 +16,7 @@ namespace HLTVDiscordBridge.Modules
             if(Context.User.Id == 248110264610848778 || Context.User.Id == 224037892387766272 || Context.User.Id == 255000770707980289)
             {
                 int totalUser = 0;
-                int guildUsers = 0;
+                int guildUsers;
                 string servernames = "";
                 foreach (SocketGuild guild in Context.Client.Guilds)
                 {
@@ -39,7 +39,7 @@ namespace HLTVDiscordBridge.Modules
             if (Context.User.Id == 255000770707980289 || Context.User.Id == 224037892387766272 || Context.User.Id == 248110264610848778) 
             {
                 _cfg = new Config();
-                EmbedBuilder builder = new EmbedBuilder();
+                EmbedBuilder builder = new();
                 builder.WithTitle($"UPDATE {version}")
                     .WithDescription(message + "\nIf you are experiencing any issues feel free to write us an [issue](https://github.com/Zsunamy/HLTVDiscordBridge/issues)\n" +
                     "Also feel free to [donate](https://www.patreon.com/zsunamy) us a cup of coffee")

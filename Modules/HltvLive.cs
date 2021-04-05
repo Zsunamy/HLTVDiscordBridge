@@ -17,7 +17,7 @@ namespace HLTVDiscordBridge.Modules
         private static async Task<List<JObject>> GetLiveMatches()
         {            
             JArray jArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
-            List<JObject> matches = new List<JObject>();
+            List<JObject> matches = new();
             foreach (JToken jTok in jArr)
             {
                 JObject jObj = JObject.Parse(jTok.ToString());
@@ -28,7 +28,7 @@ namespace HLTVDiscordBridge.Modules
                     {
                         FileStream fs = File.Create($"./cache/livematches/{matchId}.json");
                         fs.Close();
-                        JObject newLiveMatch = await Hltv.GetMatchByMatchId(matchId);
+                        JObject newLiveMatch = await HltvResults.GetMatchByMatchId(matchId);
                         File.WriteAllText($"./cache/livematches/{matchId}.json", newLiveMatch.ToString());
                         matches.Add(newLiveMatch);
                     } else
@@ -44,13 +44,13 @@ namespace HLTVDiscordBridge.Modules
         private static async Task<(Embed, ushort)> GetLiveMatchesEmbed()
         {
             List<JObject> matches = await GetLiveMatches();
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             builder.WithTitle("LIVE MATCHES")
                 .WithColor(Color.Blue)
                 .WithCurrentTimestamp();
             foreach(JObject jObj in matches)
             {
-                Emoji emote = new Emoji((matches.IndexOf(jObj) + 1).ToString() + "️⃣");
+                Emoji emote = new((matches.IndexOf(jObj) + 1).ToString() + "️⃣");
                 JObject team1 = JObject.Parse(jObj.GetValue("team1").ToString());
                 JObject team2 = JObject.Parse(jObj.GetValue("team2").ToString());
                 JObject eventObj = JObject.Parse(jObj.GetValue("event").ToString());
@@ -99,7 +99,7 @@ namespace HLTVDiscordBridge.Modules
             RestUserMessage msg = (RestUserMessage)await ReplyAsync(embed: res.Item1);
             for(int i = 1; i <= res.Item2; i++)
             {
-                Emoji emote = new Emoji(i.ToString() + "️⃣");
+                Emoji emote = new(i.ToString() + "️⃣");
 #if DEBUG
                 await msg.AddReactionAsync(emote);
 #endif

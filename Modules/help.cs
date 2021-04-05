@@ -10,11 +10,11 @@ namespace HLTVDiscordBridge.Modules
         [Command("help")]
         public async Task HelpCommand (string arg = "")
         {
-            Config _cfg = new Config();
+            Config _cfg = new();
             string prefix;
             if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) { prefix = "!"; }
             else { prefix = _cfg.GetServerConfig(Context.Guild).Prefix; }
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             builder.WithColor(Color.DarkMagenta)
                 .WithCurrentTimestamp();
             switch(arg.ToLower())

@@ -5,9 +5,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
@@ -16,153 +14,210 @@ namespace HLTVDiscordBridge.Modules
     {        
         public static async Task AktEvents(List<SocketTextChannel> channels) 
         {
-            await UpdateUpcomingEvents();
-            var res = await GetEventEmbed();
-            if(res.Item1 != null)
+            List<ushort> startedEvents = await GetStartedEvents();            
+            if (startedEvents != null) 
             {
-                /*
-                foreach (SocketTextChannel channel in channels)
+                foreach (ushort eventId in startedEvents)
                 {
-                    try { await channel.SendMessageAsync(embed: res.Item1); }
-                    catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }   
-                }*/
-            }            
+                    JObject eventStats = await GetEventStats(eventId);
+                    foreach (SocketTextChannel channel in channels)
+                    {
+                        try { await channel.SendMessageAsync(embed: GetEventStartedEmbed(eventStats)); }
+                        catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                    }
+                }
+            }   
+            
+            List<ushort> endedEventIds = await GetEndedEvent();  
+            if(endedEventIds != null)
+            {
+                foreach(ushort eventId in endedEventIds)
+                {
+                    JObject eventStats = await GetEventStats(eventId);
+                    foreach (SocketTextChannel channel in channels)
+                    {
+                        try { await channel.SendMessageAsync(embed: GetEventEndedEmbed(eventStats)); }
+                        catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                    }
+                }
+            }
         }
 
+        #region UpdateCacheFunctions
         /// <summary>
-        /// Gets new upcoming events and writes them into ./cache/events/upcoming.json
+        /// Updates ongoing and upcoming events if something has changed
         /// </summary>
-        /// <returns>new upcoming event as JObject</returns>
-        private static async Task<(JObject, bool)> GetOngoingEvents() 
+        /// <returns>All ongoing and upcoming events as JArray</returns>
+        private static async Task<JArray> UpdateEvents()
         {
-            var URI = new Uri($"https://hltv-api-steel.vercel.app/api/ongoingevents");
-            HttpClient http = new HttpClient();
-            http.BaseAddress = URI;
+            //var URI = new Uri($"https://hltv-api-steel.vercel.app/api/events");
+            var URI = new Uri($"http://revilum.com:3000/api/events");
+            HttpClient http = new();
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            if(!File.Exists("./cache/events/ongoing.json"))
+            JArray events = JArray.Parse(await httpResponse.Content.ReadAsStringAsync());
+            Directory.CreateDirectory("./cache/events");
+            if (!File.Exists("./cache/events/events.json"))
             {
-                File.WriteAllText("./cache/events/ongoing.json", JArray.Parse(await httpResponse.Content.ReadAsStringAsync()).ToString());
-                return (null, false);
-            } else
+                File.WriteAllText("./cache/events/events.json", events.ToString());
+                return events;
+            }
+            else
             {
-                JArray oldOngoing = JArray.Parse(File.ReadAllText("./cache/events/ongoing.json"));
-                JArray OngoingEvents = JArray.Parse(await httpResponse.Content.ReadAsStringAsync());
-
-                //get started events
-                List<JToken> jTokens = new List<JToken>(OngoingEvents);
-                foreach(JToken jTok in oldOngoing)
+                JArray oldEvents = JArray.Parse(File.ReadAllText("./cache/events/events.json"));
+                if(oldEvents != events)
                 {
-                    foreach(JToken kTok in OngoingEvents)
-                    {
-                        if(jTok.ToString() == kTok.ToString()) { jTokens.Remove(kTok); break; }
-                    }
+                    File.WriteAllText("./cache/events/events.json", events.ToString());
                 }
-                if (jTokens.Count > 0)
-                {
-                    File.WriteAllText("./cache/events/ongoing.json", OngoingEvents.ToString());                    
-                    if (DateTime.Now.Hour == 0) { File.WriteAllText("./cache/log/event/started/" + DateTime.Now.ToString() + ".txt", JObject.Parse(jTokens[0].ToString()).ToString()); 
-                        return (JObject.Parse(jTokens[0].ToString()), true); }
-                }
-
-                //get ended events
-                jTokens = new List<JToken>(oldOngoing);
-                foreach (JToken jTok in OngoingEvents)
-                {
-                    foreach (JToken kTok in oldOngoing)
-                    {
-                        if (jTok.ToString() == kTok.ToString()) { jTokens.Remove(kTok); break; }
-                    }
-                }
-                if(jTokens.Count > 0) 
-                {
-                    File.WriteAllText("./cache/events/ongoing.json", OngoingEvents.ToString());
-                    File.WriteAllText("./cache/log/event/ended/" + DateTime.Now.ToString() + ".txt", JObject.Parse(jTokens[0].ToString()).ToString());
-                    return (JObject.Parse(jTokens[0].ToString()), false);
-                }
-
-                return (null, false);
+                return events;
             }
         }
-
-        private static async Task<(Embed, bool)> GetEventEmbed()
+        private static async Task<JArray> UpdatePastEvents() 
         {
-            var req = await GetOngoingEvents();
-            //Debug Reasons
-            return (null, true);
-#pragma warning disable CS0162 // Unreachable code detected
-            JObject eventObj = req.Item1;
-#pragma warning restore CS0162 // Unreachable code detected
-            EmbedBuilder builder = new EmbedBuilder();
-            if (eventObj == null) { return (null, false); }
-            JObject eventStats = await GetEventStats(ushort.Parse(eventObj.GetValue("id").ToString()));
-            if (eventStats == null) { return (null, false); }
-
-            JObject location = JObject.Parse(eventStats.GetValue("location").ToString());
-            string eventLink = $"https://www.hltv.org/events/{eventObj.GetValue("id")}/{eventStats.GetValue("name").ToString().Replace(' ', '-')}";
-            if (req.Item2 == true)
+            //var URI = new Uri($"https://hltv-api-steel.vercel.app/api/pastevents");
+            var URI = new Uri($"http://revilum.com:3000/api/pastevents");
+            HttpClient http = new();
+            HttpResponseMessage httpResponse = await http.GetAsync(URI);
+            JArray events = JArray.Parse(await httpResponse.Content.ReadAsStringAsync());
+            Directory.CreateDirectory("./cache/events");
+            if (!File.Exists("./cache/events/pastevents.json"))
             {
-                builder.WithTitle($"{eventStats.GetValue("name")} started!");
+                File.WriteAllText("./cache/events/pastevents.json", events.ToString());
+                return events;
             }
             else
             {
-                builder.WithTitle($"{eventStats.GetValue("name")} just ended!");
-            }
-
-            builder.AddField("starting:", UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).ToString().Substring(0, 16) + " UTC", true)
-                .AddField("ending:", UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).ToString().Substring(0, 16) + " UTC", true)
-                .AddField("\u200b", "\u200b", true)
-                .AddField("prize pool:", eventStats.GetValue("prizePool"), true)
-                .AddField("location:", location.GetValue("name"), true)
-                .AddField("\u200b", "\u200b", true);
-            if (req.Item2 == true)
-            {
-                JArray teams = JArray.Parse(eventStats.GetValue("teams").ToString());
-                string teamsString = "";
-                for (int i = 0; i < 5; i++)
+                JArray oldEvents = JArray.Parse(File.ReadAllText("./cache/events/pastevents.json"));
+                if (oldEvents != events)
                 {
-                    try
-                    {
-                        string teamLink = $"https://www.hltv.org/team/{JObject.Parse(teams[i].ToString()).GetValue("id")}/{JObject.Parse(teams[i].ToString()).GetValue("name").ToString().Replace(' ', '-')}";
-                        teamsString += $"[{JObject.Parse(teams[i].ToString()).GetValue("name")}]({teamLink})\n";
-                    }
-                    catch (IndexOutOfRangeException) { break; }
-                    if (i == 4) { teamsString += $"and {teams.Count - 5} more"; }
+                    File.WriteAllText("./cache/events/pastevents.json", events.ToString());
                 }
-                builder.AddField("teams:", teamsString);
+                return events;
             }
-            else
-            {
-                JArray prizeDistribution = JArray.Parse(eventStats.GetValue("prizeDistribution").ToString());
-                if (prizeDistribution.ToString() != "[]")
-                {
-                    string prizeString = "";
-                    for (int i = 0; i < 4; i++)
-                    {
-                        try
-                        {
-                            string teamLink = $"https://www.hltv.org/team/{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("id")}/" +
-                                $"{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("name").ToString().Replace(' ', '-')}";
-                            prizeString += $"{JObject.Parse(prizeDistribution[i].ToString()).GetValue("place")} " +
-                              $"[{JObject.Parse(JObject.Parse(prizeDistribution[i].ToString()).GetValue("team").ToString()).GetValue("name")}]({teamLink}) " +
-                              $"({JObject.Parse(prizeDistribution[i].ToString()).GetValue("prize")})" + "\n";
-                        }
-                        catch (IndexOutOfRangeException) { prizeString = "\u200b"; break; }
-                        catch (NullReferenceException) { prizeString = "\u200b"; break; }
-                        if (i == 4) { prizeString += $"and {prizeDistribution.Count - 4} more"; }
-                    }
-                    builder.AddField("results:", prizeString);
-                }
-            }
-
-            builder.WithColor(Color.Green)
-                .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", eventLink)
-                .WithCurrentTimestamp();
-            bool featured = bool.Parse(eventObj.GetValue("featured").ToString());
-            if (featured) { builder.WithFooter("This is a featured event"); }
-            else { builder.WithFooter("This event is not featured"); }
-
-            return (builder.Build(), featured);
         }
+
+        #endregion
+
+        #region started events
+        /// <summary>
+        /// Gets new live events
+        /// </summary>
+        /// <returns>List of eventIds</returns>
+        private static async Task<List<ushort>> GetStartedEvents() 
+        {
+            JArray oldEvents = JArray.Parse(File.ReadAllText("./cache/events/events.json"));
+            JArray newEvents = await UpdateEvents();
+            if (oldEvents.ToString() == newEvents.ToString()) { return null; }
+            List<ushort> eventIds = new();
+
+            foreach(JObject jObj in newEvents)
+            {
+                if (jObj.TryGetValue("location", out JToken _)) { break; }
+                bool eventStarted = true;
+                foreach (JObject obj in oldEvents)
+                {
+                    if (obj.TryGetValue("location", out JToken _)) { break; }
+                    if(jObj.ToString() == obj.ToString()) { eventStarted = false; break; }
+                }
+                if(eventStarted) { eventIds.Add(ushort.Parse(jObj.GetValue("id").ToString())); }
+            }
+            return eventIds;
+        }
+
+        private static Embed GetEventStartedEmbed(JObject eventStats)
+        {
+            EmbedBuilder builder = new();
+            if (eventStats == null) { return null; }
+            builder.WithTitle($"{eventStats.GetValue("name")} just started!");
+            builder.AddField("startdate:", UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).ToShortDateString(), true);
+            builder.AddField("enddate:", UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).ToShortDateString(), true);
+            builder.AddField("\u200b", "\u200b", true);
+            builder.AddField("prize pool:", eventStats.GetValue("prizePool"), true);
+            JObject location = JObject.Parse(eventStats.GetValue("location").ToString());
+            builder.AddField("location:", location.GetValue("name"), true);
+            builder.AddField("\u200b", "\u200b", true);
+            JArray team = JArray.Parse(eventStats.GetValue("teams").ToString());
+            string teamString = "";
+            foreach(JObject jObj in team)
+            {
+                if(team.IndexOf(jObj) > 4) { teamString += $"and {team.Count - 5} more"; break; }
+                string teamLink = $"https://www.hltv.org/team/{jObj.GetValue("id")}/{jObj.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+                teamString += $"[{jObj.GetValue("name")}]({teamLink})\n";
+            }
+            builder.AddField("teams:", teamString);
+            builder.WithColor(Color.Gold);
+            builder.WithThumbnailUrl(eventStats.GetValue("logo").ToString());
+            string eventLink = $"https://www.hltv.org/events/{eventStats.GetValue("id")}/{eventStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+            builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", eventLink);
+            builder.WithCurrentTimestamp();
+            return builder.Build();
+        }
+        #endregion
+
+        #region ended events
+        private static async Task<List<ushort>> GetEndedEvent()
+        {
+            JArray oldEvents = JArray.Parse(File.ReadAllText("./cache/events/pastevents.json"));
+            JArray newEvents = await UpdatePastEvents();
+            if (oldEvents.ToString() == newEvents.ToString()) { return null; }
+            List<ushort> eventIds = new();
+            foreach(JObject jObj in newEvents)
+            {
+                bool eventEnded = true;
+                foreach(JObject obj in oldEvents)
+                {
+                    if(jObj.ToString() == obj.ToString()) { eventEnded = false; break; }
+                }
+                if (eventEnded) { eventIds.Add(ushort.Parse(jObj.GetValue("id").ToString())); }
+            }
+            return eventIds;
+        }
+        private static Embed GetEventEndedEmbed(JObject eventStats)
+        {
+            EmbedBuilder builder = new();
+            if (eventStats == null) { return null; }
+            builder.WithTitle($"{eventStats.GetValue("name")} just ended!");
+            builder.AddField("startdate:", UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).ToShortDateString(), true);
+            builder.AddField("enddate:", UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).ToShortDateString(), true);
+            builder.AddField("\u200b", "\u200b", true);
+            builder.AddField("prize pool:", eventStats.GetValue("prizePool"), true);
+            JObject location = JObject.Parse(eventStats.GetValue("location").ToString());
+            builder.AddField("location:", location.GetValue("name"), true);
+            builder.AddField("\u200b", "\u200b", true);
+            JArray prizeDistribution = JArray.Parse(eventStats.GetValue("prizeDistribution").ToString());
+            string prizeDistributionString = "";
+            foreach (JObject jObj in prizeDistribution)
+            {
+                if (prizeDistribution.IndexOf(jObj) > 4) { prizeDistributionString += $"and {prizeDistribution.Count - 5} more"; break; }
+                JObject team = JObject.Parse(jObj.GetValue("team").ToString());
+                string teamLink = $"https://www.hltv.org/team/{team.GetValue("id")}/{team.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+                if(jObj.TryGetValue("prize", out JToken _) && jObj.TryGetValue("qualifiesFor", out JToken qualifi))
+                {
+                    JObject qual = JObject.Parse(qualifi.ToString());
+                    string qualLink = $"https://www.hltv.org/events/{qual.GetValue("id")}/{qual.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+                    prizeDistributionString += $"{jObj.GetValue("place")} [{team.GetValue("name")}]({teamLink}) wins: {jObj.GetValue("prize")} & qualifies for: [{qual.GetValue("name")}]({qualLink})\n";
+                }
+                else if(jObj.TryGetValue("prize", out JToken _)) {
+                    prizeDistributionString += $"{jObj.GetValue("place")} [{team.GetValue("name")}]({teamLink}) wins: {jObj.GetValue("prize")}\n";
+                } else if(jObj.TryGetValue("qualifiesFor", out JToken quali)) {
+                    JObject qual = JObject.Parse(quali.ToString());
+                    string qualLink = $"https://www.hltv.org/events/{qual.GetValue("id")}/{qual.GetValue("name").ToString().ToLower().Replace(' ','-')}";
+                    prizeDistributionString += $"{jObj.GetValue("place")} [{team.GetValue("name")}]({teamLink}) qualifies for: [{qual.GetValue("name")}]({qualLink})\n";
+                }
+                else {
+                    prizeDistributionString += $"{jObj.GetValue("place")} [{team.GetValue("name")}]({teamLink})\n";
+                }
+                
+            }
+            builder.AddField("results:", prizeDistributionString);
+            builder.WithColor(Color.Gold);
+            builder.WithThumbnailUrl(eventStats.GetValue("logo").ToString());
+            string eventLink = $"https://www.hltv.org/events/{eventStats.GetValue("id")}/{eventStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+            builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", eventLink);
+            builder.WithCurrentTimestamp();
+            return builder.Build();
+        }
+        #endregion
+
 
         /// <summary>
         /// Gets detailed eventstats by its eventID
@@ -171,11 +226,10 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>JObject with stats of the event</returns>
         private static async Task<JObject> GetEventStats(ushort eventId)
         {
-            var URI = new Uri($"https://hltv-api-steel.vercel.app/api/eventbyid/{eventId}");
-            HttpClient http = new HttpClient();
-            http.BaseAddress = URI;
+            //var URI = new Uri($"https://hltv-api-steel.vercel.app/api/eventbyid/{eventId}");
+            var URI = new Uri($"http://revilum.com:3000/api/eventbyid/{eventId}");
+            HttpClient http = new();
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
-
             string httpRes = await httpResponse.Content.ReadAsStringAsync();
             JObject jObj;
             try { jObj = JObject.Parse(httpRes); }
@@ -184,9 +238,9 @@ namespace HLTVDiscordBridge.Modules
         }
         private static async Task<JObject> GetEventStats(string eventName)
         {
-            var URI = new Uri($"https://hltv-api-steel.vercel.app/api/event/{eventName}");
-            HttpClient http = new HttpClient();
-            http.BaseAddress = URI;
+            //var URI = new Uri($"https://hltv-api-steel.vercel.app/api/event/{eventName}");
+            var URI = new Uri($"http://revilum.com:3000/api/event/{eventName}");
+            HttpClient http = new();
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
 
             string httpRes = await httpResponse.Content.ReadAsStringAsync();
@@ -195,50 +249,53 @@ namespace HLTVDiscordBridge.Modules
             catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
             return jObj;
         }
-        private static async Task UpdateUpcomingEvents()
+        private static async Task<JArray> GetLatestResultsOfEvent(ushort eventId)
         {
-            var URI = new Uri("https://hltv-api-steel.vercel.app/api/upcommingevents");
-            HttpClient http = new HttpClient();
-            http.BaseAddress = URI;
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-
-            string httpRes = await httpResponse.Content.ReadAsStringAsync();
+            HttpClient http = new();
+            //Uri uri = new($"https://hltv-api-steel.vercel.app/api/results/events/[{eventId}]");
+            Uri uri = new($"http://revilum.com:3000/api/results/events/[{eventId}]");
+            HttpResponseMessage httpResponse = await http.GetAsync(uri);
             JArray jArr;
-            try { jArr = JArray.Parse(httpRes); }
-            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return; }
-
-            Directory.CreateDirectory("./cache/events");
-            File.WriteAllText("./cache/events/upcoming.json", jArr.ToString());
+            try { jArr = JArray.Parse(await httpResponse.Content.ReadAsStringAsync()); }
+            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
+            return jArr;
         }
+
+        #region tools
         private static DateTime UnixTimeStampToDateTime(string unixTimeStamp)
         {
-            DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            DateTime dtDateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
             dtDateTime = dtDateTime.AddMilliseconds(double.Parse(unixTimeStamp)).ToUniversalTime();
             dtDateTime = dtDateTime.AddHours(1);
             return dtDateTime;
         }
+        #endregion
 
         #region COMMANDS
-        [Command("events")] 
+        [Command("events"), Alias("ongoingevents")] 
         public async Task GetAllOngoingEvents()
         {
-            EmbedBuilder builder = new EmbedBuilder();
-            JArray events = JArray.Parse(File.ReadAllText("./cache/events/ongoing.json"));
+            EmbedBuilder builder = new();
+            JArray events = JArray.Parse(File.ReadAllText("./cache/events/events.json"));
             string eventString = "";
-            foreach(JToken jTok in events)
+            List<JObject> ongoingEvents = new();
+            foreach(JObject jObj in events)
             {
-                JObject eventObj = JObject.Parse(jTok.ToString());
+                if(!jObj.TryGetValue("location", out _)) { ongoingEvents.Add(jObj); }
+            }
+            foreach(JObject eventObj in ongoingEvents)
+            {
                 string toAdd = $"[{eventObj.GetValue("name")}](https://www.hltv.org/events/{eventObj.GetValue("id")}/{eventObj.GetValue("name").ToString().Replace(' ', '-')})\n";
                 eventString += toAdd;
                 if(eventString.Length > 850)
                 {                   
                     eventString = eventString.Remove(eventString.Length - toAdd.Length);
-                    eventString += $"and {events.Count - events.IndexOf(jTok) - 1} more";
+                    eventString += $"and {ongoingEvents.Count - ongoingEvents.IndexOf(eventObj) - 1} more";
                     break;
                 }
             }
             builder.WithTitle("ONGOING EVENTS")
-                .WithColor(Color.Green)
+                .WithColor(Color.Gold)
                 .AddField("events:", eventString)
                 .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://www.hltv.org/events#tab-ALL")
                 .WithCurrentTimestamp()
@@ -249,24 +306,24 @@ namespace HLTVDiscordBridge.Modules
         [Command("upcomingevents")]
         public async Task GetAllUpcomingEvents()
         {
-            int i = 0;
-            EmbedBuilder builder = new EmbedBuilder();
-            JArray events = JArray.Parse(JObject.Parse(JArray.Parse(File.ReadAllText("./cache/events/upcoming.json"))[0].ToString()).GetValue("events").ToString());
-            JArray eventsMonth2 = JArray.Parse(JObject.Parse(JArray.Parse(File.ReadAllText("./cache/events/upcoming.json"))[1].ToString()).GetValue("events").ToString());
-            foreach (JToken jTok in eventsMonth2) { events.Add(jTok); }
-            string eventString = "";
-            foreach (JToken jTok in events)
+            JArray events = JArray.Parse(File.ReadAllText("./cache/events/events.json"));
+            List<JObject> upcomingEvents = new();
+            foreach(JObject jObj in events)
             {
-               if(i == 7) { eventString += $"and {events.Count - 6} more in the next 30 days"; break; }
-                JObject eventObj = JObject.Parse(jTok.ToString());
+                if(jObj.TryGetValue("location", out _)) { upcomingEvents.Add(jObj); }
+            }
+            string eventString = "";
+            EmbedBuilder builder = new();            
+            foreach (JObject eventObj in upcomingEvents)
+            {
+                if(eventString.Length > 850) { eventString += $"and {events.Count - 6} more"; break; }
+
                 DateTime date = UnixTimeStampToDateTime(eventObj.GetValue("dateStart").ToString());
-                if (date.AddDays(30).CompareTo(DateTime.Now) == -1) { break; }
                 eventString += $"[{eventObj.GetValue("name")}](https://www.hltv.org/events/{eventObj.GetValue("id")}/{eventObj.GetValue("name").ToString().Replace(' ', '-')}) " +
                     $"({date.ToString().Substring(0, 10)})\n";
-                i++;
             }
             builder.WithTitle("UPCOMING EVENTS")
-                .WithColor(Color.Green)
+                .WithColor(Color.Gold)
                 .AddField("events:", eventString)
                 .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", "https://www.hltv.org/events#tab-ALL")
                 .WithCurrentTimestamp()
@@ -274,11 +331,12 @@ namespace HLTVDiscordBridge.Modules
             await ReplyAsync(embed: builder.Build());
         }
 
-        //[Command("event")]
+        [Command("event")]
         public async Task GetEventByName([Remainder]string arg = "")
         {
-            Config _cfg = new Config();
-            EmbedBuilder builder = new EmbedBuilder();
+            Config _cfg = new();
+            EmbedBuilder builder = new();
+
             string prefix;
             if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) { prefix = "!"; } 
             else { prefix = _cfg.GetServerConfig(Context.Guild).Prefix; }            
@@ -292,25 +350,129 @@ namespace HLTVDiscordBridge.Modules
                 await ReplyAsync(embed: builder.Build());
                 return;
             }
+
             JObject eventStats = await GetEventStats(arg);
             if(eventStats == null) { return; }
+            else if(eventStats.ToString() == "{}")
+            {
+                builder.WithColor(Color.Red)
+                    .WithTitle("ERROR")
+                    .WithCurrentTimestamp();
+                builder.WithDescription($"The event {arg} does not exist or is not scheduled yet.");
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
             JObject location = JObject.Parse(eventStats.GetValue("location").ToString());
-            builder.WithTitle($"{eventStats.GetValue("name")}")
-                .AddField("starting:", UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).ToString().Substring(0, 16) + " UTC", true)
-                .AddField("ending:", UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).ToString().Substring(0, 16) + " UTC", true)
-                .AddField("\u200b", "\u200b", true)
+            builder.WithTitle($"{eventStats.GetValue("name")}");
+            if(UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).CompareTo(DateTime.Now) > 0 && UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).CompareTo(DateTime.Now) > 0)
+            {
+                builder.AddField("starting:", UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).ToString().Substring(0, 16) + " UTC", true)
+                .AddField("ending:", UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).ToString().Substring(0, 16) + " UTC", true);
+            } else if(UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).CompareTo(DateTime.Now) < 0 && UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).CompareTo(DateTime.Now) < 0)
+            {
+                builder.AddField("started:", UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).ToString().Substring(0, 16) + " UTC", true)
+                .AddField("ended:", UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).ToString().Substring(0, 16) + " UTC", true);
+            } else
+            {
+                builder.AddField("started:", UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).ToString().Substring(0, 16) + " UTC", true)
+                .AddField("ending:", UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).ToString().Substring(0, 16) + " UTC", true);
+            }
+            
+            builder.AddField("\u200b", "\u200b", true)
                 .AddField("prize pool:", eventStats.GetValue("prizePool"), true)
                 .AddField("location:", location.GetValue("name"), true)
                 .AddField("\u200b", "\u200b", true);
-            if(UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).CompareTo(DateTime.Now) > 0)
+            if(UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).CompareTo(DateTime.Now) > 0 && UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).CompareTo(DateTime.Now) > 0)
             {
-                Console.WriteLine("future" + eventStats.GetValue("name"));
-            } else
+                //teams
+                JArray team = JArray.Parse(eventStats.GetValue("teams").ToString());
+                string teamString = "";
+                foreach (JObject jObj in team)
+                {
+                    if (team.IndexOf(jObj) > 4) { teamString += $"and {team.Count - 5} more"; break; }
+                    string teamLink = $"https://www.hltv.org/team/{jObj.GetValue("id")}/{jObj.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+                    teamString += $"[{jObj.GetValue("name")}]({teamLink})\n";
+                }
+                builder.AddField("teams:", teamString);
+            } else if(UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).CompareTo(DateTime.Now) < 0 && UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).CompareTo(DateTime.Now) < 0)
             {
-                Console.WriteLine("past" + eventStats.GetValue("name"));
+                //teams
+                JArray teams = JArray.Parse(eventStats.GetValue("teams").ToString());
+                string teamString = "";
+                foreach (JObject jObj in teams)
+                {
+                    if (teams.IndexOf(jObj) > 4) { teamString += $"and {teams.Count - 5} more"; break; }
+                    string teamLink = $"https://www.hltv.org/team/{jObj.GetValue("id")}/{jObj.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+                    teamString += $"[{jObj.GetValue("name")}]({teamLink})\n";
+                }
+                builder.AddField("teams:", teamString, true);
+                //prize distribution
+                JArray prizeDistribution = JArray.Parse(eventStats.GetValue("prizeDistribution").ToString());
+                string prizeDistributionString = "";
+                foreach (JObject jObj in prizeDistribution)
+                {
+                    if (prizeDistribution.IndexOf(jObj) > 4) { prizeDistributionString += $"and {prizeDistribution.Count - 5} more"; break; }
+                    JObject team = JObject.Parse(jObj.GetValue("team").ToString());
+                    string teamLink = $"https://www.hltv.org/team/{team.GetValue("id")}/{team.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+                    if (jObj.TryGetValue("prize", out JToken _) && jObj.TryGetValue("qualifiesFor", out JToken qualifi))
+                    {
+                        JObject qual = JObject.Parse(qualifi.ToString());
+                        string qualLink = $"https://www.hltv.org/events/{qual.GetValue("id")}/{qual.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+                        prizeDistributionString += $"{jObj.GetValue("place")} [{team.GetValue("name")}]({teamLink}) wins: {jObj.GetValue("prize")} & qualifies for: [{qual.GetValue("name")}]({qualLink})\n";
+                    }
+                    else if (jObj.TryGetValue("prize", out JToken _))
+                    {
+                        prizeDistributionString += $"{jObj.GetValue("place")} [{team.GetValue("name")}]({teamLink}) wins: {jObj.GetValue("prize")}\n";
+                    }
+                    else if (jObj.TryGetValue("qualifiesFor", out JToken quali))
+                    {
+                        JObject qual = JObject.Parse(quali.ToString());
+                        string qualLink = $"https://www.hltv.org/events/{qual.GetValue("id")}/{qual.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+                        prizeDistributionString += $"{jObj.GetValue("place")} [{team.GetValue("name")}]({teamLink}) qualifies for: [{qual.GetValue("name")}]({qualLink})\n";
+                    }
+                    else
+                    {
+                        prizeDistributionString += $"{jObj.GetValue("place")} [{team.GetValue("name")}]({teamLink})\n";
+                    }
+                }
+                builder.AddField("results:", prizeDistributionString, true);
+                builder.AddField("\u200b", "\u200b", true);
             }
+            else
+            {
+                //teams
+                JArray teams = JArray.Parse(eventStats.GetValue("teams").ToString());
+                string teamString = "";
+                foreach (JObject jObj in teams)
+                {
+                    if (teams.IndexOf(jObj) > 4) { teamString += $"and {teams.Count - 5} more"; break; }
+                    string teamLink = $"https://www.hltv.org/team/{jObj.GetValue("id")}/{jObj.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+                    teamString += $"[{jObj.GetValue("name")}]({teamLink})\n";
+                }
+                builder.AddField("teams:", teamString, true);
+                //Event is live
+                JArray latestResults = await GetLatestResultsOfEvent(ushort.Parse(eventStats.GetValue("id").ToString()));
+                string latestResultsString = "";
+                foreach(JObject jObj in latestResults)
+                {
+                    if(latestResults.IndexOf(jObj) > 4) { break; }
+                    JObject team1 = JObject.Parse(jObj.GetValue("team1").ToString());
+                    JObject team2 = JObject.Parse(jObj.GetValue("team2").ToString());
+                    string matchLink = $"https://www.hltv.org/matches/{jObj.GetValue("id")}/{team1.GetValue("name").ToString().ToLower().Replace(" ", "-")}-vs-" +
+                        $"{team2.GetValue("name").ToString().ToLower().Replace(" ", "-")}";
+                    latestResultsString += $"[{team1.GetValue("name")} vs. {team2.GetValue("name")}]({matchLink})\n";
+                }
+                builder.AddField("latest results:", latestResultsString, true);
+                builder.AddField("\u200b", "\u200b", true);
+            }
+            builder.WithColor(Color.Gold);
+            builder.WithThumbnailUrl(eventStats.GetValue("logo").ToString());
+            string eventLink = $"https://www.hltv.org/events/{eventStats.GetValue("id")}/{eventStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+            builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", eventLink);
+            builder.WithCurrentTimestamp();
+            builder.WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+            await ReplyAsync(embed: builder.Build());
         }
         #endregion
-
     }
 }

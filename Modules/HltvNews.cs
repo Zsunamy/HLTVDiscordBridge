@@ -26,8 +26,8 @@ namespace HLTVDiscordBridge.Modules
         //official RSS Feed       
         public static async Task<News> GetNews()
         {
-            HttpClient http = new HttpClient();
-            HttpRequestMessage req = new HttpRequestMessage();
+            HttpClient http = new();
+            HttpRequestMessage req = new();
             req.RequestUri = new Uri("https://www.hltv.org/rss/news");
             HttpResponseMessage res = await http.SendAsync(req);
             string result = await res.Content.ReadAsStringAsync();
@@ -36,11 +36,11 @@ namespace HLTVDiscordBridge.Modules
             if (File.ReadAllText("./cache/news/news.xml") == result) { return null; }
             File.WriteAllText("./cache/news/news.xml", result);
 
-            XmlDocument doc = new XmlDocument();
+            XmlDocument doc = new();
             doc.Load("./cache/news/news.xml");
             XmlNodeList nodes = doc.GetElementsByTagName("item");
             XmlNodeList latestNews = nodes[0].ChildNodes;
-            News news = new News();
+            News news = new();
             news.title = latestNews[0].InnerText;
             news.description = latestNews[1].InnerText;
             news.link = latestNews[2].InnerText;
@@ -51,7 +51,7 @@ namespace HLTVDiscordBridge.Modules
 
         public static Embed GetNewsEmbed(News news)
         {
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             builder.WithTitle(news.title)
                 .WithColor(Color.Blue);       
 
@@ -77,10 +77,8 @@ namespace HLTVDiscordBridge.Modules
                 File.WriteAllText("./cache/news/ids.txt", File.ReadAllText("./cache/news/ids.txt") + "\n" + bam.id);
                 foreach (SocketTextChannel channel in channels)
                 {
-#if RELEASE
                     try { await channel.SendMessageAsync(embed: embed); }
-                    catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }   
-#endif
+                    catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; } 
                 }                
             }
         }

@@ -41,9 +41,9 @@ namespace HLTVDiscordBridge
         /// <returns>Config</returns>
         public ConfigClass LoadConfig()
         {
-            ConfigClass conf = new ConfigClass();
+            ConfigClass conf = new();
             _xml = new XmlSerializer(typeof(ConfigClass));
-            FileStream stream = new FileStream("./config.xml", FileMode.Open);
+            FileStream stream = new("./config.xml", FileMode.Open);
             conf = (ConfigClass)_xml.Deserialize(stream);
             stream.Close();
             return conf;
@@ -53,7 +53,7 @@ namespace HLTVDiscordBridge
         [Command("init")]
         public async Task InitTextChannel(SocketTextChannel channel = null)
         {
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
             {
                 builder.WithTitle("ERROR")
@@ -82,7 +82,7 @@ namespace HLTVDiscordBridge
         [Command("minstars")]
         public async Task ChangeMinStars(string stars = "")
         {
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) 
             {
                 builder.WithTitle("ERROR")
@@ -110,11 +110,11 @@ namespace HLTVDiscordBridge
                 await ReplyAsync(embed: builder.Build());
                 return;
             }
-            ServerConfig _config = new ServerConfig();
+            ServerConfig _config = new();
             _config = GetServerConfig(Context.Guild);
             _config.MinimumStars = starsNum;
-            FileStream fs = new FileStream("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
-            XmlSerializer _xml = new XmlSerializer(typeof(ServerConfig));
+            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
+            XmlSerializer _xml = new(typeof(ServerConfig));
             _xml.Serialize(fs, _config);
             fs.Close();
             builder.WithColor(Color.Green)
@@ -128,8 +128,8 @@ namespace HLTVDiscordBridge
         [Command("featuredevents")]
         public async Task ChangeFeaturedEvents(string arg = "")
         {
-            EmbedBuilder builder = new EmbedBuilder();
-            ServerConfig _config = new ServerConfig();
+            EmbedBuilder builder = new();
+            ServerConfig _config = new();
             _config = GetServerConfig(Context.Guild);
             if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
             {
@@ -161,8 +161,8 @@ namespace HLTVDiscordBridge
             else if (arg.ToLower() == "true") { _config.OnlyFeaturedEvents = true; description += "ONLY FEATURED EVENTS"; }
             else { _config.OnlyFeaturedEvents = false; description += "SHOW ALL EVENTS"; }
 
-            FileStream fs = new FileStream("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
-            XmlSerializer _xml = new XmlSerializer(typeof(ServerConfig));
+            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
+            XmlSerializer _xml = new(typeof(ServerConfig));
             _xml.Serialize(fs, _config);
             fs.Close();
             builder.WithColor(Color.Green)
@@ -176,7 +176,7 @@ namespace HLTVDiscordBridge
         [Command("prefix")]
         public async Task ChangePrefix(string arg = "")
         {            
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
             {
                 builder.WithTitle("ERROR")
@@ -204,12 +204,12 @@ namespace HLTVDiscordBridge
                 return;
             } 
             
-            ServerConfig _config = new ServerConfig();
+            ServerConfig _config = new();
             _config = GetServerConfig(Context.Guild);
             _config.Prefix = arg;
 
-            FileStream fs = new FileStream("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
-            XmlSerializer _xml = new XmlSerializer(typeof(ServerConfig));
+            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
+            XmlSerializer _xml = new(typeof(ServerConfig));
             _xml.Serialize(fs, _config);
             fs.Close();
             builder.WithColor(Color.Green)
@@ -221,7 +221,7 @@ namespace HLTVDiscordBridge
         }
         public async Task ChangeResultOutput(string arg = "")
         {
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             ServerConfig cfg = GetServerConfig(Context.Guild);
             string state = GetServerConfig(Context.Guild).ResultOutput ? "disabled" : "enabled";
             if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
@@ -259,8 +259,8 @@ namespace HLTVDiscordBridge
                 await ReplyAsync(embed: builder.Build());
                 return;
             }
-            FileStream fs = new FileStream("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
-            XmlSerializer _xml = new XmlSerializer(typeof(ServerConfig));
+            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
+            XmlSerializer _xml = new(typeof(ServerConfig));
             _xml.Serialize(fs, cfg);
             fs.Close();
             builder.WithColor(Color.Green)
@@ -282,7 +282,7 @@ namespace HLTVDiscordBridge
         /// <param name="startup">Is this the startup?</param>
         public async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null, bool startup = false)
         {
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             if (channel == null)
             {                
                 channel = guild.DefaultChannel;
@@ -303,7 +303,7 @@ namespace HLTVDiscordBridge
                     .WithCurrentTimestamp()
                     .WithColor(Color.DarkBlue);
             }
-            ServerConfig _config = new ServerConfig();
+            ServerConfig _config = new();
 
             if(channel != null) { _config.NewsChannelID = channel.Id; }            
             _config.GuildID = guild.Id;
@@ -314,7 +314,7 @@ namespace HLTVDiscordBridge
             _xml = new XmlSerializer(typeof(ServerConfig));
             Directory.CreateDirectory("./cache/serverconfig");
             if(File.Exists($"./cache/serverconfig/{guild.Id}.xml") && startup) { return; }
-            FileStream stream = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.Create);  
+            FileStream stream = new($"./cache/serverconfig/{guild.Id}.xml", FileMode.Create);  
             _xml.Serialize(stream, _config);            
             stream.Close();
             try { await channel.SendMessageAsync(embed: builder.Build()); }
@@ -349,13 +349,13 @@ namespace HLTVDiscordBridge
         /// <returns>List<SocketTextChannel> of all channels</returns>
         public async Task<List<SocketTextChannel>> GetChannels (DiscordSocketClient client)
         {
-            List<SocketTextChannel> channel = new List<SocketTextChannel>();
-            ServerConfig _config = new ServerConfig();
+            List<SocketTextChannel> channel = new();
+            ServerConfig _config = new();
             _xml = new XmlSerializer(typeof(ServerConfig));
             foreach (SocketGuild guild in client.Guilds)
             {
                 if (!File.Exists($"./cache/serverconfig/{guild.Id}.xml")) { await GuildJoined(guild); }                
-                FileStream fs = new FileStream($"./cache/serverconfig/{guild.Id}.xml", FileMode.Open);
+                FileStream fs = new($"./cache/serverconfig/{guild.Id}.xml", FileMode.Open);
                 _config = (ServerConfig)_xml.Deserialize(fs);
                 fs.Close();
                 if ((SocketTextChannel)client.GetChannel(_config.NewsChannelID) != null) { channel.Add((SocketTextChannel)client.GetChannel(_config.NewsChannelID)); }                
@@ -369,11 +369,11 @@ namespace HLTVDiscordBridge
         /// <returns>ServerConfig</returns>
         public ServerConfig GetServerConfig(SocketTextChannel channel)
         {
-            ServerConfig _config = new ServerConfig();
+            ServerConfig _config = new();
             _xml = new XmlSerializer(typeof(ServerConfig));
             foreach(string path in Directory.GetFiles("./cache/serverconfig/"))
             {
-                FileStream fs = new FileStream(path, FileMode.Open);
+                FileStream fs = new(path, FileMode.Open);
                 _config = (ServerConfig)_xml.Deserialize(fs);
                 fs.Close();
                 if (_config.NewsChannelID == channel.Id)
@@ -390,9 +390,9 @@ namespace HLTVDiscordBridge
         /// <returns>ServerConfig</returns>
         public ServerConfig GetServerConfig(SocketGuild guild)
         {
-            ServerConfig _config = new ServerConfig();
+            ServerConfig _config = new();
             _xml = new XmlSerializer(typeof(ServerConfig));
-            FileStream fs = new FileStream("./cache/serverconfig/" + guild.Id + ".xml", FileMode.Open);
+            FileStream fs = new("./cache/serverconfig/" + guild.Id + ".xml", FileMode.Open);
             _config = (ServerConfig)_xml.Deserialize(fs);
             fs.Close();
             return _config;

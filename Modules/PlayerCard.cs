@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -36,9 +32,9 @@ namespace HLTVDiscordBridge.Modules
             } else
             {
                 //Get non cached Player                
-                Uri uri = new Uri("https://hltv-api-steel.vercel.app/api/player/" + playername);
-                HttpClient _http = new HttpClient();
-                _http.BaseAddress = uri;
+                //Uri uri = new("https://hltv-api-steel.vercel.app/api/player/" + playername);
+                Uri uri = new("http://revilum.com:3000/api/player/" + playername);
+                HttpClient _http = new();
                 HttpResponseMessage httpRequest = await _http.GetAsync(uri);
 
                 try { idJObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync()); }
@@ -50,11 +46,10 @@ namespace HLTVDiscordBridge.Modules
                 ushort playerID = ushort.Parse(idJObj.GetValue("id").ToString());
                 JArray achievements = JArray.Parse(idJObj.GetValue("achievements").ToString());
 
-                Uri uri1 = new Uri("https://hltv-api-steel.vercel.app/api/playerstats/" + playerID.ToString());
-                HttpClient _http1 = new HttpClient();
-                _http1.BaseAddress = uri1;
-                HttpResponseMessage httpRequest1 = await _http1.GetAsync(uri1);
-                statsJObj = JObject.Parse(await httpRequest1.Content.ReadAsStringAsync());
+                //uri = new("https://hltv-api-steel.vercel.app/api/playerstats/" + playerID.ToString());
+                uri = new("http://revilum.com:3000/api/playerstats/" + playerID.ToString());
+                httpRequest = await _http.GetAsync(uri);
+                statsJObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync());
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/stats.json", statsJObj.ToString());
                 return (statsJObj, playerID, achievements);
             }            
@@ -62,7 +57,7 @@ namespace HLTVDiscordBridge.Modules
 
         private static async Task<Embed> GetPlayerCard(SocketCommandContext context, string playername = "")
         {            
-            EmbedBuilder builder = new EmbedBuilder();
+            EmbedBuilder builder = new();
             
             var req = await GetPlayerStats(playername);
             JObject jObj = req.Item1;
@@ -180,8 +175,8 @@ namespace HLTVDiscordBridge.Modules
         [Command("player")]
         public async Task Player([Remainder]string playername = "")
         {
-            EmbedBuilder builder = new EmbedBuilder();
-            Config _cfg = new Config();
+            EmbedBuilder builder = new();
+            Config _cfg = new();
             if (playername == "")
             {
                 string prefix;

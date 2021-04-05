@@ -6,15 +6,23 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
 {
     public class HltvResults : ModuleBase<SocketCommandContext>
     {
+        public static async Task<JObject> GetMatchByMatchId(uint matchId)
+        {
+            var URI = new Uri("http://revilum.com:3000/api/match/" + matchId);
+            HttpClient http = new();
+            HttpResponseMessage httpResponse = await http.GetAsync(URI);
+            string httpRes = await httpResponse.Content.ReadAsStringAsync();
+            return JObject.Parse(httpRes);
+        }
+
+        #region Results
         public static async Task<JArray> GetResults(ushort teamId)
         {
             string idsString = $"[{teamId}]";
@@ -35,7 +43,6 @@ namespace HLTVDiscordBridge.Modules
             string httpRes = await httpResponse.Content.ReadAsStringAsync();
             return JArray.Parse(httpRes);
         }
-
         /// <summary>
         /// Updates the results if there is a new one.
         /// </summary>
@@ -62,25 +69,35 @@ namespace HLTVDiscordBridge.Modules
         /// Gets the stats of the latest match if it was not cached
         /// </summary>
         /// <returns>Latest Match Stats as JObject, star rating of the match as ushort</returns>
-        private static async Task<(JObject, ushort)> GetLatestMatchStats()
+        private static async Task<List<(JObject, ushort)>> GetNewMatches()
         {
+            List<(JObject, ushort)> newMatches = new();
             Directory.CreateDirectory("./cache/results");
-            if (!File.Exists("./cache/results/results.json")) { await UpdateResultsCache(); return (null, 0); }
+            if (!File.Exists("./cache/results/results.json")) { await UpdateResultsCache(); return null; }
             JArray oldResults = JArray.Parse(File.ReadAllText("./cache/results/results.json"));
             JArray newResults = await UpdateResultsCache();
-            if(newResults == null) { return (null, 0); }
-            else if (oldResults.ToString() == newResults.ToString()) { return (null, 0); }
-
-            string matchId = JObject.Parse(oldResults[0].ToString()).GetValue("id").ToString();
-            ushort stars = ushort.Parse(JObject.Parse(oldResults[0].ToString()).GetValue("stars").ToString());
-
-            //var URI = new Uri("https://hltv-api-steel.vercel.app/api/match/" + matchId);
-            var URI = new Uri("http://revilum.com:3000/api/match/" + matchId);
-            HttpClient http = new();
-            http.BaseAddress = URI;
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            string httpRes = await httpResponse.Content.ReadAsStringAsync();
-            return (JObject.Parse(httpRes), stars);
+            if(newResults == null) { return null; }
+            else if (oldResults.ToString() == newResults.ToString()) { return null; }
+            foreach(JObject jObj in newResults)
+            {
+                bool newResult = true;
+                foreach(JObject kObj in oldResults)
+                {
+                    if(jObj.ToString() == kObj.ToString()) { newResult = false; }
+                }
+                if(newResult)
+                {
+                    await Task.Delay(5000);
+                    //var URI = new Uri("https://hltv-api-steel.vercel.app/api/match/" + matchId);
+                    var URI = new Uri("http://revilum.com:3000/api/match/" + jObj.GetValue("id").ToString());
+                    HttpClient http = new();
+                    HttpResponseMessage httpResponse = await http.GetAsync(URI);
+                    string httpRes = await httpResponse.Content.ReadAsStringAsync();
+                    JObject matchStats = JObject.Parse(httpRes);
+                    newMatches.Add((matchStats, ushort.Parse(jObj.GetValue("stars").ToString())));
+                }
+            }
+            return newMatches;            
         }
         private static Embed GetResultEmbed(JObject res, ushort stars)
         {            
@@ -106,7 +123,7 @@ namespace HLTVDiscordBridge.Modules
                 .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", latestMatchId)
                 .WithCurrentTimestamp();
             string footerString = "";
-            Emoji emo = new Emoji("⭐");
+            Emoji emo = new("⭐");
             for (int i = 1; i <= stars; i++)
             {
                 footerString += emo;
@@ -114,52 +131,141 @@ namespace HLTVDiscordBridge.Modules
             builder.WithFooter(footerString);
 
             string mapsString = "";
-            foreach (JToken mapTok in maps)
+            foreach (JObject map in maps)
             {
-                JObject map = JObject.Parse(mapTok.ToString());
                 string mapName = map.GetValue("name").ToString();
-                JObject result = JObject.Parse(map.GetValue("result").ToString());
-                JArray halfResults = JArray.Parse(result.GetValue("halfResults").ToString());
-                string halfResultsString = "";
-                for(int i = 0; i < halfResults.Count; i++)
+                if(map.TryGetValue("result", out JToken resultTok))
                 {
-                    JObject halfResult = JObject.Parse(halfResults[i].ToString());
-                    if(i == 0) { halfResultsString += $"{halfResult.GetValue("team1Rounds")}:{halfResult.GetValue("team2Rounds")}"; continue; }
-                    halfResultsString += $" | {halfResult.GetValue("team1Rounds")}:{halfResult.GetValue("team2Rounds")}";
+                    JObject result = JObject.Parse(resultTok.ToString());
+                    JArray halfResults = JArray.Parse(result.GetValue("halfResults").ToString());
+                    string halfResultsString = "";
+                    for (int i = 0; i < halfResults.Count; i++)
+                    {
+                        JObject halfResult = JObject.Parse(halfResults[i].ToString());
+                        if (i == 0) { halfResultsString += $"{halfResult.GetValue("team1Rounds")}:{halfResult.GetValue("team2Rounds")}"; continue; }
+                        halfResultsString += $" | {halfResult.GetValue("team1Rounds")}:{halfResult.GetValue("team2Rounds")}";
+                    }
+                    mapsString += $"{GetMapNameByAcronym(mapName)} ({result.GetValue("team1TotalRounds")}:{result.GetValue("team2TotalRounds")}) ({halfResultsString})\n";
+                } else
+                {
+                    mapsString += $"__{GetMapNameByAcronym(mapName)}__\n";
                 }
-                mapsString += $"{GetMapNameByAcronym(mapName)} ({result.GetValue("team1TotalRounds")}:{result.GetValue("team2TotalRounds")}) ({halfResultsString})\n";
+                
             }
             builder.AddField("maps:", mapsString);
-
-            string highlightsString = "";
-            for (int i = 0; i < highlights.Count; i++)
+            
+            if(highlights.Count > 0)
             {
-                if(i == 2) { break; }
-                JObject highlight = JObject.Parse(highlights[i].ToString());
-                highlightsString += $"[{DoNewLines(highlight.GetValue("title").ToString(), 35)}]({highlight.GetValue("link")})\n\n";
+                string highlightsString = "";
+                for (int i = 0; i < highlights.Count; i++)
+                {
+                    if (i == 2) { break; }
+                    JObject highlight = JObject.Parse(highlights[i].ToString());
+                    highlightsString += $"[{DoNewLines(highlight.GetValue("title").ToString(), 35)}]({highlight.GetValue("link")})\n\n";
+                }
+                builder.AddField("highlights:", highlightsString);
             }
-            builder.AddField("highlights:", highlightsString);
+            
 
             return builder.Build();
         }
+
+
         public static async Task AktResults(DiscordSocketClient client)
         {
             Config _cfg = new();
-            var req = await GetLatestMatchStats();
-            JObject latestResult = req.Item1;
-            ushort stars = req.Item2;
-            if (latestResult != null)
+            List<(JObject, ushort)> newMatches = await GetNewMatches();
+            if(newMatches != null)
             {
-                foreach(SocketTextChannel channel in await _cfg.GetChannels(client))
+                foreach ((JObject, ushort) match in newMatches)
                 {
-                    if(_cfg.GetServerConfig(channel).MinimumStars <= stars)
+                    JObject latestMatch = match.Item1;
+                    ushort stars = match.Item2;
+                    foreach (SocketTextChannel channel in await _cfg.GetChannels(client))
                     {
-                        try { RestUserMessage msg = await channel.SendMessageAsync(embed: GetResultEmbed(latestResult, stars)); }
-                        catch(Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); }
+                        if (_cfg.GetServerConfig(channel).MinimumStars <= stars)
+                        {
+                            try { RestUserMessage msg = await channel.SendMessageAsync(embed: GetResultEmbed(latestMatch, stars)); await msg.AddReactionAsync(await Config.GetEmote(client)); }
+                            catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); }
+                        }
                     }
                 }
             }
         }
+        #endregion
+
+        #region PlayerStatsOfResult
+        private static async Task<JObject> GetPlStats(string matchid)
+        {
+            //var URI = new Uri("https://hltv-api-steel.vercel.app/api/match/" + matchid);
+            var URI = new Uri("http://revilum.com:3000/api/match/" + matchid);
+            HttpClient http = new();
+            HttpResponseMessage httpResponse = await http.GetAsync(URI);
+            string httpResPLStats = await httpResponse.Content.ReadAsStringAsync();
+            JObject match = JObject.Parse(httpResPLStats);
+
+            URI = new Uri("http://revilum.com:3000/api/matchstats/" + match.GetValue("statsId"));
+            httpResponse = await http.GetAsync(URI);
+            string matchStats = await httpResponse.Content.ReadAsStringAsync();
+            JObject matchStatsObj = JObject.Parse(matchStats);
+
+            return matchStatsObj;
+        }
+        private static async Task<Embed> GetPlStatsEmbed(string matchlink)
+        {
+            EmbedBuilder builder = new();
+            
+            JObject matchStats = await GetPlStats(matchlink.Substring(29, 7));
+            JObject PlayerStats = JObject.Parse(matchStats.GetValue("playerStats").ToString());
+            JObject team1 = JObject.Parse(matchStats.GetValue("team1").ToString());
+            JObject team2 = JObject.Parse(matchStats.GetValue("team2").ToString());
+            JArray team1Player = JArray.Parse(PlayerStats.GetValue("team1").ToString());
+            JArray team2Player = JArray.Parse(PlayerStats.GetValue("team2").ToString());
+            string statsLink = $"https://www.hltv.org/stats/matches/{matchStats.GetValue("id")}/{team1.GetValue("name").ToString().Replace(' ', '-').ToLower()}-vs-{team2.GetValue("name").ToString().Replace(' ', '-').ToLower()}";
+
+            builder.WithTitle($"PLAYERSTATS ({team1.GetValue("name")} vs. {team2.GetValue("name")})")
+                .WithColor(Color.Red);
+
+            string team1PlayersString = "";
+            string team1KADString = "";
+            string team1RatingString = "";
+            foreach(JObject jObj in team1Player)
+            {
+                JObject player = JObject.Parse(jObj.GetValue("player").ToString());
+                string playerLink = $"https://hltv.org/player/{player.GetValue("id")}/{player.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+                team1PlayersString += $"[{player.GetValue("name")}]({playerLink})\n";
+                team1KADString += $"{jObj.GetValue("kills")}/{jObj.GetValue("assists")}/{jObj.GetValue("deaths")}\n";
+                team1RatingString += $"{jObj.GetValue("rating1")}\n";
+            }
+            builder.AddField($"players ({team1.GetValue("name")}):", team1PlayersString, true);
+            builder.AddField("K/A/D", team1KADString, true);
+            builder.AddField("rating", team1RatingString, true);
+
+            string team2PlayersString = "";
+            string team2KADString = "";
+            string team2RatingString = "";
+            foreach (JObject jObj in team2Player)
+            {
+                JObject player = JObject.Parse(jObj.GetValue("player").ToString());
+                string playerLink = $"https://hltv.org/player/{player.GetValue("id")}/{player.GetValue("name").ToString().ToLower().Replace(' ', '-')}";
+                team2PlayersString += $"[{player.GetValue("name")}]({playerLink})\n";
+                team2KADString += $"{jObj.GetValue("kills")}/{jObj.GetValue("assists")}/{jObj.GetValue("deaths")}\n";
+                team2RatingString += $"{jObj.GetValue("rating1")}\n";
+            }
+            builder.AddField($"players ({team2.GetValue("name")}):", team2PlayersString, true);
+            builder.AddField("K/A/D", team2KADString, true);
+            builder.AddField("rating", team2RatingString, true);
+
+            builder.WithAuthor("full stats on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", statsLink);
+            builder.WithCurrentTimestamp();
+
+            return builder.Build();
+        }
+        public static async Task SendPlStats(string matchLink, ITextChannel channel)
+        {
+            await channel.SendMessageAsync(embed: await GetPlStatsEmbed(matchLink));
+        }
+        #endregion
 
         #region tools
         private static string GetFormatFromAcronym(string req)
