@@ -61,7 +61,7 @@ namespace HLTVDiscordBridge
                 await _cfg.GuildJoined(guild, null, true);
             }
 
-            //await BGTask();
+            await BGTask();
 
             await Task.Delay(-1);
         }
@@ -99,16 +99,17 @@ namespace HLTVDiscordBridge
                     await http.SendAsync(req);
                 } else if(DateTime.Now.Hour == 21) { updateServerCountGG = true; }
 
+                await HltvUpcomingAndLiveMatches.AktUpcomingAndLiveMatches();
                 Stopwatch watch = new(); watch.Start();                    
-                await HltvResults.AktResults(_client);
+                //await HltvResults.AktResults(_client);
                 Console.WriteLine($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)"); 
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 3); watch.Restart();
-                await HltvEvents.AktEvents(await _cfg.GetChannels(_client));
+                //await HltvEvents.AktEvents(await _cfg.GetChannels(_client));
                 Console.WriteLine($"{DateTime.Now.ToLongTimeString()} HLTV\t\tEvents aktualisiert ({watch.ElapsedMilliseconds}ms)");
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 3); watch.Restart();
                 //await Upcoming.UpdateUpcomingMatches();
                 //Console.WriteLine($"{DateTime.Now.ToShortTimeString()} HLTV\t\tUpcomingMatches aktualisiert ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
-                await HltvNews.AktHLTVNews(await _cfg.GetChannels(_client));
+                //await HltvNews.AktHLTVNews(await _cfg.GetChannels(_client));
                 Console.WriteLine($"{DateTime.Now.ToLongTimeString()} HLTV\t\tNews aktualisiert ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
                 CacheCleaner.Cleaner(_client);
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 3);
@@ -134,7 +135,7 @@ namespace HLTVDiscordBridge
                     {
                         foreach (string emoteString in numberEmoteStrings)
                         {
-                            if (emoteString == reaction.Emote.ToString()) { HltvLive.StartScoreboard(msg, new Emoji(reaction.Emote.ToString()), (channel as SocketGuildChannel).Guild); return; }
+                            if (emoteString == reaction.Emote.ToString()) { /*HltvLive.StartScoreboard(msg, new Emoji(reaction.Emote.ToString()), (channel as SocketGuildChannel).Guild); return;*/ }
                         }
                     }
                     else if (emote.ToString() == reaction.Emote.ToString())

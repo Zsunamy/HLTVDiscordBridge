@@ -12,6 +12,7 @@ namespace HLTVDiscordBridge.Modules
 {
     public class TeamCard : ModuleBase<SocketCommandContext>
     {
+        #region Commands
         [Command("team")] 
         public async Task SendTeamCard([Remainder]string name = "")
         {
@@ -36,7 +37,9 @@ namespace HLTVDiscordBridge.Modules
                 await Context.Channel.SendFileAsync(req.Item2, embed: req.Item1);
             }            
         }
+        #endregion
 
+        #region API
         /// <summary>
         /// gets all available stats of a team
         /// </summary>
@@ -59,19 +62,18 @@ namespace HLTVDiscordBridge.Modules
 
                 //Uri uri1 = new Uri($"https://hltv-api-steel.vercel.app/api/teamstats/{fullTeamJObject.GetValue("id")}");
                 uri = new Uri($"http://revilum.com:3000/api/teamstats/{fullTeamJObject.GetValue("id")}");
-                HttpResponseMessage res1 = await http.GetAsync(uri);
-                JObject teamStats = JObject.Parse(await res1.Content.ReadAsStringAsync());
+                res = await http.GetAsync(uri);
+                JObject teamStats = JObject.Parse(await res.Content.ReadAsStringAsync());
 
                 Directory.CreateDirectory($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}");
                 File.WriteAllText($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/fullteam.json", fullTeamJObject.ToString());
                 File.WriteAllText($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/teamstats.json", teamStats.ToString());
 
                 //Thumbnail
-                HttpClient client = new();
-                HttpResponseMessage httpRes = await client.GetAsync(new Uri(fullTeamJObject.GetValue("logo").ToString()));
+                res = await http.GetAsync(new Uri(fullTeamJObject.GetValue("logo").ToString()));
                 string thumbPath;
-                try { thumbPath = ConvertSVGtoPNG(await httpRes.Content.ReadAsByteArrayAsync(), fullTeamJObject.GetValue("name").ToString()); }
-                catch (System.Xml.XmlException) { Bitmap.FromStream(await httpRes.Content.ReadAsStreamAsync()).Save($"./cache/teamcards/" +
+                try { thumbPath = ConvertSVGtoPNG(await res.Content.ReadAsByteArrayAsync(), fullTeamJObject.GetValue("name").ToString()); }
+                catch (System.Xml.XmlException) { Bitmap.FromStream(await res.Content.ReadAsStreamAsync()).Save($"./cache/teamcards/" +
                     $"{name.ToLower().Replace(' ', '-')}/{name.ToLower().Replace(' ', '-')}_logo.png", System.Drawing.Imaging.ImageFormat.Png); thumbPath = $"./cache/teamcards/" +
                     $"{name.ToLower().Replace(' ', '-')}/{name.ToLower().Replace(' ', '-')}_logo.png"; }
 
@@ -85,7 +87,9 @@ namespace HLTVDiscordBridge.Modules
                 return (teamStats, fullTeamJObject, true, thumbPath);
             }            
         }
+        #endregion
 
+        #region Embeds
         private static async Task<(Embed, string)> GetTeamCard(string name)
         {
             var res = await GetTeamStats(name);
@@ -214,7 +218,7 @@ namespace HLTVDiscordBridge.Modules
 
             //upcoming matches
             string upcomingMatchesString = "";
-            JArray upcomingMatches = Upcoming.SearchUpcoming(teamJObj.GetValue("name").ToString());
+            JArray upcomingMatches = HltvUpcomingAndLiveMatches.SearchUpcoming(teamJObj.GetValue("name").ToString());
             if(upcomingMatches.Count == 0) { upcomingMatchesString = "no upcoming matches"; }
             else
             {
@@ -241,7 +245,7 @@ namespace HLTVDiscordBridge.Modules
             builder.WithFooter("The stats shown were collected during the last 3 months");
             return (builder.Build(), res.Item4);
         }
-
+        #endregion
 
         #region tools
         /// <summary>

@@ -103,7 +103,8 @@ namespace HLTVDiscordBridge.Modules
         {            
             JObject eventInfo = JObject.Parse(res.GetValue("event").ToString());
             string eventLink = $"https://www.hltv.org/events/{eventInfo.GetValue("id")}/{eventInfo.GetValue("name").ToString().Replace(' ', '-')}";
-            string additionalInfo = "";//res.GetValue("additionalInfo").ToString(); //?
+            string additionalInfo = "";
+            if(res.TryGetValue("significance", out JToken val)) { additionalInfo = val.ToString(); }
             JObject team1 = JObject.Parse(res.GetValue("team1").ToString());
             JObject team2 = JObject.Parse(res.GetValue("team2").ToString());
             JObject winner = JObject.Parse(res.GetValue("winnerTeam").ToString());
