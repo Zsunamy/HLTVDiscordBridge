@@ -51,8 +51,7 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/teamcards");
             if(!Directory.Exists($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}"))
             {
-                //Uri uri = new Uri($"https://hltv-api-steel.vercel.app/api/team/{name}");
-                Uri uri = new($"http://revilum.com:3000/api/team/{name}");
+                Uri uri = new Uri($"https://hltv-api-steel.vercel.app/api/team/{name}");
                 HttpClient http = new();
                 HttpResponseMessage res = await http.GetAsync(uri);
                 JObject fullTeamJObject;
@@ -60,8 +59,7 @@ namespace HLTVDiscordBridge.Modules
                 catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return (null, null, false, ""); }
                 if (fullTeamJObject.ToString() == "{}") { return (null, null, true, ""); }
 
-                //Uri uri1 = new Uri($"https://hltv-api-steel.vercel.app/api/teamstats/{fullTeamJObject.GetValue("id")}");
-                uri = new Uri($"http://revilum.com:3000/api/teamstats/{fullTeamJObject.GetValue("id")}");
+                Uri uri1 = new Uri($"https://hltv-api-steel.vercel.app/api/teamstats/{fullTeamJObject.GetValue("id")}");
                 res = await http.GetAsync(uri);
                 JObject teamStats = JObject.Parse(await res.Content.ReadAsStringAsync());
 
