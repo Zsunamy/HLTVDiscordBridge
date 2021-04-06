@@ -18,7 +18,9 @@ namespace HLTVDiscordBridge.Modules
         public static async Task<(JArray, JArray)> AktUpcomingAndLiveMatches()
         {
             Directory.CreateDirectory("./cache/matches");
-            JArray jArr = JArray.Parse((await Tools.RequestApiJArray("matches")).ToString());
+            var req = await Tools.RequestApiJArray("matches");
+            if(!req.Item2) { return (null, null); }
+            JArray jArr = req.Item1;
             JArray upcomingMatches = new();
             JArray liveMatches = new();
             foreach(JObject jObj in jArr)
@@ -143,7 +145,16 @@ namespace HLTVDiscordBridge.Modules
         private static async Task<(Embed, ushort)> GetLiveMatchesEmbed()
         {
             JArray matches = (await AktUpcomingAndLiveMatches()).Item2;
+            
             EmbedBuilder builder = new();
+            if (matches == null)
+            {
+                builder.WithColor(Color.Red)
+                   .WithTitle($"error")
+                   .WithDescription("Our API is currently not available! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues). We're sorry for the inconvience")
+                   .WithCurrentTimestamp();
+                return (builder.Build(), 0);
+            }
             builder.WithTitle("LIVE MATCHES")
                 .WithColor(Color.Blue)
                 .WithCurrentTimestamp();
