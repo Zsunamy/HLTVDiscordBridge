@@ -170,6 +170,7 @@ namespace HLTVDiscordBridge
                             .WithCurrentTimestamp()
                             .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
                         break;
+                    case "news":
                     case "newsoutput":
                         if (bool.TryParse(arg, out bool newsoutput))
                         {
@@ -189,6 +190,8 @@ namespace HLTVDiscordBridge
                                 .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
                         }
                         break;
+                    case "result":
+                    case "results":
                     case "resultoutput":
                         if (bool.TryParse(arg, out bool resultoutput))
                         {
@@ -208,6 +211,8 @@ namespace HLTVDiscordBridge
                                 .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
                         }
                         break;
+                    case "event":
+                    case "events":
                     case "eventoutput":
                         if (bool.TryParse(arg, out bool eventoutput))
                         {
@@ -230,8 +235,8 @@ namespace HLTVDiscordBridge
                     default:
                         builder.WithColor(Color.Red)
                                 .WithTitle("error")
-                                .WithDescription($"{option.ToLower()} is not valid! Please state one of the following options:\n`minstars`\n`featuredevents`\n`prefix`\n" +
-                                $"`newsoutput`\n`resultoutput`\n`eventoutput`")
+                                .WithDescription($"{option.ToLower()} is not valid! Please state one of the following options:\n`stars`\n`featuredevents`\n`prefix`\n" +
+                                $"`news`\n`results`\n`events`")
                                 .WithCurrentTimestamp()
                                 .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
                         break;

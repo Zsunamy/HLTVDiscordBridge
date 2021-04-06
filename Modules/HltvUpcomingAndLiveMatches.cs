@@ -17,11 +17,8 @@ namespace HLTVDiscordBridge.Modules
         #region API
         public static async Task<(JArray, JArray)> AktUpcomingAndLiveMatches()
         {
-            HttpClient http = new();
-            Uri uri = new($"{Config.LoadConfig().APILink}/api/matches");
-            HttpResponseMessage res = await http.GetAsync(uri);
             Directory.CreateDirectory("./cache/matches");
-            JArray jArr = JArray.Parse(await res.Content.ReadAsStringAsync());
+            JArray jArr = JArray.Parse((await Tools.RequestApiJArray("matches")).ToString());
             JArray upcomingMatches = new();
             JArray liveMatches = new();
             foreach(JObject jObj in jArr)

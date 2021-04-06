@@ -60,6 +60,7 @@ namespace HLTVDiscordBridge
             {
                 await _cfg.GuildJoined(guild, null, true);
             }
+
 #if RELEASE
             await BGTask();
 #endif
@@ -161,8 +162,7 @@ namespace HLTVDiscordBridge
 
         private Task Log(LogMessage arg)
         {
-            Console.WriteLine(arg);
-
+            Console.WriteLine(arg.ToString().Split("     ")[0] + "\t" + arg.ToString().Split("     ")[1]);
             return Task.CompletedTask;
         }
 

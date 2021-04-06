@@ -31,23 +31,20 @@ namespace HLTVDiscordBridge.Modules
                 return (statsJObj, playerID, achievements);
             } else
             {
-                //Get non cached Player                
-                Uri uri = new($"{Config.LoadConfig().APILink}/api/player/" + playername);
-                HttpClient _http = new();
-                HttpResponseMessage httpRequest = await _http.GetAsync(uri);
-
-                try { idJObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync()); }
-                catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return (null, 0, null); }                    
-                if (idJObj.Count == 0) { return (null, 0, JArray.Parse("[]")); }
+                //Get non cached Player 
+                var req = await Tools.RequestApiJObject("player/" + playername);
+                if(!req.Item2) { return (null, 0, null); }
+                idJObj = req.Item1;
+                if (idJObj == null) { return (null, 0, JArray.Parse("[]")); }
 
                 Directory.CreateDirectory($"./cache/playercards/{playername.ToLower()}");
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/id.json", idJObj.ToString());
                 ushort playerID = ushort.Parse(idJObj.GetValue("id").ToString());
                 JArray achievements = JArray.Parse(idJObj.GetValue("achievements").ToString());
 
-                uri = new($"{Config.LoadConfig().APILink}/api/playerstats/" + playerID.ToString());
-                httpRequest = await _http.GetAsync(uri);
-                statsJObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync());
+                req = await Tools.RequestApiJObject("playerstats/" + playerID.ToString());
+                if (!req.Item2) { return (null, 0, null); }
+                statsJObj = req.Item1;
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/stats.json", statsJObj.ToString());
                 return (statsJObj, playerID, achievements);
             }            
@@ -68,7 +65,6 @@ namespace HLTVDiscordBridge.Modules
                 return builder.Build();
             } else if(jObj == null && achievements == null)
             {
-                Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
                 builder.WithColor(Color.Red)
                     .WithTitle($"error")
                     .WithDescription("Our API is currently not available! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues). We're sorry for the inconvience");                

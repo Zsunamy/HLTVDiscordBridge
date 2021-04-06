@@ -39,9 +39,9 @@ namespace HLTVDiscordBridge.Modules
                     break;
                 case "set":
                     builder.WithTitle($"advanced help for {prefix}set")
-                        .AddField("options:", "```\nstars\nfeaturedevents\nprefix\nnewsoutput\nresultoutput\neventoutput```", true)
+                        .AddField("options:", "```\nstars\nfeaturedevents\nprefix\nnews\nresults\nevents```", true)
                         .AddField("possible states:", "```number from 0-5\ntrue/false\nany string\ntrue/false\ntrue/false\ntrue/false```", true)
-                        .AddField("examples:", $"\u200b\n`{prefix}set prefix $`\n\n`{prefix}set newsoutput false`\n\n`{prefix}set stars 3`", true)
+                        .AddField("examples:", $"\u200b\n`{prefix}set prefix $`\n\n`{prefix}set news false`\n\n`{prefix}set stars 3`", true)
                         .AddField("summary:", $"Changes the options for you personal server.", true)
                         .AddField("permissions:", "admin", true)
                         .AddField("\u200b", "\u200b", true)

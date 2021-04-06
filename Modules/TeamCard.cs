@@ -51,30 +51,29 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/teamcards");
             if(!Directory.Exists($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}"))
             {
-                Uri uri = new($"{Config.LoadConfig().APILink}/api/team/{name}");
-                HttpClient http = new();
-                HttpResponseMessage res = await http.GetAsync(uri);
+                var req = await Tools.RequestApiJObject($"team/{name}");
+                if(!req.Item2) { return (null, null, false, ""); }
                 JObject fullTeamJObject;
-                try { fullTeamJObject = JObject.Parse(await res.Content.ReadAsStringAsync()); }
-                catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return (null, null, false, ""); }
-                if (fullTeamJObject.ToString() == "{}") { return (null, null, true, ""); }
+                fullTeamJObject = req.Item1;
+                if (fullTeamJObject == null) { return (null, null, true, ""); }
 
                 await Task.Delay(3000);
-                uri = new Uri($"{Config.LoadConfig().APILink}/api/teamstats/{fullTeamJObject.GetValue("id")}");
-                res = await http.GetAsync(uri);
-                JObject teamStats = JObject.Parse(await res.Content.ReadAsStringAsync());
-
-                Directory.CreateDirectory($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}");
-                File.WriteAllText($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/fullteam.json", fullTeamJObject.ToString());
-                File.WriteAllText($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/teamstats.json", teamStats.ToString());
+                req = await Tools.RequestApiJObject($"teamstats/{fullTeamJObject.GetValue("id")}");
+                if(!req.Item2) { return (null, null, false, ""); }
+                JObject teamStats = req.Item1;
+                
+                Directory.CreateDirectory($"./cache/teamcards/{teamStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}");
+                File.WriteAllText($"./cache/teamcards/{teamStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}/fullteam.json", fullTeamJObject.ToString());
+                File.WriteAllText($"./cache/teamcards/{teamStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}/teamstats.json", teamStats.ToString());
 
                 //Thumbnail
-                res = await http.GetAsync(new Uri(fullTeamJObject.GetValue("logo").ToString()));
+                HttpClient http = new();
+                HttpResponseMessage res = await http.GetAsync(new Uri(fullTeamJObject.GetValue("logo").ToString()));
                 string thumbPath;
                 try { thumbPath = ConvertSVGtoPNG(await res.Content.ReadAsByteArrayAsync(), fullTeamJObject.GetValue("name").ToString()); }
                 catch (System.Xml.XmlException) { Bitmap.FromStream(await res.Content.ReadAsStreamAsync()).Save($"./cache/teamcards/" +
-                    $"{name.ToLower().Replace(' ', '-')}/{name.ToLower().Replace(' ', '-')}_logo.png", System.Drawing.Imaging.ImageFormat.Png); thumbPath = $"./cache/teamcards/" +
-                    $"{name.ToLower().Replace(' ', '-')}/{name.ToLower().Replace(' ', '-')}_logo.png"; }
+                    $"{teamStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}/{teamStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}_logo.png", System.Drawing.Imaging.ImageFormat.Png); thumbPath = $"./cache/teamcards/" +
+                    $"{teamStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}/{teamStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}_logo.png"; }
 
                 return (teamStats, fullTeamJObject, true, thumbPath);
 
@@ -82,7 +81,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 JObject fullTeamJObject = JObject.Parse(File.ReadAllText($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/fullteam.json"));
                 JObject teamStats = JObject.Parse(File.ReadAllText($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/teamstats.json"));
-                string thumbPath = $"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/{name.ToLower().Replace(' ', '-')}_logo.png";
+                string thumbPath = $"./cache/teamcards/{teamStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}/{teamStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}_logo.png";
                 return (teamStats, fullTeamJObject, true, thumbPath);
             }            
         }
@@ -200,20 +199,27 @@ namespace HLTVDiscordBridge.Modules
             await Task.Delay(3000);
             JArray recentResults = await HltvResults.GetResults(ushort.Parse(teamStatsJObj.GetValue("id").ToString()));
             string recentResultsString = "";
-            for(int i = 0; i < recentResults.Count; i++)
+            if (recentResults == null)
             {
-                if(i == 4) { break; }
-                JObject result = JObject.Parse(recentResults[i].ToString());
-                string opponentTeam;
-                JObject team1 = JObject.Parse(result.GetValue("team1").ToString());
-                JObject team2 = JObject.Parse(result.GetValue("team2").ToString());
-                if (team1.GetValue("name").ToString() == teamJObj.GetValue("name").ToString()) 
-                { opponentTeam = team2.GetValue("name").ToString(); }
-                else { opponentTeam = JObject.Parse(result.GetValue("team1").ToString()).GetValue("name").ToString(); }
-                string link = $"https://www.hltv.org/matches/{result.GetValue("id")}/{team1.GetValue("name").ToString().Replace(' ', '-')}-vs-" +
-                $"{team2.GetValue("name").ToString().Replace(' ', '-')}";
-                recentResultsString += $"[vs. {opponentTeam}]({link})\n";
+                recentResultsString = "n.A";
+            } else
+            {
+                for (int i = 0; i < recentResults.Count; i++)
+                {
+                    if (i == 4) { break; }
+                    JObject result = JObject.Parse(recentResults[i].ToString());
+                    string opponentTeam;
+                    JObject team1 = JObject.Parse(result.GetValue("team1").ToString());
+                    JObject team2 = JObject.Parse(result.GetValue("team2").ToString());
+                    if (team1.GetValue("name").ToString() == teamJObj.GetValue("name").ToString())
+                    { opponentTeam = team2.GetValue("name").ToString(); }
+                    else { opponentTeam = JObject.Parse(result.GetValue("team1").ToString()).GetValue("name").ToString(); }
+                    string link = $"https://www.hltv.org/matches/{result.GetValue("id")}/{team1.GetValue("name").ToString().Replace(' ', '-')}-vs-" +
+                    $"{team2.GetValue("name").ToString().Replace(' ', '-')}";
+                    recentResultsString += $"[vs. {opponentTeam}]({link})\n";
+                }
             }
+            
             builder.AddField("recent results:", recentResultsString, true);
 
             //upcoming matches

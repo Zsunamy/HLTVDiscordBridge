@@ -21,13 +21,16 @@ namespace HLTVDiscordBridge.Modules
                 foreach (ushort eventId in startedEvents)
                 {
                     JObject eventStats = await GetEventStats(eventId);
-                    foreach (SocketTextChannel channel in channels)
+                    if(eventStats != null)
                     {
-                        ServerConfig config = _cfg.GetServerConfig(channel);
-                        if(config.EventOutput)
+                        foreach (SocketTextChannel channel in channels)
                         {
-                            try { await channel.SendMessageAsync(embed: GetEventStartedEmbed(eventStats)); }
-                            catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                            ServerConfig config = _cfg.GetServerConfig(channel);
+                            if (config.EventOutput)
+                            {
+                                try { await channel.SendMessageAsync(embed: GetEventStartedEmbed(eventStats)); }
+                                catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                            }
                         }
                     }
                 }
@@ -39,13 +42,16 @@ namespace HLTVDiscordBridge.Modules
                 foreach(ushort eventId in endedEventIds)
                 {
                     JObject eventStats = await GetEventStats(eventId);
-                    foreach (SocketTextChannel channel in channels)
+                    if(eventStats != null)
                     {
-                        ServerConfig config = _cfg.GetServerConfig(channel);
-                        if(config.EventOutput)
+                        foreach (SocketTextChannel channel in channels)
                         {
-                            try { await channel.SendMessageAsync(embed: GetEventEndedEmbed(eventStats)); }
-                            catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                            ServerConfig config = _cfg.GetServerConfig(channel);
+                            if (config.EventOutput)
+                            {
+                                try { await channel.SendMessageAsync(embed: GetEventEndedEmbed(eventStats)); }
+                                catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                            }
                         }
                     }
                 }
@@ -59,10 +65,9 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>All ongoing and upcoming events as JArray</returns>
         private static async Task<JArray> UpdateEvents()
         {
-            var URI = new Uri($"{Config.LoadConfig().APILink}/api/events");
-            HttpClient http = new();
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            JArray events = JArray.Parse(await httpResponse.Content.ReadAsStringAsync());
+            var req = await Tools.RequestApiJArray("events");
+            if(!req.Item2) { return null; }
+            JArray events = req.Item1;
             Directory.CreateDirectory("./cache/events");
             if (!File.Exists("./cache/events/events.json"))
             {
@@ -81,10 +86,9 @@ namespace HLTVDiscordBridge.Modules
         }
         private static async Task<JArray> UpdatePastEvents() 
         {
-            var URI = new Uri($"{Config.LoadConfig().APILink}/api/pastevents");
-            HttpClient http = new();
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            JArray events = JArray.Parse(await httpResponse.Content.ReadAsStringAsync());
+            var req = await Tools.RequestApiJArray("pastevents");
+            if(!req.Item2) { return null; }
+            JArray events = req.Item1;
             Directory.CreateDirectory("./cache/events");
             if (!File.Exists("./cache/events/pastevents.json"))
             {
@@ -109,38 +113,18 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>JObject with stats of the event</returns>
         private static async Task<JObject> GetEventStats(ushort eventId)
         {
-            var URI = new Uri($"{Config.LoadConfig().APILink}/api/eventbyid/{eventId}");
-            HttpClient http = new();
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            string httpRes = await httpResponse.Content.ReadAsStringAsync();
-            JObject jObj;
-            try { jObj = JObject.Parse(httpRes); }
-            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
-            return jObj;
+            var req = await Tools.RequestApiJObject($"eventbyid/{eventId}");
+            return req.Item1;
         }
-        private static async Task<JObject> GetEventStats(string eventName)
+        private static async Task<(JObject, bool)> GetEventStats(string eventName)
         {
-            var URI = new Uri($"{Config.LoadConfig().APILink}/api/event/{eventName}");
-            HttpClient http = new();
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-
-            string httpRes = await httpResponse.Content.ReadAsStringAsync();
-            JObject jObj;
-            try { jObj = JObject.Parse(httpRes); }
-            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToLongTimeString()}API\t API down"); return null; }
-            return jObj;
+            var req = await Tools.RequestApiJObject($"event/{eventName}");
+            return req;
         }
         private static async Task<JArray> GetLatestResultsOfEvent(ushort eventId)
         {
-            JArray jArr;
-            HttpClient http = new();
-            Uri uri = new($"{Config.LoadConfig().APILink}/api/results/events/[{eventId}]");
-            HttpResponseMessage httpResponse = await http.GetAsync(uri);
-            try { jArr = JArray.Parse(await httpResponse.Content.ReadAsStringAsync()); }
-            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToLongTimeString()}API\t API down"); return null; }
-            File.WriteAllText($"./cache/events/{eventId}/results.json", jArr.ToString());
-
-            return jArr;
+            var req = await Tools.RequestApiJArray($"events/[{eventId}]");
+            return req.Item1;
         }
         #endregion
 
@@ -153,6 +137,7 @@ namespace HLTVDiscordBridge.Modules
         {
             JArray oldEvents = JArray.Parse(File.ReadAllText("./cache/events/events.json"));
             JArray newEvents = await UpdateEvents();
+            if(newEvents == null) { return null; }
             if (oldEvents.ToString() == newEvents.ToString()) { return null; }
             List<ushort> eventIds = new();
 
@@ -205,6 +190,7 @@ namespace HLTVDiscordBridge.Modules
         {
             JArray oldEvents = JArray.Parse(File.ReadAllText("./cache/events/pastevents.json"));
             JArray newEvents = await UpdatePastEvents();
+            if(newEvents == null) { return null; }
             if (oldEvents.ToString() == newEvents.ToString()) { return null; }
             List<ushort> eventIds = new();
             foreach(JObject jObj in newEvents)
@@ -338,6 +324,14 @@ namespace HLTVDiscordBridge.Modules
         [Command("event")]
         public async Task GetEventByName([Remainder]string arg = "")
         {
+            EmbedBuilder builder = new();
+            builder.WithTitle("error")
+                .WithColor(Color.Red)
+                .WithDescription("This command is currently not available. Sorry for the inconvenience.")
+                .WithCurrentTimestamp();
+            await ReplyAsync(embed: builder.Build());
+            return;
+            /*
             Config _cfg = new();
             EmbedBuilder builder = new();
 
@@ -355,15 +349,34 @@ namespace HLTVDiscordBridge.Modules
                 return;
             }
 
-            JObject eventStats = await GetEventStats(arg);
-            if(eventStats == null) { return; }
-            else if(eventStats.ToString() == "{}")
+            builder.WithTitle("Your request is loading!")
+                .WithDescription("This may take up to 30 seconds")
+                .WithCurrentTimestamp();
+            var msg = await Context.Channel.SendMessageAsync(embed: builder.Build());
+            IDisposable typingState = Context.Channel.EnterTypingState();
+            var req = await GetEventStats(arg);
+            JObject eventStats = req.Item1;
+            typingState.Dispose();
+            await msg.DeleteAsync();
+            
+            if(eventStats == null && !req.Item2) 
+            {
+                builder.WithColor(Color.Red)
+                    .WithTitle($"error")
+                    .WithDescription("Our API is currently not available! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues). We're sorry for the inconvience")
+                    .WithCurrentTimestamp();
+                await ReplyAsync(embed: builder.Build());
+                typingState.Dispose();
+                return; 
+            }
+            else if(eventStats == null && req.Item2)
             {
                 builder.WithColor(Color.Red)
                     .WithTitle("error")
                     .WithCurrentTimestamp();
                 builder.WithDescription($"The event {arg} does not exist or is not scheduled yet.");
                 await ReplyAsync(embed: builder.Build());
+                typingState.Dispose();
                 return;
             }
             JObject location = JObject.Parse(eventStats.GetValue("location").ToString());
@@ -457,14 +470,21 @@ namespace HLTVDiscordBridge.Modules
                 //Event is live
                 JArray latestResults = await GetLatestResultsOfEvent(ushort.Parse(eventStats.GetValue("id").ToString()));
                 string latestResultsString = "";
-                foreach(JObject jObj in latestResults)
+                if (latestResults == null)
                 {
-                    if(latestResults.IndexOf(jObj) > 4) { break; }
-                    JObject team1 = JObject.Parse(jObj.GetValue("team1").ToString());
-                    JObject team2 = JObject.Parse(jObj.GetValue("team2").ToString());
-                    string matchLink = $"https://www.hltv.org/matches/{jObj.GetValue("id")}/{team1.GetValue("name").ToString().ToLower().Replace(" ", "-")}-vs-" +
-                        $"{team2.GetValue("name").ToString().ToLower().Replace(" ", "-")}";
-                    latestResultsString += $"[{team1.GetValue("name")} vs. {team2.GetValue("name")}]({matchLink})\n";
+                    latestResultsString = "n.A";
+                }
+                else
+                {
+                    foreach (JObject jObj in latestResults)
+                    {
+                        if (latestResults.IndexOf(jObj) > 4) { break; }
+                        JObject team1 = JObject.Parse(jObj.GetValue("team1").ToString());
+                        JObject team2 = JObject.Parse(jObj.GetValue("team2").ToString());
+                        string matchLink = $"https://www.hltv.org/matches/{jObj.GetValue("id")}/{team1.GetValue("name").ToString().ToLower().Replace(" ", "-")}-vs-" +
+                            $"{team2.GetValue("name").ToString().ToLower().Replace(" ", "-")}";
+                        latestResultsString += $"[{team1.GetValue("name")} vs. {team2.GetValue("name")}]({matchLink})\n";
+                    }
                 }
                 builder.AddField("latest results:", latestResultsString, true);
                 builder.AddField("\u200b", "\u200b", true);
@@ -476,6 +496,7 @@ namespace HLTVDiscordBridge.Modules
             builder.WithCurrentTimestamp();
             builder.WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
             await ReplyAsync(embed: builder.Build());
+            */
         }
         #endregion
     }

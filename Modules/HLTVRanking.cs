@@ -14,7 +14,7 @@ namespace HLTVDiscordBridge.Modules
         public async Task GetRanking([Remainder]string arg = "GLOBAL")
         {
             EmbedBuilder embed = new();
-            Uri uri;
+            string endpoint;
             if (arg.Contains('-'))
             {
                 arg = "";
@@ -22,16 +22,16 @@ namespace HLTVDiscordBridge.Modules
             }
             if (arg == "GLOBAL")
             {
-                uri = new Uri($"{Config.LoadConfig().APILink}/api/ranking");
+                endpoint = "ranking";
             }
             else if (DateTime.TryParse(arg, out DateTime time))
             {
                 string[] months = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
-                uri = new Uri($"{Config.LoadConfig().APILink}/api/ranking/{time.Day}/{months[time.Month - 1]}/{time.Year}");
+                endpoint = $"ranking/{time.Day}/{months[time.Month - 1]}/{time.Year}";
             }
             else
             {
-                uri = new Uri($"{Config.LoadConfig().APILink}/api/ranking/" + arg.ToLower());
+                endpoint = "ranking/" + arg.ToLower();
             }
 
             //cache
@@ -39,19 +39,15 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/ranking");
             if(!File.Exists($"./cache/ranking/ranking_{arg.ToLower().Replace(' ','-')}.json"))
             {
-                HttpClient httpClient = new();
-                httpClient.BaseAddress = uri;
-                HttpResponseMessage response = await httpClient.GetAsync(uri);
-                try { jArr = JArray.Parse(await response.Content.ReadAsStringAsync()); }
-                catch (Newtonsoft.Json.JsonReaderException)
-                {
-                    Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down");
+                var req = await Tools.RequestApiJArray(endpoint);
+                if(!req.Item2) {
                     embed.WithColor(Color.Red)
                         .WithTitle($"error")
                         .WithDescription("Our API is currently not available! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues). We're sorry for the inconvience");
                     await ReplyAsync(embed: embed.Build());
                     return;
                 }
+                jArr = req.Item1;
                 if (jArr.Count == 0) 
                 {
                     embed.WithColor(Color.Red)

@@ -15,33 +15,22 @@ namespace HLTVDiscordBridge.Modules
     {
         public static async Task<JObject> GetMatchByMatchId(uint matchId)
         {
-            var URI = new Uri($"{Config.LoadConfig().APILink}/api/match/" + matchId);
-            HttpClient http = new();
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            string httpRes = await httpResponse.Content.ReadAsStringAsync();
-            return JObject.Parse(httpRes);
+            var req = await Tools.RequestApiJObject("match/" + matchId);
+            return req.Item1;
         }
 
         #region Results
         public static async Task<JArray> GetResults(ushort teamId)
         {
             string idsString = $"[{teamId}]";
-            var URI = new Uri($"{Config.LoadConfig().APILink}/api/results/teams/{idsString}");
-            HttpClient http = new();
-            http.BaseAddress = URI;
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            string httpRes = await httpResponse.Content.ReadAsStringAsync();
-            return JArray.Parse(httpRes);
+            var req = await Tools.RequestApiJArray($"results/teams/{idsString}");
+            return req.Item1;
         }
         public static async Task<JArray> GetUpcomingMatches(ushort teamId)
         {
             string idsString = $"[{teamId}]";
-            var URI = new Uri($"{Config.LoadConfig().APILink}/api/matches/teams/{idsString}");
-            HttpClient http = new();
-            http.BaseAddress = URI;
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            string httpRes = await httpResponse.Content.ReadAsStringAsync();
-            return JArray.Parse(httpRes);
+            var req = await Tools.RequestApiJArray($"matches/teams/{idsString}");
+            return req.Item1;
         }
         /// <summary>
         /// Updates the results if there is a new one.
@@ -49,14 +38,10 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>The latest results as JArray</returns>
         private static async Task<JArray> UpdateResultsCache()
         {
-            var URI = new Uri($"{Config.LoadConfig().APILink}/api/results");
-            HttpClient http = new();
-            http.BaseAddress = URI;
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            string httpRes = await httpResponse.Content.ReadAsStringAsync();            
-            JArray jArr;
-            try { jArr = JArray.Parse(httpRes); }
-            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
+            var req = await Tools.RequestApiJArray("results");
+            if(!req.Item2) { return null; }
+            JArray jArr = req.Item1;
+
             Directory.CreateDirectory("./cache/results");
             Directory.CreateDirectory("./archive/results");
             if(!File.Exists("./cache/results/results.json")) { File.WriteAllText("./cache/results/results.json", jArr.ToString()); }
@@ -87,11 +72,9 @@ namespace HLTVDiscordBridge.Modules
                 if(newResult)
                 {
                     await Task.Delay(5000);
-                    var URI = new Uri($"{Config.LoadConfig().APILink}/api/match/" + jObj.GetValue("id").ToString());
-                    HttpClient http = new();
-                    HttpResponseMessage httpResponse = await http.GetAsync(URI);
-                    string httpRes = await httpResponse.Content.ReadAsStringAsync();
-                    JObject matchStats = JObject.Parse(httpRes);
+                    var req = await Tools.RequestApiJObject("match/" + jObj.GetValue("id").ToString());
+                    if(!req.Item2) { continue; }
+                    JObject matchStats = req.Item1;
                     newMatches.Add((matchStats, ushort.Parse(jObj.GetValue("stars").ToString())));
                 }
             }
@@ -196,24 +179,26 @@ namespace HLTVDiscordBridge.Modules
         #region PlayerStatsOfResult
         private static async Task<JObject> GetPlStats(string matchid)
         {
-            var URI = new Uri($"{Config.LoadConfig().APILink}/api/match/" + matchid);
-            HttpClient http = new();
-            HttpResponseMessage httpResponse = await http.GetAsync(URI);
-            string httpResPLStats = await httpResponse.Content.ReadAsStringAsync();
-            JObject match = JObject.Parse(httpResPLStats);
+            var req = await Tools.RequestApiJObject("match/" + matchid);
+            if(!req.Item2) { return null; }
+            JObject match = req.Item1;
 
-            URI = new Uri($"{Config.LoadConfig().APILink}/api/matchstats/" + match.GetValue("statsId"));
-            httpResponse = await http.GetAsync(URI);
-            string matchStats = await httpResponse.Content.ReadAsStringAsync();
-            JObject matchStatsObj = JObject.Parse(matchStats);
-
-            return matchStatsObj;
+            req = await Tools.RequestApiJObject("matchstats/" + match.GetValue("statsId"));
+            return req.Item1;
         }
         private static async Task<Embed> GetPlStatsEmbed(string matchlink)
         {
             EmbedBuilder builder = new();
             
             JObject matchStats = await GetPlStats(matchlink.Substring(29, 7));
+            if(matchStats == null)
+            {
+                builder.WithColor(Discord.Color.Red)
+                    .WithTitle($"error")
+                    .WithDescription("Our API is currently not available! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues). We're sorry for the inconvience")
+                    .WithCurrentTimestamp();
+                return builder.Build();
+            }
             JObject PlayerStats = JObject.Parse(matchStats.GetValue("playerStats").ToString());
             JObject team1 = JObject.Parse(matchStats.GetValue("team1").ToString());
             JObject team2 = JObject.Parse(matchStats.GetValue("team2").ToString());
