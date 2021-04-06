@@ -19,15 +19,6 @@ namespace HLTVDiscordBridge.Modules
                 .WithCurrentTimestamp();
             switch (arg.ToLower())
             {
-                case "prefix":
-                    builder.WithTitle($"advanced help for {prefix}prefix")
-                        .AddField("syntax:", $"`{prefix}prefix [prefix]`", true)
-                        .AddField("example:", $"`{prefix}prefix ?`", true)
-                        .AddField("\u200b", "\u200b", true)
-                        .AddField("summary:", $"Sets a custom prefix for this server.", true)
-                        .AddField("permissions:", "admin", true)
-                        .AddField("\u200b", "\u200b", true);
-                    break;
                 case "init":
                     builder.WithTitle($"advanced help for {prefix}init")
                         .AddField("syntax:", $"`{prefix}init [optional: #textchannelid]`", true)
@@ -48,11 +39,12 @@ namespace HLTVDiscordBridge.Modules
                     break;
                 case "set":
                     builder.WithTitle($"advanced help for {prefix}set")
-                        .AddField("options:", "`stars`\n`featuredevents`\n`prefix`\n`newsoutput`\n`resultoutput`\n`eventoutput`", true)
-                        .AddField("possible states:", "number between 0-5\ntrue/false\nany string\ntrue/false\ntrue/false\ntrue/false", true)
-                        .AddField("examples:", $"`{prefix}set prefix $`\n`{prefix}set newsoutput false`\n`{prefix}set stars 3`", true)
+                        .AddField("options:", "```\nstars\nfeaturedevents\nprefix\nnewsoutput\nresultoutput\neventoutput```", true)
+                        .AddField("possible states:", "```number from 0-5\ntrue/false\nany string\ntrue/false\ntrue/false\ntrue/false```", true)
+                        .AddField("examples:", $"\u200b\n`{prefix}set prefix $`\n\n`{prefix}set newsoutput false`\n\n`{prefix}set stars 3`", true)
                         .AddField("summary:", $"Changes the options for you personal server.", true)
                         .AddField("permissions:", "admin", true)
+                        .AddField("\u200b", "\u200b", true)
                         .WithFooter($"for more details type: {prefix}set");
                     break;
                 case "ranking":
@@ -75,7 +67,7 @@ namespace HLTVDiscordBridge.Modules
                     break;
                 case "event":
                     builder.WithTitle($"advanced help for {prefix}event")
-                        .AddField("syntax:", $"`{prefix}event [eventname]`", true)
+                        .AddField("syntax:", $"`{prefix}event [name]`", true)
                         .AddField("example:", $"`{prefix}event IEM New York 2020 Europe`", true)
                         .AddField("\u200b", "\u200b", true)
                         .AddField("summary:", $"Displays information about the specified event.", true)
@@ -103,18 +95,28 @@ namespace HLTVDiscordBridge.Modules
                 case "live":
                     builder.WithTitle($"advanced help for {prefix}live")
                         .AddField("syntax:", $"`{prefix}live`", true)
-                        .AddField("example.", $"`{prefix}live`", true)                        
+                        .AddField("example.", $"`{prefix}live`", true)
                         .AddField("\u200b", "\u200b", true)
                         .AddField("summary:", $"Displays all live matches and their livestreams.", true)
                         .AddField("permissions:", "@everyone", true)
                         .AddField("\u200b", "\u200b", true);
                     break;
+                case "team":
+                    builder.WithTitle($"advanced help for {prefix}team")
+                        .AddField("syntax:", $"`{prefix}team [name]`", true)
+                        .AddField("example.", $"`{prefix}team astralis`", true)
+                        .AddField("\u200b", "\u200b", true)
+                        .AddField("summary:", $"Displays information about the specified team.", true)
+                        .AddField("permissions:", "@everyone", true)
+                        .AddField("\u200b", "\u200b", true);
+                    break;
                 default:
                     builder.WithTitle("HELP")
-                        .AddField("commands:", $"`{prefix}init\n{prefix}player\n{prefix}minstars\n{prefix}ranking\n{prefix}about\n{prefix}upcoming\n{prefix}event\n{prefix}events\n{prefix}upcomingevents\n{prefix}live\n{prefix}prefix`", true)
-                        .AddField("short summary:", $"sets the default channel for HLTV-NEWS\ngives information about a specified player\nsets required amount of stars for the automated messages about HLTV matches\n" +
-                        $"displays the team ranking\nabout us\ndisplays upcoming matches\ngives information about a specified event\nshows all ongoing events\n" +
-                        $"shows upcoming events for the next 30 days\nshows all live matches\nchanges the command prefix", true)
+                        .AddField("commands:", $"```{prefix}init\n{prefix}set\n{prefix}about\n{prefix}ranking\n{prefix}upcoming\n{prefix}live\n{prefix}player\n{prefix}team\n{prefix}event\n{prefix}events\n{prefix}upcomingevents```", true)
+                        .AddField("short summary:", $"```sets the default channel for HLTV-NEWS\nchanges the options for your server\nabout us\n" +
+                        $"displays the team ranking\ndisplays upcoming matches\nshows all live matches\n" +
+                        $"gives information about a player\ngives information about a team\ngives information about an event\nshows all ongoing events\n" +
+                        $"shows upcoming events```", true)
                         .WithFooter($"For more details type: \"{prefix}help [command]\"");
                     break;
             }

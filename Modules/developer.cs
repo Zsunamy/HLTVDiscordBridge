@@ -40,9 +40,9 @@ namespace HLTVDiscordBridge.Modules
                 foreach (SocketTextChannel channel in await _cfg.GetChannels(Context.Client))
                 {
                     ServerConfig config = _cfg.GetServerConfig(channel);
-                    message = message.Replace("<prefix>", config.Prefix);
+                    string newMessage = message.Replace("<prefix>", config.Prefix);
                     builder.WithTitle($"Update: {version}")
-                        .WithDescription(message + $"\nDo you have any inquiries or issues? [Contact us!](https://github.com/Zsunamy/HLTVDiscordBridge/issues)\n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>\n" +
+                        .WithDescription(newMessage + $"\nDo you have any inquiries or issues? [Contact us!](https://github.com/Zsunamy/HLTVDiscordBridge/issues)\n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>\n" +
                 $"Also feel free to [donate](https://www.patreon.com/zsunamy) us to support this project.\n Another quick and easy way to show us your support is by [voting](https://top.gg/bot/807182830752628766/vote) for this bot on [top.gg](https://top.gg/bot/807182830752628766) to increase awareness.")
                         .WithColor(Color.Green)
                         .WithCurrentTimestamp();

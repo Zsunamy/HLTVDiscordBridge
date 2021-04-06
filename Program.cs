@@ -60,8 +60,9 @@ namespace HLTVDiscordBridge
             {
                 await _cfg.GuildJoined(guild, null, true);
             }
-
+#if RELEASE
             await BGTask();
+#endif
 
             await Task.Delay(-1);
         }
