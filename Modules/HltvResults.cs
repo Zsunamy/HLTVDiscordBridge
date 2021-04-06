@@ -147,7 +147,7 @@ namespace HLTVDiscordBridge.Modules
                     mapsString += $"{GetMapNameByAcronym(mapName)} ({result.GetValue("team1TotalRounds")}:{result.GetValue("team2TotalRounds")}) ({halfResultsString})\n";
                 } else
                 {
-                    mapsString += $"__{GetMapNameByAcronym(mapName)}__\n";
+                    mapsString += $"~~{GetMapNameByAcronym(mapName)}~~\n";
                 }
                 
             }
