@@ -32,7 +32,7 @@ namespace HLTVDiscordBridge.Modules
             } else
             {
                 //Get non cached Player                
-                Uri uri = new("https://hltv-api-steel.vercel.app/api/player/" + playername);
+                Uri uri = new($"{Config.LoadConfig().APILink}/api/player/" + playername);
                 HttpClient _http = new();
                 HttpResponseMessage httpRequest = await _http.GetAsync(uri);
 
@@ -45,7 +45,7 @@ namespace HLTVDiscordBridge.Modules
                 ushort playerID = ushort.Parse(idJObj.GetValue("id").ToString());
                 JArray achievements = JArray.Parse(idJObj.GetValue("achievements").ToString());
 
-                uri = new("https://hltv-api-steel.vercel.app/api/playerstats/" + playerID.ToString());
+                uri = new($"{Config.LoadConfig().APILink}/api/playerstats/" + playerID.ToString());
                 httpRequest = await _http.GetAsync(uri);
                 statsJObj = JObject.Parse(await httpRequest.Content.ReadAsStringAsync());
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/stats.json", statsJObj.ToString());

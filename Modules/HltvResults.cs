@@ -15,7 +15,7 @@ namespace HLTVDiscordBridge.Modules
     {
         public static async Task<JObject> GetMatchByMatchId(uint matchId)
         {
-            var URI = new Uri("http://hltv-api-steel.vercel.app/api/match/" + matchId);
+            var URI = new Uri($"{Config.LoadConfig().APILink}/api/match/" + matchId);
             HttpClient http = new();
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
             string httpRes = await httpResponse.Content.ReadAsStringAsync();
@@ -26,7 +26,7 @@ namespace HLTVDiscordBridge.Modules
         public static async Task<JArray> GetResults(ushort teamId)
         {
             string idsString = $"[{teamId}]";
-            var URI = new Uri($"http://hltv-api-steel.vercel.app/api/results/teams/{idsString}");
+            var URI = new Uri($"{Config.LoadConfig().APILink}/api/results/teams/{idsString}");
             HttpClient http = new();
             http.BaseAddress = URI;
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
@@ -36,7 +36,7 @@ namespace HLTVDiscordBridge.Modules
         public static async Task<JArray> GetUpcomingMatches(ushort teamId)
         {
             string idsString = $"[{teamId}]";
-            var URI = new Uri($"http://hltv-api-steel.vercel.app/api/matches/teams/{idsString}");
+            var URI = new Uri($"{Config.LoadConfig().APILink}/api/matches/teams/{idsString}");
             HttpClient http = new();
             http.BaseAddress = URI;
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
@@ -49,7 +49,7 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>The latest results as JArray</returns>
         private static async Task<JArray> UpdateResultsCache()
         {
-            var URI = new Uri("https://hltv-api-steel.vercel.app/api/results");
+            var URI = new Uri($"{Config.LoadConfig().APILink}/api/results");
             HttpClient http = new();
             http.BaseAddress = URI;
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
@@ -87,7 +87,7 @@ namespace HLTVDiscordBridge.Modules
                 if(newResult)
                 {
                     await Task.Delay(5000);
-                    var URI = new Uri("https://hltv-api-steel.vercel.app/api/match/" + jObj.GetValue("id").ToString());
+                    var URI = new Uri($"{Config.LoadConfig().APILink}/api/match/" + jObj.GetValue("id").ToString());
                     HttpClient http = new();
                     HttpResponseMessage httpResponse = await http.GetAsync(URI);
                     string httpRes = await httpResponse.Content.ReadAsStringAsync();
@@ -196,13 +196,13 @@ namespace HLTVDiscordBridge.Modules
         #region PlayerStatsOfResult
         private static async Task<JObject> GetPlStats(string matchid)
         {
-            var URI = new Uri("https://hltv-api-steel.vercel.app/api/match/" + matchid);
+            var URI = new Uri($"{Config.LoadConfig().APILink}/api/match/" + matchid);
             HttpClient http = new();
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
             string httpResPLStats = await httpResponse.Content.ReadAsStringAsync();
             JObject match = JObject.Parse(httpResPLStats);
 
-            URI = new Uri("http://hltv-api-steel.vercel.app/api/matchstats/" + match.GetValue("statsId"));
+            URI = new Uri($"{Config.LoadConfig().APILink}/api/matchstats/" + match.GetValue("statsId"));
             httpResponse = await http.GetAsync(URI);
             string matchStats = await httpResponse.Content.ReadAsStringAsync();
             JObject matchStatsObj = JObject.Parse(matchStats);

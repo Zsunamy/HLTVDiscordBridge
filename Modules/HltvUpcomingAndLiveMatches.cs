@@ -18,7 +18,7 @@ namespace HLTVDiscordBridge.Modules
         public static async Task<(JArray, JArray)> AktUpcomingAndLiveMatches()
         {
             HttpClient http = new();
-            Uri uri = new("http://hltv-api-steel.vercel.app/api/matches");
+            Uri uri = new($"{Config.LoadConfig().APILink}/api/matches");
             HttpResponseMessage res = await http.GetAsync(uri);
             Directory.CreateDirectory("./cache/matches");
             JArray jArr = JArray.Parse(await res.Content.ReadAsStringAsync());

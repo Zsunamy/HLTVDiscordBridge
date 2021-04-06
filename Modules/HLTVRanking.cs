@@ -22,16 +22,16 @@ namespace HLTVDiscordBridge.Modules
             }
             if (arg == "GLOBAL")
             {
-                uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking");
+                uri = new Uri($"{Config.LoadConfig().APILink}/api/ranking");
             }
             else if (DateTime.TryParse(arg, out DateTime time))
             {
                 string[] months = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
-                uri = new Uri($"https://hltv-api-steel.vercel.app/api/ranking/{time.Day}/{months[time.Month - 1]}/{time.Year}");
+                uri = new Uri($"{Config.LoadConfig().APILink}/api/ranking/{time.Day}/{months[time.Month - 1]}/{time.Year}");
             }
             else
             {
-                uri = new Uri("https://hltv-api-steel.vercel.app/api/ranking/" + arg.ToLower());
+                uri = new Uri($"{Config.LoadConfig().APILink}/api/ranking/" + arg.ToLower());
             }
 
             //cache

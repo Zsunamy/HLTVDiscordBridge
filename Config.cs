@@ -18,6 +18,7 @@ namespace HLTVDiscordBridge
         public int CheckResultsTimeInterval { get; set; }
         public string TopGGApiKey { get; set; }
         public string BotsGGApiKey { get; set; }
+        public string APILink { get; set; }
     }
 
     public class ServerConfig
@@ -40,8 +41,9 @@ namespace HLTVDiscordBridge
         /// Loads the generel bot config
         /// </summary>
         /// <returns>Config</returns>
-        public ConfigClass LoadConfig()
+        public static ConfigClass LoadConfig()
         {
+            XmlSerializer _xml;
             ConfigClass conf = new();
             _xml = new XmlSerializer(typeof(ConfigClass));
             FileStream stream = new("./config.xml", FileMode.Open);

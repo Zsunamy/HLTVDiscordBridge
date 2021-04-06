@@ -36,7 +36,7 @@ namespace HLTVDiscordBridge
                 .AddSingleton(_commands)
                 .BuildServiceProvider();
 
-            Botconfig = _cfg.LoadConfig();
+            Botconfig = Config.LoadConfig();
 
             string BotToken = Botconfig.BotToken;
 

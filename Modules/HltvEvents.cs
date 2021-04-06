@@ -59,7 +59,7 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>All ongoing and upcoming events as JArray</returns>
         private static async Task<JArray> UpdateEvents()
         {
-            var URI = new Uri($"https://hltv-api-steel.vercel.app/api/events");
+            var URI = new Uri($"{Config.LoadConfig().APILink}/api/events");
             HttpClient http = new();
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
             JArray events = JArray.Parse(await httpResponse.Content.ReadAsStringAsync());
@@ -81,7 +81,7 @@ namespace HLTVDiscordBridge.Modules
         }
         private static async Task<JArray> UpdatePastEvents() 
         {
-            var URI = new Uri($"https://hltv-api-steel.vercel.app/api/pastevents");
+            var URI = new Uri($"{Config.LoadConfig().APILink}/api/pastevents");
             HttpClient http = new();
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
             JArray events = JArray.Parse(await httpResponse.Content.ReadAsStringAsync());
@@ -109,7 +109,7 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>JObject with stats of the event</returns>
         private static async Task<JObject> GetEventStats(ushort eventId)
         {
-            var URI = new Uri($"https://hltv-api-steel.vercel.app/api/eventbyid/{eventId}");
+            var URI = new Uri($"{Config.LoadConfig().APILink}/api/eventbyid/{eventId}");
             HttpClient http = new();
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
             string httpRes = await httpResponse.Content.ReadAsStringAsync();
@@ -120,24 +120,24 @@ namespace HLTVDiscordBridge.Modules
         }
         private static async Task<JObject> GetEventStats(string eventName)
         {
-            var URI = new Uri($"https://hltv-api-steel.vercel.app/api/event/{eventName}");
+            var URI = new Uri($"{Config.LoadConfig().APILink}/api/event/{eventName}");
             HttpClient http = new();
             HttpResponseMessage httpResponse = await http.GetAsync(URI);
 
             string httpRes = await httpResponse.Content.ReadAsStringAsync();
             JObject jObj;
             try { jObj = JObject.Parse(httpRes); }
-            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
+            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToLongTimeString()}API\t API down"); return null; }
             return jObj;
         }
         private static async Task<JArray> GetLatestResultsOfEvent(ushort eventId)
         {
             JArray jArr;
             HttpClient http = new();
-            Uri uri = new($"https://hltv-api-steel.vercel.app/api/results/events/[{eventId}]");
+            Uri uri = new($"{Config.LoadConfig().APILink}/api/results/events/[{eventId}]");
             HttpResponseMessage httpResponse = await http.GetAsync(uri);
             try { jArr = JArray.Parse(await httpResponse.Content.ReadAsStringAsync()); }
-            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToString().Substring(11)}API\t API down"); return null; }
+            catch (Newtonsoft.Json.JsonReaderException) { Console.WriteLine($"{DateTime.Now.ToLongTimeString()}API\t API down"); return null; }
             File.WriteAllText($"./cache/events/{eventId}/results.json", jArr.ToString());
 
             return jArr;

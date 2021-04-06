@@ -51,7 +51,7 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/teamcards");
             if(!Directory.Exists($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}"))
             {
-                Uri uri = new Uri($"https://hltv-api-steel.vercel.app/api/team/{name}");
+                Uri uri = new($"{Config.LoadConfig().APILink}/api/team/{name}");
                 HttpClient http = new();
                 HttpResponseMessage res = await http.GetAsync(uri);
                 JObject fullTeamJObject;
@@ -60,7 +60,7 @@ namespace HLTVDiscordBridge.Modules
                 if (fullTeamJObject.ToString() == "{}") { return (null, null, true, ""); }
 
                 await Task.Delay(3000);
-                uri = new Uri($"https://hltv-api-steel.vercel.app/api/teamstats/{fullTeamJObject.GetValue("id")}");
+                uri = new Uri($"{Config.LoadConfig().APILink}/api/teamstats/{fullTeamJObject.GetValue("id")}");
                 res = await http.GetAsync(uri);
                 JObject teamStats = JObject.Parse(await res.Content.ReadAsStringAsync());
 
