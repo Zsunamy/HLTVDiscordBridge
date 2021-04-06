@@ -173,7 +173,7 @@ namespace HLTVDiscordBridge.Modules
         #region tools
         public static JArray SearchUpcoming()
         {
-            JArray jArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
+            JArray jArr = JArray.Parse(File.ReadAllText("./cache/matches/upcomingMatches.json"));
             JArray result = JArray.Parse("[]");
             foreach (JToken jTok in jArr)
             {
@@ -192,7 +192,7 @@ namespace HLTVDiscordBridge.Modules
         }
         public static JArray SearchUpcoming(string arg)
         {
-            JArray jArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
+            JArray jArr = JArray.Parse(File.ReadAllText("./cache/matches/upcomingMatches.json"));
             JArray result = JArray.Parse("[]");
             foreach (JToken jTok in jArr)
             {
@@ -227,7 +227,7 @@ namespace HLTVDiscordBridge.Modules
         }
         public static JArray SearchUpcoming(DateTime dateArg)
         {
-            JArray jArr = JArray.Parse(File.ReadAllText("./cache/upcoming.json"));
+            JArray jArr = JArray.Parse(File.ReadAllText("./cache/matches/upcomingMatches.json"));
             JArray result = JArray.Parse("[]");
             foreach (JToken jTok in jArr)
             {
