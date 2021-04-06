@@ -69,13 +69,16 @@ namespace HLTVDiscordBridge.Modules
             if(bam == null) { return; }
 
             string[] ids = File.ReadAllLines("./cache/news/ids.txt");
+            List<string> idList = new();
+            
             bool sent = false;
-            foreach (string id in ids) { if(id == bam.id.ToString()) { sent = true; } }
+            foreach (string id in ids) { idList.Add(id); if(id == bam.id.ToString()) { sent = true; } }
 
             if (!sent)
             {
+                idList.Add(bam.id.ToString());
                 Embed embed = GetNewsEmbed(bam);
-                File.WriteAllText("./cache/news/ids.txt", File.ReadAllText("./cache/news/ids.txt") + "\n" + bam.id);
+                File.WriteAllLines("./cache/news/ids.txt", idList.ToArray());
                 foreach (SocketTextChannel channel in channels)
                 {
                     ServerConfig config = _cfg.GetServerConfig(channel);
