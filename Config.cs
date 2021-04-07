@@ -327,17 +327,16 @@ namespace HLTVDiscordBridge
             FileStream stream = new($"./cache/serverconfig/{guild.Id}.xml", FileMode.Create);  
             _xml.Serialize(stream, _config);            
             stream.Close();
-            try { await channel.SendMessageAsync(embed: builder.Build()); }
-            catch(Discord.Net.HttpException)
-            {
+            if(channel == null) {
                 builder.WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. To set a default HLTV-News output channel, type !init " +
                     $"in a channel of your choice, but make sure that the bot has enough permission to access and send messages in that channel. " +
                     $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
                     $"https://github.com/Zsunamy/HLTVDiscordBridge/issues \n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>");
                 try { await guild.Owner.SendMessageAsync(embed: builder.Build()); }
-                catch (Discord.Net.HttpException) { }
+                catch (Discord.Net.HttpException) { return; }
             }
-               
+            else { await channel.SendMessageAsync(embed: builder.Build()); }
+            
         }
 
         public static async Task<GuildEmote> GetEmote(DiscordSocketClient client)
