@@ -333,7 +333,7 @@ namespace HLTVDiscordBridge
                     $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
                     $"https://github.com/Zsunamy/HLTVDiscordBridge/issues \n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>");
                 try { await guild.Owner.SendMessageAsync(embed: builder.Build()); }
-                catch (Discord.Net.HttpException) { return; }
+                catch (Exception){ return; }
             }
             else { await channel.SendMessageAsync(embed: builder.Build()); }
             
