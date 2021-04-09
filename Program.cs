@@ -60,7 +60,7 @@ namespace HLTVDiscordBridge
             {
                 await _cfg.GuildJoined(guild, null, true);
             }
-
+            CacheCleaner.Cleaner(_client);
 #if RELEASE
             await BGTask();
 #endif
