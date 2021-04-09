@@ -76,7 +76,7 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/news");
             if(!File.Exists("./cache/news/ids.txt")) { FileStream fs = File.Create("./cache/news/ids.txt"); fs.Close(); }
             string[] ids = File.ReadAllLines("./cache/news/ids.txt");
-            string[] newIds = null;
+            string[] newIds = Array.Empty<string>();
             if(ids.Length > 10) { ids.CopyTo(newIds, 1); File.WriteAllLines("./cache/news/ids.txt", newIds); } 
         }
     }
