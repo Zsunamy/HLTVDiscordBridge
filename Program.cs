@@ -70,6 +70,7 @@ namespace HLTVDiscordBridge
 
         private Task GuildLeft(SocketGuild arg)
         {
+            File.Delete($"./cache/serverconfig/{arg.Id}.xml");
             CacheCleaner.Cleaner(_client);
             return Task.CompletedTask;
         }
