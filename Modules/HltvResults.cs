@@ -32,6 +32,7 @@ namespace HLTVDiscordBridge.Modules
             var req = await Tools.RequestApiJArray($"matches/teams/{idsString}");
             return req.Item1;
         }
+        
         /// <summary>
         /// Updates the results if there is a new one.
         /// </summary>
@@ -64,6 +65,18 @@ namespace HLTVDiscordBridge.Modules
             else if (oldResults.ToString() == newResults.ToString()) { return null; }
             foreach(JObject jObj in newResults)
             {
+                if(!File.Exists("./cache/results/resultIds.txt")) { File.WriteAllText("./cache/results/resultIds.txt", jObj.GetValue("id").ToString() + "\n"); }
+                else 
+                {
+                    string[] ids = File.ReadAllLines("./cache/results/resultIds.txt");
+                    bool alreadysent = false;
+                    foreach(string id in ids)
+                    {
+                        if(id == jObj.GetValue("id").ToString()) { alreadysent = true; }
+                    }
+                    if(alreadysent) { continue; }
+                    File.WriteAllText("./cache/results/resultIds.txt", jObj.GetValue("id").ToString() + "\n" + File.ReadAllText("./cache/results/resultIds.txt")); 
+                }
                 bool newResult = true;
                 foreach(JObject kObj in oldResults)
                 {

@@ -60,8 +60,7 @@ namespace HLTVDiscordBridge
             {
                 await _cfg.GuildJoined(guild, null, true);
             }
-            CacheCleaner.Cleaner(_client);
-#if RELEASE
+#if DEBUG
             await BGTask();
 #endif
 
@@ -109,7 +108,7 @@ namespace HLTVDiscordBridge
                 await HltvResults.AktResults(_client);
                 Console.WriteLine($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)"); 
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                //await HltvEvents.AktEvents(await _cfg.GetChannels(_client));
+                await HltvEvents.AktEvents(await _cfg.GetChannels(_client));
                 Console.WriteLine($"{DateTime.Now.ToLongTimeString()} HLTV\t\tEvents aktualisiert ({watch.ElapsedMilliseconds}ms)");
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvNews.AktHLTVNews(await _cfg.GetChannels(_client));

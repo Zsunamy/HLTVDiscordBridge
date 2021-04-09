@@ -144,6 +144,19 @@ namespace HLTVDiscordBridge.Modules
             foreach(JObject jObj in newEvents)
             {
                 if (jObj.TryGetValue("location", out JToken _)) { break; }
+                if(!File.Exists("./cache/events/StartedEventIds.txt")) { File.WriteAllText("./cache/events/StartedEventIds.txt", jObj.GetValue("id").ToString() + "\n"); }
+                else
+                {
+                    string[] Ids = File.ReadAllLines("./cache/events/StartedEventIds.txt");
+                    bool alreadysent = false;
+                    foreach (string id in Ids)
+                    {
+                        if(id == jObj.GetValue("id").ToString()) { alreadysent = true; break; }
+                    }
+                    if(alreadysent) { continue; }
+                    File.WriteAllText("./cache/events/StartedEventIds.txt", jObj.GetValue("id").ToString() + "\n" + File.ReadAllText("./cache/events/StartedEventIds.txt"));
+                }
+
                 bool eventStarted = true;
                 foreach (JObject obj in oldEvents)
                 {
@@ -195,6 +208,19 @@ namespace HLTVDiscordBridge.Modules
             List<ushort> eventIds = new();
             foreach(JObject jObj in newEvents)
             {
+                if (!File.Exists("./cache/events/EndedEventIds.txt")) { File.WriteAllText("./cache/events/EndedEventIds.txt", jObj.GetValue("id").ToString() + "\n"); }
+                else
+                {
+                    string[] Ids = File.ReadAllLines("./cache/events/EndedEventIds.txt");
+                    bool alreadysent = false;
+                    foreach (string id in Ids)
+                    {
+                        if (id == jObj.GetValue("id").ToString()) { alreadysent = true; break; }
+                    }
+                    if (alreadysent) { continue; }
+                    File.WriteAllText("./cache/events/EndedEventIds.txt", jObj.GetValue("id").ToString() + "\n" + File.ReadAllText("./cache/events/EndedEventIds.txt"));
+                }
+
                 bool eventEnded = true;
                 foreach(JObject obj in oldEvents)
                 {
