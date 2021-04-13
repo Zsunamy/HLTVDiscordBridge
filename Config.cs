@@ -57,7 +57,7 @@ namespace HLTVDiscordBridge
         public async Task ChangeServerConfig(string option = "", [Remainder]string arg = "")
         {
             ServerConfig _cfg = GetServerConfig(Context.Guild);
-            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
+            
             XmlSerializer _xml = new(typeof(ServerConfig));
             EmbedBuilder builder = new();
             if(Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
@@ -66,8 +66,6 @@ namespace HLTVDiscordBridge
                     .WithColor(Color.Red)
                     .WithDescription("Please use this command only on guilds!")
                     .WithCurrentTimestamp();
-                _xml.Serialize(fs, _cfg);
-                fs.Close();
                 await ReplyAsync(embed: builder.Build());
                 return;
             }
@@ -77,8 +75,6 @@ namespace HLTVDiscordBridge
                     .WithColor(Color.Red)
                     .WithDescription("You do not have enough permission to change the output-channel!")
                     .WithCurrentTimestamp();
-                _xml.Serialize(fs, _cfg);
-                fs.Close();
                 await ReplyAsync(embed: builder.Build());
                 return;
             }
@@ -90,8 +86,6 @@ namespace HLTVDiscordBridge
                     .AddField("options:", "`stars`\n`featuredevents`\n`prefix`\n`newsoutput`\n`resultoutput`\n`eventoutput`", true)
                     .AddField("possible states:", "number between 0-5\ntrue/false\nany string\ntrue/false\ntrue/false\ntrue/false", true)
                     .WithCurrentTimestamp();
-                _xml.Serialize(fs, _cfg);
-                fs.Close();
                 await ReplyAsync(embed: builder.Build());
                 return;
             } else if(arg == "")
@@ -100,8 +94,6 @@ namespace HLTVDiscordBridge
                     .WithColor(Color.Red)
                     .WithDescription($"You can't change {option} to nothing! Please use a valid state: {_cfg.Prefix}set [option] [new state]!")
                     .WithCurrentTimestamp();
-                _xml.Serialize(fs, _cfg);
-                fs.Close();
                 await ReplyAsync(embed: builder.Build());
                 return;
             } 
@@ -242,7 +234,7 @@ namespace HLTVDiscordBridge
                         break;
                 }
             }
-            
+            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
             _xml.Serialize(fs, _cfg);
             fs.Close();
             await ReplyAsync(embed: builder.Build());
