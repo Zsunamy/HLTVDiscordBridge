@@ -49,7 +49,7 @@ namespace HLTVDiscordBridge.Modules
                     try { await channel.SendMessageAsync(embed: builder.Build()); }
                     catch (Discord.Net.HttpException)
                     {
-                        Console.WriteLine($"not enough permission in channel {channel}");
+                        Program.WriteLog($"not enough permission in channel {channel}");
                     }
                 }
             }            

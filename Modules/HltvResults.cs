@@ -181,7 +181,7 @@ namespace HLTVDiscordBridge.Modules
                         if (config.MinimumStars <= stars && config.ResultOutput)
                         {
                             try { RestUserMessage msg = await channel.SendMessageAsync(embed: GetResultEmbed(latestMatch, stars)); await msg.AddReactionAsync(await Config.GetEmote(client)); }
-                            catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); }
+                            catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); }
                         }
                     }
                 }

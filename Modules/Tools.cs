@@ -43,12 +43,12 @@ namespace HLTVDiscordBridge.Modules
             else if(resultString == "403" || resultString == "error")
             {
                 //cloudflare ban
-                Console.WriteLine($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} returned cloudflare ban");
+                Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} returned cloudflare ban");
                 return (null, false);
             } else
             {
                 //OK
-                Console.WriteLine($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
+                Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
                 return (JObject.Parse(resultString), true);
             }
         }
@@ -66,13 +66,13 @@ namespace HLTVDiscordBridge.Modules
             else if (resultString == "403" || resultString == "error")
             {
                 //cloudflare ban
-                Console.WriteLine($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} returned cloudflare ban");
+                Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} returned cloudflare ban");
                 return (null, false);
             }
             else
             {
                 //OK
-                Console.WriteLine($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
+                Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
                 return (JArray.Parse(resultString), true);
             }
         }

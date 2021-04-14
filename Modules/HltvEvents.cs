@@ -29,7 +29,7 @@ namespace HLTVDiscordBridge.Modules
                             if (config.EventOutput)
                             {
                                 try { await channel.SendMessageAsync(embed: GetEventStartedEmbed(eventStats)); }
-                                catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                                catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); continue; }
                             }
                         }
                     }
@@ -50,7 +50,7 @@ namespace HLTVDiscordBridge.Modules
                             if (config.EventOutput)
                             {
                                 try { await channel.SendMessageAsync(embed: GetEventEndedEmbed(eventStats)); }
-                                catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                                catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); continue; }
                             }
                         }
                     }

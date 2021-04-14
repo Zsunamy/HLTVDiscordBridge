@@ -59,7 +59,6 @@ namespace HLTVDiscordBridge.Modules
         } 
         private async Task Receive(RestTextChannel channel)
         {
-            Console.WriteLine("a");
             if(channel == null) { return; }
             WebSocketReceiveResult res = await _webSocket.ReceiveAsync(buffer, CancellationToken.None);
             if (res.Count != 0 || res.CloseStatus == WebSocketCloseStatus.Empty)

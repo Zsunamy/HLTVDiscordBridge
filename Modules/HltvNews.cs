@@ -89,7 +89,7 @@ namespace HLTVDiscordBridge.Modules
                     if(config.NewsOutput)
                     {
                         try { await channel.SendMessageAsync(embed: embed); }
-                        catch (Discord.Net.HttpException) { Console.WriteLine($"not enough permission in channel {channel}"); continue; }
+                        catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); continue; }
                     }
                 }                
             }

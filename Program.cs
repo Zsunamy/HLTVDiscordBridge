@@ -60,7 +60,7 @@ namespace HLTVDiscordBridge
             {
                 await _cfg.GuildJoined(guild, null, true);
             }
-#if RELEASE
+#if DEBUG
             await BGTask();
 #endif
 
@@ -103,16 +103,16 @@ namespace HLTVDiscordBridge
 
                 Stopwatch watch = new(); watch.Start();
                 await HltvUpcomingAndLiveMatches.AktUpcomingAndLiveMatches();
-                Console.WriteLine($"{DateTime.Now.ToLongTimeString()} HLTV\t\tLiveAndUpcomingMatches aktualisiert ({watch.ElapsedMilliseconds}ms)");
+                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tLiveAndUpcomingMatches aktualisiert ({watch.ElapsedMilliseconds}ms)");
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvResults.AktResults(_client);
-                Console.WriteLine($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)"); 
+                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)"); 
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvEvents.AktEvents(await _cfg.GetChannels(_client));
-                Console.WriteLine($"{DateTime.Now.ToLongTimeString()} HLTV\t\tEvents aktualisiert ({watch.ElapsedMilliseconds}ms)");
+                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tEvents aktualisiert ({watch.ElapsedMilliseconds}ms)");
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvNews.AktHLTVNews(await _cfg.GetChannels(_client));
-                Console.WriteLine($"{DateTime.Now.ToLongTimeString()} HLTV\t\tNews aktualisiert ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
+                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tNews aktualisiert ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
                 CacheCleaner.Cleaner(_client);
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4);
             }
@@ -160,9 +160,14 @@ namespace HLTVDiscordBridge
             });                      
         }
 
+        public static void WriteLog(string arg)
+        {
+            Console.WriteLine(arg);
+            File.WriteAllText($"./cache/log/{DateTime.Now.ToLongDateString()}.log", File.ReadAllText($"./cache/log/{DateTime.Now.ToLongDateString()}.log") + "\n" + arg);
+        }
         private Task Log(LogMessage arg)
         {
-            Console.WriteLine(arg.ToString().Split("     ")[0] + "\t" + arg.ToString().Split("     ")[1]);
+            WriteLog(arg.ToString().Split("     ")[0] + "\t" + arg.ToString().Split("     ")[1]);
             return Task.CompletedTask;
         }
 
@@ -200,7 +205,7 @@ namespace HLTVDiscordBridge
                     File.WriteAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt", ori + DateTime.Now.ToShortTimeString() + " " + Message.Channel.ToString() + " " + Message.ToString() + "\n");
 
                     if (!Result.IsSuccess)
-                        Console.WriteLine(Result.ErrorReason);
+                        WriteLog(Result.ErrorReason);
                 }                
             });
         }
