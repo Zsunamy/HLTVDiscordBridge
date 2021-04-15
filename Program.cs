@@ -163,6 +163,7 @@ namespace HLTVDiscordBridge
         public static void WriteLog(string arg)
         {
             Console.WriteLine(arg);
+            if(!File.Exists($"./cache/log/{DateTime.Now.ToLongDateString()}.log")) { var fs = File.Create($"./cache/log/{DateTime.Now.ToLongDateString()}.log"); fs.Close(); }
             File.WriteAllText($"./cache/log/{DateTime.Now.ToLongDateString()}.log", File.ReadAllText($"./cache/log/{DateTime.Now.ToLongDateString()}.log") + "\n" + arg);
         }
         private Task Log(LogMessage arg)
