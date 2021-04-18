@@ -9,24 +9,6 @@ namespace HLTVDiscordBridge.Modules
     {             
         public static void Cleaner(DiscordSocketClient client)
         {
-            //ServerConfigs
-            Directory.CreateDirectory("./cache/serverconfig");
-            foreach(string file in Directory.GetFiles("./cache/serverconfig"))
-            {
-                bool todelete = true;
-                foreach(SocketGuild guild in client.Guilds)
-                {
-                    if (file.Contains(guild.Id.ToString()))
-                    {
-                        todelete = false;
-                        break;
-                    }
-                }
-                if (todelete)
-                {
-                    File.Delete(file);
-                }
-            }
             //delete playercards after 7 days
             Directory.CreateDirectory("./cache/playercards");
             foreach (string dir in Directory.GetDirectories("./cache/playercards"))
