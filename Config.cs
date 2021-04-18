@@ -281,6 +281,8 @@ namespace HLTVDiscordBridge
         /// <param name="startup">Is this the startup?</param>
         public async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null, bool startup = false)
         {
+            if (File.Exists($"./cache/serverconfig/{guild.Id}.xml") && startup) { return; }
+
             EmbedBuilder builder = new();
             if (channel == null)
             {                
@@ -289,7 +291,7 @@ namespace HLTVDiscordBridge
                 string guildName;
                 if (channel == null) { guildName = "n.A"; channelMention = "n.A"; }
                 else { guildName = guild.Name; channelMention = channel.Mention; }
-                builder.WithTitle("INIT")
+                builder.WithTitle("Init")
                     .WithDescription($"Thanks for adding the HLTVDiscordBridge to {guildName}. {channelMention} is set as default output for HLTV-NEWS. " +
                     $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
                     $"https://github.com/Zsunamy/HLTVDiscordBridge/issues \n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>")
@@ -313,12 +315,12 @@ namespace HLTVDiscordBridge
             _config.NewsOutput = true;
             _config.ResultOutput = true;
 
-            _xml = new XmlSerializer(typeof(ServerConfig));
             Directory.CreateDirectory("./cache/serverconfig");
-            if(File.Exists($"./cache/serverconfig/{guild.Id}.xml") && startup) { return; }
+            _xml = new XmlSerializer(typeof(ServerConfig));
             FileStream stream = new($"./cache/serverconfig/{guild.Id}.xml", FileMode.Create);  
-            _xml.Serialize(stream, _config);            
+            _xml.Serialize(stream, _config); 
             stream.Close();
+
             if(channel == null) {
                 builder.WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. To set a default HLTV-News output channel, type !init " +
                     $"in a channel of your choice, but make sure that the bot has enough permission to access and send messages in that channel. " +
@@ -327,7 +329,11 @@ namespace HLTVDiscordBridge
                 try { await guild.Owner.SendMessageAsync(embed: builder.Build()); }
                 catch (Exception){ return; }
             }
-            else { await channel.SendMessageAsync(embed: builder.Build()); }
+            else 
+            {
+                try { await channel.SendMessageAsync(embed: builder.Build()); }
+                catch (Exception) { return; }
+            }
             
         }
 
