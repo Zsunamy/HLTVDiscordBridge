@@ -14,7 +14,6 @@ namespace HLTVDiscordBridge.Modules
     {        
         public static async Task AktEvents(List<SocketTextChannel> channels) 
         {
-            Config _cfg = new();
             List<ushort> startedEvents = await GetStartedEvents();            
             if (startedEvents != null) 
             {
@@ -25,7 +24,7 @@ namespace HLTVDiscordBridge.Modules
                     {
                         foreach (SocketTextChannel channel in channels)
                         {
-                            ServerConfig config = _cfg.GetServerConfig(channel);
+                            ServerConfig config = Config.GetServerConfig(channel);
                             if (config.EventOutput)
                             {
                                 try { await channel.SendMessageAsync(embed: GetEventStartedEmbed(eventStats)); }
@@ -46,7 +45,7 @@ namespace HLTVDiscordBridge.Modules
                     {
                         foreach (SocketTextChannel channel in channels)
                         {
-                            ServerConfig config = _cfg.GetServerConfig(channel);
+                            ServerConfig config = Config.GetServerConfig(channel);
                             if (config.EventOutput)
                             {
                                 try { await channel.SendMessageAsync(embed: GetEventEndedEmbed(eventStats)); }

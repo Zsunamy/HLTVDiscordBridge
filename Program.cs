@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using HLTVDiscordBridge.Modules;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -17,11 +18,9 @@ namespace HLTVDiscordBridge
     {
         static void Main(string[] args) => new Program().RunBotAsync().GetAwaiter().GetResult();
 
-
         private DiscordSocketClient _client;
         private CommandService _commands;
         private IServiceProvider _services;
-        private Config _cfg;
         private ConfigClass Botconfig;
 
         public async Task RunBotAsync()
@@ -29,7 +28,6 @@ namespace HLTVDiscordBridge
             DiscordSocketConfig _config = new() { };
             _client = new DiscordSocketClient();
             _commands = new CommandService();
-            _cfg = new Config();
 
             _services = new ServiceCollection()
                 .AddSingleton(_client)
@@ -58,7 +56,7 @@ namespace HLTVDiscordBridge
             await Task.Delay(3000);
             foreach (SocketGuild guild in _client.Guilds)
             {
-                await _cfg.GuildJoined(guild, null, true);
+                await Config.GuildJoined(guild, null, true);
             }
 #if RELEASE
             await BGTask();
@@ -69,13 +67,14 @@ namespace HLTVDiscordBridge
 
         private Task GuildLeft(SocketGuild arg)
         {
-            File.Delete($"./cache/serverconfig/{arg.Id}.xml");
+            IMongoCollection<ServerConfig> collection = Config.GetCollection();
+            collection.DeleteOne(x => x.GuildID == arg.Id);
             return Task.CompletedTask;
         }
 
         private async Task GuildJoined(SocketGuild guild)
         {
-            await _cfg.GuildJoined(guild);
+            await Config.GuildJoined(guild);
         }
 
         private async Task BGTask()
@@ -107,10 +106,10 @@ namespace HLTVDiscordBridge
                 await HltvResults.AktResults(_client);
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)"); 
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                await HltvEvents.AktEvents(await _cfg.GetChannels(_client));
+                await HltvEvents.AktEvents(await Config.GetChannels(_client));
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tEvents aktualisiert ({watch.ElapsedMilliseconds}ms)");
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                await HltvNews.AktHLTVNews(await _cfg.GetChannels(_client));
+                await HltvNews.AktHLTVNews(await Config.GetChannels(_client));
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tNews aktualisiert ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
                 CacheCleaner.Cleaner(_client);
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4);
@@ -192,7 +191,7 @@ namespace HLTVDiscordBridge
                 int argPos = 0;
                 string prefix;
                 if (Message.Channel as SocketGuildChannel == null) { prefix = "!"; }
-                else { prefix = _cfg.GetServerConfig((Message.Channel as SocketGuildChannel).Guild).Prefix; }
+                else { prefix = Config.GetServerConfig((Message.Channel as SocketGuildChannel).Guild).Prefix; }
 
                 if (Message.HasStringPrefix(prefix, ref argPos) || Message.HasStringPrefix($"{prefix} ", ref argPos) || Message.HasMentionPrefix(_client.CurrentUser, ref argPos))
                 {

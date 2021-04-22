@@ -9,6 +9,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace HLTVDiscordBridge
 {
@@ -19,10 +22,13 @@ namespace HLTVDiscordBridge
         public string TopGGApiKey { get; set; }
         public string BotsGGApiKey { get; set; }
         public string APILink { get; set; }
+        public string DatabaseLink { get; set; }
     }
 
     public class ServerConfig
     {
+        [BsonId]
+        public ObjectId Id { get; set; }
         public ulong GuildID { get; set; }
         public ulong NewsChannelID { get; set; }
         public ushort MinimumStars { get; set; }
@@ -35,8 +41,55 @@ namespace HLTVDiscordBridge
 
     public class Config : ModuleBase<SocketCommandContext>
     {
+        public static void InitAllConfigs()
+        {
+            IMongoCollection<ServerConfig> collection = GetCollection();
+            XmlSerializer _xml = new(typeof(ServerConfig));
+            foreach(string file in Directory.GetFiles("./cache/serverconfig"))
+            {
+                FileStream fs = File.OpenRead(file);
+                var cfg = _xml.Deserialize(fs) as ServerConfig;
+                fs.Close();
+                collection.InsertOne(cfg);
+            }
+        }
+        public static IMongoCollection<ServerConfig> GetCollection()
+        {
+            MongoClient dbClient = new(LoadConfig().DatabaseLink);
+#if DEBUG
+            IMongoDatabase db = dbClient.GetDatabase("hltv-dev");
+#endif
+#if RELEASE
+            IMongoDatabase db = dbClient.GetDatabase("hltv");
+#endif
+            return db.GetCollection<ServerConfig>("serverconfig");
+        }
+        public static ServerConfig GetServerConfig(SocketTextChannel channel)
+        {
+            IMongoCollection<ServerConfig> collection = GetCollection();
+            return collection.Find(x => x.NewsChannelID == channel.Id).First();
+        }
+        public static ServerConfig GetServerConfig(SocketGuild guild)
+        {
+            IMongoCollection<ServerConfig> collection = GetCollection();
+            return collection.Find(x => x.GuildID == guild.Id).First();
+        }
+        public static async Task<List<SocketTextChannel>> GetChannels(DiscordSocketClient client)
+        {
+            List<SocketTextChannel> channels = new();
+            IMongoCollection<ServerConfig> collection = GetCollection();
+            List<ServerConfig> configs = (await collection.FindAsync(_ => true)).ToList();
 
-        XmlSerializer _xml;
+            foreach (ServerConfig cfg in configs)
+            {
+                if ((SocketTextChannel)client.GetChannel(cfg.NewsChannelID) != null)
+                {
+                    channels.Add((SocketTextChannel)client.GetChannel(cfg.NewsChannelID));
+                }
+            }
+            return channels;
+        }
+
         /// <summary>
         /// Loads the generel bot config
         /// </summary>
@@ -52,15 +105,17 @@ namespace HLTVDiscordBridge
             return conf;
         }
 
-        #region Commands
+#region Commands
         [Command("set")]
         public async Task ChangeServerConfig(string option = "", [Remainder]string arg = "")
         {
-            ServerConfig _cfg = GetServerConfig(Context.Guild);
-            
-            XmlSerializer _xml = new(typeof(ServerConfig));
             EmbedBuilder builder = new();
-            if(Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
+
+            IMongoCollection<ServerConfig> collection = GetCollection();
+
+            UpdateDefinition<ServerConfig> update = null;
+
+            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
             {
                 builder.WithTitle("error")
                     .WithColor(Color.Red)
@@ -69,7 +124,10 @@ namespace HLTVDiscordBridge
                 await ReplyAsync(embed: builder.Build());
                 return;
             }
-            if(!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
+
+            ServerConfig _cfg = GetServerConfig(Context.Guild);
+
+            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
             {
                 builder.WithTitle("error")
                     .WithColor(Color.Red)
@@ -107,7 +165,7 @@ namespace HLTVDiscordBridge
                         {
                             if (newStars >= 0 && newStars <= 5)
                             {
-                                _cfg.MinimumStars = newStars;
+                                update = Builders<ServerConfig>.Update.Set(x => x.MinimumStars, newStars);
                                 builder.WithColor(Color.Green)
                                     .WithTitle("SUCCESS")
                                     .WithDescription($"You successfully changed the minimum stars to output a HLTV match to `{newStars}`")
@@ -135,7 +193,7 @@ namespace HLTVDiscordBridge
                     case "featuredevents":
                         if (bool.TryParse(arg, out bool featuredevents))
                         {
-                            _cfg.OnlyFeaturedEvents = featuredevents;
+                            update = Builders<ServerConfig>.Update.Set(x => x.OnlyFeaturedEvents, featuredevents);
                             string featured;
                             if (featuredevents) { featured = "only featured events"; }
                             else { featured = "all events"; }
@@ -155,7 +213,7 @@ namespace HLTVDiscordBridge
                         }
                         break;
                     case "prefix":
-                        _cfg.Prefix = arg;
+                        update = Builders<ServerConfig>.Update.Set(x => x.Prefix, arg);
                         builder.WithColor(Color.Green)
                             .WithTitle("SUCCESS")
                             .WithDescription($"You successfully changed the prefix to `{arg}`")
@@ -166,7 +224,7 @@ namespace HLTVDiscordBridge
                     case "newsoutput":
                         if (bool.TryParse(arg, out bool newsoutput))
                         {
-                            _cfg.NewsOutput = newsoutput;
+                            update = Builders<ServerConfig>.Update.Set(x => x.NewsOutput, newsoutput);
                             builder.WithColor(Color.Green)
                                 .WithTitle("SUCCESS")
                                 .WithDescription($"You successfully changed the automatic news output to `{newsoutput}`")
@@ -187,7 +245,7 @@ namespace HLTVDiscordBridge
                     case "resultoutput":
                         if (bool.TryParse(arg, out bool resultoutput))
                         {
-                            _cfg.ResultOutput = resultoutput;
+                            update = Builders<ServerConfig>.Update.Set(x => x.ResultOutput, resultoutput);
                             builder.WithColor(Color.Green)
                                 .WithTitle("SUCCESS")
                                 .WithDescription($"You successfully changed the automatic result output to `{resultoutput}`")
@@ -208,7 +266,7 @@ namespace HLTVDiscordBridge
                     case "eventoutput":
                         if (bool.TryParse(arg, out bool eventoutput))
                         {
-                            _cfg.EventOutput = eventoutput;
+                            update = Builders<ServerConfig>.Update.Set(x => x.EventOutput, eventoutput);
                             builder.WithColor(Color.Green)
                                 .WithTitle("SUCCESS")
                                 .WithDescription($"You successfully changed the automatic event output to `{eventoutput}`")
@@ -234,12 +292,9 @@ namespace HLTVDiscordBridge
                         break;
                 }
             }
-            FileStream fs = new("./cache/serverconfig/" + Context.Guild.Id + ".xml", FileMode.Create);
-            _xml.Serialize(fs, _cfg);
-            fs.Close();
+            await collection.UpdateOneAsync(x => x.GuildID == Context.Guild.Id, update);
             await ReplyAsync(embed: builder.Build());
         }
-
 
         [Command("init")]
         public async Task InitTextChannel(SocketTextChannel channel = null)
@@ -267,9 +322,15 @@ namespace HLTVDiscordBridge
             {
                 channel = (SocketTextChannel)Context.Channel;
             }
-            await GuildJoined(Context.Guild, channel);
+            IMongoCollection<ServerConfig> collection = GetCollection();
+            collection.UpdateOne(x => x.GuildID == Context.Guild.Id, Builders<ServerConfig>.Update.Set(x => x.NewsChannelID, channel.Id));
+            builder.WithTitle("Init")
+                    .WithDescription($"Success! You are now using the channel {channel.Mention} as default output for HLTV-NEWS")
+                    .WithCurrentTimestamp()
+                    .WithColor(Color.DarkBlue);
+            await ReplyAsync(embed: builder.Build());
         }
-        #endregion
+#endregion
 
 
         /// <summary>
@@ -279,9 +340,11 @@ namespace HLTVDiscordBridge
         /// <param name="client">Bot Client</param>
         /// <param name="channel">Sets a custom Channel. null = default channel on guild</param>
         /// <param name="startup">Is this the startup?</param>
-        public async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null, bool startup = false)
+        public static async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null, bool startup = false)
         {
-            if (File.Exists($"./cache/serverconfig/{guild.Id}.xml") && startup) { return; }
+            IMongoCollection<ServerConfig> collection = GetCollection();
+
+            if (collection.Find(x => x.GuildID == guild.Id).CountDocuments() != 0 && startup) { return; }
 
             EmbedBuilder builder = new();
             if (channel == null)
@@ -304,8 +367,8 @@ namespace HLTVDiscordBridge
                     .WithCurrentTimestamp()
                     .WithColor(Color.DarkBlue);
             }
-            ServerConfig _config = new();
 
+            ServerConfig _config = new();
             if(channel != null) { _config.NewsChannelID = channel.Id; }            
             _config.GuildID = guild.Id;
             _config.MinimumStars = 0;
@@ -315,11 +378,7 @@ namespace HLTVDiscordBridge
             _config.NewsOutput = true;
             _config.ResultOutput = true;
 
-            Directory.CreateDirectory("./cache/serverconfig");
-            _xml = new XmlSerializer(typeof(ServerConfig));
-            FileStream stream = new($"./cache/serverconfig/{guild.Id}.xml", FileMode.Create);  
-            _xml.Serialize(stream, _config); 
-            stream.Close();
+            collection.InsertOne(_config);
 
             if(channel == null) {
                 builder.WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. To set a default HLTV-News output channel, type !init " +
@@ -344,66 +403,9 @@ namespace HLTVDiscordBridge
                 if (guild.Id == 748637221300732076)
                 {
                     return await guild.GetEmoteAsync(809082404324114522);
-                }                
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Gets all HLTV output channels of the client
-        /// </summary>
-        /// <param name="client">acting client</param>
-        /// <returns>List<SocketTextChannel> of all channels</returns>
-        public async Task<List<SocketTextChannel>> GetChannels (DiscordSocketClient client)
-        {
-            List<SocketTextChannel> channel = new();
-            ServerConfig _config = new();
-            _xml = new XmlSerializer(typeof(ServerConfig));
-            foreach (SocketGuild guild in client.Guilds)
-            {
-                if (!File.Exists($"./cache/serverconfig/{guild.Id}.xml")) { await GuildJoined(guild); }                
-                FileStream fs = new($"./cache/serverconfig/{guild.Id}.xml", FileMode.Open);
-                _config = (ServerConfig)_xml.Deserialize(fs);
-                fs.Close();
-                if ((SocketTextChannel)client.GetChannel(_config.NewsChannelID) != null) { channel.Add((SocketTextChannel)client.GetChannel(_config.NewsChannelID)); }                
-            }
-            return channel;
-        }
-        /// <summary>
-        /// Gets the Serverconfig
-        /// </summary>
-        /// <param name="channel">HLTV output channel</param>
-        /// <returns>ServerConfig</returns>
-        public ServerConfig GetServerConfig(SocketTextChannel channel)
-        {
-            ServerConfig _config = new();
-            _xml = new XmlSerializer(typeof(ServerConfig));
-            foreach(string path in Directory.GetFiles("./cache/serverconfig/"))
-            {
-                FileStream fs = new(path, FileMode.Open);
-                _config = (ServerConfig)_xml.Deserialize(fs);
-                fs.Close();
-                if (_config.NewsChannelID == channel.Id)
-                {
-                    return _config;
                 }
             }
             return null;
         }
-        /// <summary>
-        /// Gets the Serverconfig
-        /// </summary>
-        /// <param name="guild">Guild of wanted config</param>
-        /// <returns>ServerConfig</returns>
-        public ServerConfig GetServerConfig(SocketGuild guild)
-        {
-            ServerConfig _config = new();
-            _xml = new XmlSerializer(typeof(ServerConfig));
-            FileStream fs = new("./cache/serverconfig/" + guild.Id + ".xml", FileMode.Open);
-            _config = (ServerConfig)_xml.Deserialize(fs);
-            fs.Close();
-            return _config;
-        }
     }
-
 }

@@ -170,12 +170,11 @@ namespace HLTVDiscordBridge.Modules
         public async Task Player([Remainder]string playername = "")
         {
             EmbedBuilder builder = new();
-            Config _cfg = new();
             if (playername == "")
             {
                 string prefix;
                 if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) { prefix = "!"; }
-                else { prefix = _cfg.GetServerConfig(Context.Guild).Prefix; }
+                else { prefix = Config.GetServerConfig(Context.Guild).Prefix; }
                 builder.WithColor(Color.Red)
                     .WithTitle("syntax error")
                     .WithDescription($"Please mind the syntax: \"{prefix}player [name]\"")

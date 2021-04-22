@@ -167,7 +167,6 @@ namespace HLTVDiscordBridge.Modules
 
         public static async Task AktResults(DiscordSocketClient client)
         {
-            Config _cfg = new();
             List<(JObject, ushort)> newMatches = await GetNewMatches();
             if(newMatches != null)
             {
@@ -175,9 +174,9 @@ namespace HLTVDiscordBridge.Modules
                 {
                     JObject latestMatch = match.Item1;
                     ushort stars = match.Item2;
-                    foreach (SocketTextChannel channel in await _cfg.GetChannels(client))
+                    foreach (SocketTextChannel channel in await Config.GetChannels(client))
                     {
-                        ServerConfig config = _cfg.GetServerConfig(channel);
+                        ServerConfig config = Config.GetServerConfig(channel);
                         if (config.MinimumStars <= stars && config.ResultOutput)
                         {
                             try { RestUserMessage msg = await channel.SendMessageAsync(embed: GetResultEmbed(latestMatch, stars)); await msg.AddReactionAsync(await Config.GetEmote(client)); }

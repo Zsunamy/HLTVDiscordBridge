@@ -15,9 +15,8 @@ namespace HLTVDiscordBridge.Modules
             EmbedFooterBuilder builder = new();
             string[] footerStrings = File.ReadAllText("./cache/footer.txt").Split("\n");
             Random _rnd = new();
-            Config _cfg = new();
             string footerString = footerStrings[_rnd.Next(0, footerStrings.Length)];
-            if (footerString.Contains("<prefix>")) { footerString = footerString.Replace("<prefix>", _cfg.GetServerConfig(guild).Prefix); }
+            if (footerString.Contains("<prefix>")) { footerString = footerString.Replace("<prefix>", Config.GetServerConfig(guild).Prefix); }
             if (footerString.Contains("<servercount>")) { footerString = footerString.Replace("<servercount>", client.Guilds.Count.ToString()); }
             int totalUser = 0;
             foreach (SocketGuild g in client.Guilds)

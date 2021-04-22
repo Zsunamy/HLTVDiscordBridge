@@ -8,8 +8,6 @@ namespace HLTVDiscordBridge.Modules
 {
     public class Developer : ModuleBase<SocketCommandContext>
     {
-        Config _cfg = new();
-
         [Command("servercount")]
         public async Task ServerCount()
         {
@@ -33,13 +31,11 @@ namespace HLTVDiscordBridge.Modules
         {
             if (Context.User.Id == 255000770707980289 || Context.User.Id == 224037892387766272 || Context.User.Id == 248110264610848778) 
             {
-                _cfg = new Config();
                 EmbedBuilder builder = new();
                 
-                
-                foreach (SocketTextChannel channel in await _cfg.GetChannels(Context.Client))
+                foreach (SocketTextChannel channel in await Config.GetChannels(Context.Client))
                 {
-                    ServerConfig config = _cfg.GetServerConfig(channel);
+                    ServerConfig config = Config.GetServerConfig(channel);
                     string newMessage = message.Replace("<prefix>", config.Prefix);
                     builder.WithTitle($"Update: {version}")
                         .WithDescription(newMessage + $"\nDo you have any inquiries or issues? [Contact us!](https://github.com/Zsunamy/HLTVDiscordBridge/issues)\n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>\n" +
