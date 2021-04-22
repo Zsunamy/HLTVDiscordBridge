@@ -10,6 +10,8 @@
         "dependencies": {
           "Discord.Net": "2.3.1",
           "Microsoft.Extensions.DependencyInjection": "5.0.1",
+          "MongoDB.Bson": "2.12.2",
+          "MongoDB.Driver": "2.12.2",
           "Svg": "3.2.3"
         },
         "runtime": {
@@ -84,6 +86,14 @@
           }
         }
       },
+      "DnsClient/1.4.0": {
+        "runtime": {
+          "lib/netstandard2.1/DnsClient.dll": {
+            "assemblyVersion": "1.4.0.0",
+            "fileVersion": "1.4.0.0"
+          }
+        }
+      },
       "Fizzler/1.2.0": {
         "runtime": {
           "lib/netstandard2.0/Fizzler.dll": {
@@ -129,6 +139,87 @@
             "assetType": "runtime",
             "assemblyVersion": "4.0.2.0",
             "fileVersion": "4.700.19.56404"
+          }
+        }
+      },
+      "MongoDB.Bson/2.12.2": {
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "5.0.0"
+        },
+        "runtime": {
+          "lib/netstandard2.1/MongoDB.Bson.dll": {
+            "assemblyVersion": "2.12.2.0",
+            "fileVersion": "2.12.2.0"
+          }
+        }
+      },
+      "MongoDB.Driver/2.12.2": {
+        "dependencies": {
+          "MongoDB.Bson": "2.12.2",
+          "MongoDB.Driver.Core": "2.12.2",
+          "MongoDB.Libmongocrypt": "1.2.1"
+        },
+        "runtime": {
+          "lib/netstandard2.1/MongoDB.Driver.dll": {
+            "assemblyVersion": "2.12.2.0",
+            "fileVersion": "2.12.2.0"
+          }
+        }
+      },
+      "MongoDB.Driver.Core/2.12.2": {
+        "dependencies": {
+          "DnsClient": "1.4.0",
+          "MongoDB.Bson": "2.12.2",
+          "MongoDB.Libmongocrypt": "1.2.1",
+          "SharpCompress": "0.23.0",
+          "System.Buffers": "4.5.1"
+        },
+        "runtime": {
+          "lib/netstandard2.1/MongoDB.Driver.Core.dll": {
+            "assemblyVersion": "2.12.2.0",
+            "fileVersion": "2.12.2.0"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win/native/libzstd.dll": {
+            "rid": "win",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win/native/snappy32.dll": {
+            "rid": "win",
+            "assetType": "native",
+            "fileVersion": "1.1.1.7"
+          },
+          "runtimes/win/native/snappy64.dll": {
+            "rid": "win",
+            "assetType": "native",
+            "fileVersion": "1.1.1.7"
+          }
+        }
+      },
+      "MongoDB.Libmongocrypt/1.2.1": {
+        "runtime": {
+          "lib/netstandard2.1/MongoDB.Libmongocrypt.dll": {
+            "assemblyVersion": "1.2.1.0",
+            "fileVersion": "1.2.1.0"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/linux/native/libmongocrypt.so": {
+            "rid": "linux",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx/native/libmongocrypt.dylib": {
+            "rid": "osx",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win/native/mongocrypt.dll": {
+            "rid": "win",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
           }
         }
       },
@@ -215,6 +306,17 @@
           }
         }
       },
+      "SharpCompress/0.23.0": {
+        "dependencies": {
+          "System.Text.Encoding.CodePages": "4.5.1"
+        },
+        "runtime": {
+          "lib/netstandard2.0/SharpCompress.dll": {
+            "assemblyVersion": "0.23.0.0",
+            "fileVersion": "0.23.0.0"
+          }
+        }
+      },
       "Svg/3.2.3": {
         "dependencies": {
           "Fizzler": "1.2.0",
@@ -231,6 +333,7 @@
           }
         }
       },
+      "System.Buffers/4.5.1": {},
       "System.Collections/4.3.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "3.1.0",
@@ -368,6 +471,7 @@
           "Microsoft.NETCore.Targets": "1.1.0"
         }
       },
+      "System.Runtime.CompilerServices.Unsafe/5.0.0": {},
       "System.Runtime.Extensions/4.3.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "3.1.0",
@@ -380,6 +484,12 @@
           "Microsoft.NETCore.Platforms": "3.1.0",
           "Microsoft.NETCore.Targets": "1.1.0",
           "System.Runtime": "4.3.0"
+        }
+      },
+      "System.Text.Encoding.CodePages/4.5.1": {
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "3.1.0",
+          "System.Runtime.CompilerServices.Unsafe": "5.0.0"
         }
       },
       "System.Threading/4.3.0": {
@@ -446,6 +556,13 @@
       "path": "discord.net.websocket/2.3.1",
       "hashPath": "discord.net.websocket.2.3.1.nupkg.sha512"
     },
+    "DnsClient/1.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-CO1NG1zQdV0nEAXmr/KppLZ0S1qkaPwV0kPX5YPgmYBtrBVh1XMYHM54IXy3RBJu1k4thFtpzwo4HNHqxiuFYw==",
+      "path": "dnsclient/1.4.0",
+      "hashPath": "dnsclient.1.4.0.nupkg.sha512"
+    },
     "Fizzler/1.2.0": {
       "type": "package",
       "serviceable": true,
@@ -488,6 +605,34 @@
       "path": "microsoft.win32.systemevents/4.7.0",
       "hashPath": "microsoft.win32.systemevents.4.7.0.nupkg.sha512"
     },
+    "MongoDB.Bson/2.12.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-J6BuU4N9mD780KUI964zQbwuOMPpeRcsx4Lj98LaYd+l6pEEogin+BNFqnandwCqYjPlQGnmuDkqZXoIumAYTQ==",
+      "path": "mongodb.bson/2.12.2",
+      "hashPath": "mongodb.bson.2.12.2.nupkg.sha512"
+    },
+    "MongoDB.Driver/2.12.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-OWHZmRx9AMtfInSKa9vFjTFOnzik2w9eeA6X5Dw0iHYMfObS6e805v1evi6cp4g/CIllzVdCjW+haKThKwInFQ==",
+      "path": "mongodb.driver/2.12.2",
+      "hashPath": "mongodb.driver.2.12.2.nupkg.sha512"
+    },
+    "MongoDB.Driver.Core/2.12.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-cU5AOB45bX/kMsnyp8733aaZxbRAumMszlZ5xuy3Lo7G0E9S1Gqqt1KlkyD7etzMyTZSzcWnHTg8LXH9ym/JkA==",
+      "path": "mongodb.driver.core/2.12.2",
+      "hashPath": "mongodb.driver.core.2.12.2.nupkg.sha512"
+    },
+    "MongoDB.Libmongocrypt/1.2.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-VUtUAO2W6+DOjBtLHuD9WlTTcxYLXCNfp9YeKcws5LNAl0xej2KX1I37VsTAKnmnMjAF2Vwy1FXLCpK84FglMA==",
+      "path": "mongodb.libmongocrypt/1.2.1",
+      "hashPath": "mongodb.libmongocrypt.1.2.1.nupkg.sha512"
+    },
     "Newtonsoft.Json/12.0.2": {
       "type": "package",
       "serviceable": true,
@@ -502,12 +647,26 @@
       "path": "runtime.osx.10.10-x64.corecompat.system.drawing/5.8.64",
       "hashPath": "runtime.osx.10.10-x64.corecompat.system.drawing.5.8.64.nupkg.sha512"
     },
+    "SharpCompress/0.23.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HBbT47JHvNrsZX2dTBzUBOSzBt+EmIRGLIBkbxcP6Jef7DB4eFWQX5iHWV3Nj7hABFPCjISrZ8s0z72nF2zFHQ==",
+      "path": "sharpcompress/0.23.0",
+      "hashPath": "sharpcompress.0.23.0.nupkg.sha512"
+    },
     "Svg/3.2.3": {
       "type": "package",
       "serviceable": true,
       "sha512": "sha512-rSyJ6CLAE4Ac/0c5Li2AJ6fLaT0cyq68N046ROQG+3U3LwgkUZbkmORlX69xmpEFvRG4hY4GPK6qc2tbSwERRQ==",
       "path": "svg/3.2.3",
       "hashPath": "svg.3.2.3.nupkg.sha512"
+    },
+    "System.Buffers/4.5.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Rw7ijyl1qqRS0YQD/WycNst8hUUMgrMH4FCn1nNm27M4VxchZ1js3fVjQaANHO5f3sN4isvP4a+Met9Y4YomAg==",
+      "path": "system.buffers/4.5.1",
+      "hashPath": "system.buffers.4.5.1.nupkg.sha512"
     },
     "System.Collections/4.3.0": {
       "type": "package",
@@ -614,6 +773,13 @@
       "path": "system.runtime/4.3.0",
       "hashPath": "system.runtime.4.3.0.nupkg.sha512"
     },
+    "System.Runtime.CompilerServices.Unsafe/5.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ZD9TMpsmYJLrxbbmdvhwt9YEgG5WntEnZ/d1eH8JBX9LBp+Ju8BSBhUGbZMNVHHomWo2KVImJhTDl2hIgw/6MA==",
+      "path": "system.runtime.compilerservices.unsafe/5.0.0",
+      "hashPath": "system.runtime.compilerservices.unsafe.5.0.0.nupkg.sha512"
+    },
     "System.Runtime.Extensions/4.3.0": {
       "type": "package",
       "serviceable": true,
@@ -627,6 +793,13 @@
       "sha512": "sha512-BiIg+KWaSDOITze6jGQynxg64naAPtqGHBwDrLaCtixsa5bKiR8dpPOHA7ge3C0JJQizJE+sfkz1wV+BAKAYZw==",
       "path": "system.text.encoding/4.3.0",
       "hashPath": "system.text.encoding.4.3.0.nupkg.sha512"
+    },
+    "System.Text.Encoding.CodePages/4.5.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-4J2JQXbftjPMppIHJ7IC+VXQ9XfEagN92vZZNoG12i+zReYlim5dMoXFC1Zzg7tsnKDM7JPo5bYfFK4Jheq44w==",
+      "path": "system.text.encoding.codepages/4.5.1",
+      "hashPath": "system.text.encoding.codepages.4.5.1.nupkg.sha512"
     },
     "System.Threading/4.3.0": {
       "type": "package",
