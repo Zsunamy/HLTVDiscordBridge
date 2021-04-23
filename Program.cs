@@ -79,13 +79,13 @@ namespace HLTVDiscordBridge
 
         private async Task BGTask()
         {            
-            bool updateServerCountGG = true;
+            int lastUpdate = 0;
             while (true)
             {
                 //top.gg API & bots.gg API             
-                if(DateTime.Now.Hour == 20 && updateServerCountGG && _client.CurrentUser.Id == 807182830752628766) 
+                if (DateTime.Now.Hour > lastUpdate && _client.CurrentUser.Id == 807182830752628766)
                 {
-                    updateServerCountGG = false;
+                    lastUpdate = DateTime.Now.Hour;
                     HttpClient http = new();
                     //top.gg
                     http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(Botconfig.TopGGApiKey);
@@ -97,8 +97,7 @@ namespace HLTVDiscordBridge
                     req = new(HttpMethod.Post, "https://discord.bots.gg/api/v1/bots/807182830752628766/stats");
                     req.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
                     await http.SendAsync(req);
-                } else if(DateTime.Now.Hour == 21) { updateServerCountGG = true; }
-
+                }
                 Stopwatch watch = new(); watch.Start();
                 await HltvUpcomingAndLiveMatches.AktUpcomingAndLiveMatches();
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tLiveAndUpcomingMatches aktualisiert ({watch.ElapsedMilliseconds}ms)");
