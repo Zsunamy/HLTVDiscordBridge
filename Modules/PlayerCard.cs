@@ -93,7 +93,7 @@ namespace HLTVDiscordBridge.Modules
                 {
                     ushort playerId;
                     if(find1.FirstOrDefault() != null) { playerId = find1.FirstOrDefault().PlayerId; }
-                    else { playerId = find2.FirstOrDefault().PlayerId; }
+                    else { playerId = find2.FirstOrDefault().PlayerId; playername = find2.FirstOrDefault().Name; }
                     req = await Tools.RequestApiJObject("playerById/" + playerId);
                     if (!req.Item2) { return (null, 0, null); }
                     idJObj = req.Item1;
