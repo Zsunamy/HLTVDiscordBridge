@@ -1,16 +1,53 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Driver;
 using Newtonsoft.Json.Linq;
 
 namespace HLTVDiscordBridge.Modules
 {
+    class PlayerDocument
+    {
+        [BsonId]
+        public ObjectId Id { get; set; }
+        public ushort PlayerId { get; set; }
+        public string Name { get; set; }
+        public List<string> Alias { get; set; }
+        public string Nationality { get; set; }
+        public string Image { get; set; }
+    }
     public class PlayerCard : ModuleBase<SocketCommandContext>
     {
+        private static IMongoCollection<PlayerDocument> GetCollection()
+        {
+            MongoClient dbClient = new(Config.LoadConfig().DatabaseLink);
+#if DEBUG
+            IMongoDatabase db = dbClient.GetDatabase("hltv-dev");
+#endif
+#if RELEASE
+            IMongoDatabase db = dbClient.GetDatabase("hltv");
+#endif
+            return db.GetCollection<PlayerDocument>("players");
+        }
+
+        public static void PlayerTest()
+        {
+            IMongoCollection<PlayerDocument> collection = GetCollection();
+            PlayerDocument doc = new();
+            List<string> alias = new();
+            alias.Add("simple"); alias.Add("jürgen");
+            doc.Name = "s1mple";
+            doc.Alias = alias;
+            collection.InsertOne(doc);
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -32,10 +69,36 @@ namespace HLTVDiscordBridge.Modules
             } else
             {
                 //Get non cached Player 
-                var req = await Tools.RequestApiJObject("player/" + playername);
-                if(!req.Item2) { return (null, 0, null); }
-                idJObj = req.Item1;
-                if (idJObj == null) { return (null, 0, JArray.Parse("[]")); }
+
+                //DATABASE
+                IMongoCollection<PlayerDocument> collection = GetCollection();
+                (JObject, bool) req = (null, false);
+                var find1 = collection.Find(x => x.Name == playername.ToLower());
+                var find2 = collection.Find(x => x.Alias.Contains(playername.ToLower()));
+                if (find1.CountDocuments() == 0 && find2.CountDocuments() == 0)
+                {
+                    req = await Tools.RequestApiJObject("player/" + playername);
+                    if (!req.Item2) { return (null, 0, null); }
+                    idJObj = req.Item1;
+                    if (idJObj == null) { return (null, 0, JArray.Parse("[]")); }
+                    PlayerDocument doc = new();
+                    doc.PlayerId = ushort.Parse(idJObj.GetValue("id").ToString());
+                    doc.Name = idJObj.GetValue("ign").ToString();
+                    doc.Alias = null;
+                    doc.Image = idJObj.GetValue("image").ToString();
+                    doc.Nationality = JObject.Parse(idJObj.GetValue("country").ToString()).GetValue("code").ToString();
+                    collection.InsertOne(doc);
+                }
+                else
+                {
+                    ushort playerId;
+                    if(find1.FirstOrDefault() != null) { playerId = find1.FirstOrDefault().PlayerId; }
+                    else { playerId = find2.FirstOrDefault().PlayerId; }
+                    req = await Tools.RequestApiJObject("playerById/" + playerId);
+                    if (!req.Item2) { return (null, 0, null); }
+                    idJObj = req.Item1;
+                    if (idJObj == null) { return (null, 0, JArray.Parse("[]")); }
+                }
 
                 Directory.CreateDirectory($"./cache/playercards/{playername.ToLower()}");
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/id.json", idJObj.ToString());

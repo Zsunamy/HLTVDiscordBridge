@@ -51,7 +51,7 @@ namespace HLTVDiscordBridge
             await _client.SetGameAsync("!help");
 
             //await _scoreboard.ConnectWebSocket();
-
+            //PlayerCard.PlayerTest();
             //catch if serverconfigs exist
             await Task.Delay(3000);
             foreach (SocketGuild guild in _client.Guilds)
