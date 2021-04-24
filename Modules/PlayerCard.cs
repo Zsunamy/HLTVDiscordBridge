@@ -94,10 +94,21 @@ namespace HLTVDiscordBridge.Modules
                     ushort playerId;
                     if(find1.FirstOrDefault() != null) { playerId = find1.FirstOrDefault().PlayerId; }
                     else { playerId = find2.FirstOrDefault().PlayerId; playername = find2.FirstOrDefault().Name; }
-                    req = await Tools.RequestApiJObject("playerById/" + playerId);
-                    if (!req.Item2) { return (null, 0, null); }
-                    idJObj = req.Item1;
-                    if (idJObj == null) { return (null, 0, JArray.Parse("[]")); }
+                    if(Directory.Exists($"./cache/playercards/{playername.ToLower()}"))
+                    {
+                        //cached
+                        idJObj = JObject.Parse(File.ReadAllText($"./cache/playercards/{playername.ToLower()}/id.json"));
+                        statsJObj = JObject.Parse(File.ReadAllText($"./cache/playercards/{playername.ToLower()}/stats.json"));
+                        ushort Id = ushort.Parse(idJObj.GetValue("id").ToString());
+                        JArray Achievements = JArray.Parse(idJObj.GetValue("achievements").ToString());
+                        return (statsJObj, Id, Achievements);
+                    } else
+                    {
+                        req = await Tools.RequestApiJObject("playerById/" + playerId);
+                        if (!req.Item2) { return (null, 0, null); }
+                        idJObj = req.Item1;
+                        if (idJObj == null) { return (null, 0, JArray.Parse("[]")); }
+                    }
                 }
 
                 Directory.CreateDirectory($"./cache/playercards/{playername.ToLower()}");
