@@ -54,8 +54,7 @@ namespace HLTVDiscordBridge
             //PlayerCard.PlayerTest();
             //catch if serverconfigs exist
             await Task.Delay(3000);
-            StatsUpdater.StatsTracker.Servercount = _client.Guilds.Count;
-            StatsUpdater.UpdateStats();
+            StatsUpdater.InitStats();
             foreach (SocketGuild guild in _client.Guilds)
             {
                 await Config.GuildJoined(guild, null, true);

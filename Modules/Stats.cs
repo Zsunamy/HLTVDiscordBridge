@@ -61,6 +61,11 @@ namespace HLTVDiscordBridge.Modules
 #endif
             return db.GetCollection<StatsTracker>("stats");
         }
+        public static void InitStats()
+        {
+            IMongoCollection<StatsTracker> collection = GetCollection();
+            StatsTracker = collection.Find(x => x.Id == ObjectId.Parse("60941203bd1ee1cd03d32943")).FirstOrDefault();
+        }
         public static void UpdateStats()
         {
             IMongoCollection<StatsTracker> collection = GetCollection();
