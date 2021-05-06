@@ -172,6 +172,9 @@ namespace HLTVDiscordBridge.Modules
             {
                 foreach ((JObject, ushort) match in newMatches)
                 {
+                    StatsUpdater.StatsTracker.MatchesSent += 1;
+                    StatsUpdater.UpdateStats();
+
                     JObject latestMatch = match.Item1;
                     ushort stars = match.Item2;
                     foreach (SocketTextChannel channel in await Config.GetChannels(client))
@@ -179,7 +182,12 @@ namespace HLTVDiscordBridge.Modules
                         ServerConfig config = Config.GetServerConfig(channel);
                         if (config.MinimumStars <= stars && config.ResultOutput)
                         {
-                            try { RestUserMessage msg = await channel.SendMessageAsync(embed: GetResultEmbed(latestMatch, stars)); await msg.AddReactionAsync(await Config.GetEmote(client)); }
+                            try { 
+                                RestUserMessage msg = await channel.SendMessageAsync(embed: GetResultEmbed(latestMatch, stars)); 
+                                await msg.AddReactionAsync(await Config.GetEmote(client));
+                                StatsUpdater.StatsTracker.MessagesSent += 1;
+                                StatsUpdater.UpdateStats();
+                            }
                             catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); }
                         }
                     }
@@ -259,6 +267,8 @@ namespace HLTVDiscordBridge.Modules
         public static async Task SendPlStats(string matchLink, ITextChannel channel)
         {
             await channel.SendMessageAsync(embed: await GetPlStatsEmbed(matchLink));
+            StatsUpdater.StatsTracker.MessagesSent += 1;
+            StatsUpdater.UpdateStats();
         }
         #endregion
 

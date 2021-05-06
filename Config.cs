@@ -390,7 +390,11 @@ namespace HLTVDiscordBridge
             }
             else 
             {
-                try { await channel.SendMessageAsync(embed: builder.Build()); }
+                try { 
+                    await channel.SendMessageAsync(embed: builder.Build());
+                    StatsUpdater.StatsTracker.MessagesSent += 1;
+                    StatsUpdater.UpdateStats();
+                }
                 catch (Exception) { return; }
             }
             

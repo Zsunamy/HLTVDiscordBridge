@@ -9,15 +9,53 @@ using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
 {
-    public class StatsStruct
+    public class PlayerReq
     {
-        [BsonId]
-        public ObjectId Id { get; set; }
-        public int ApiRequest { get; set; }
+        public PlayerReq(string name, int id, int reqs)
+        {
+            Name = name;
+            PlayerId = id;
+            Reqs = reqs;
+        }
+
+        public string Name { get; set; }
+        public int PlayerId { get; set; }
+        public int Reqs { get; set; }
     }
-    public class Stats
+    public class TeamReq
     {
-        private static IMongoCollection<StatsStruct> GetCollection()
+        public TeamReq(string name, int id, int reqs)
+        {
+            Name = name;
+            TeamId = id;
+            Reqs = reqs;
+        }
+        public string Name { get; set; }
+        public int TeamId { get; set; }
+        public int Reqs { get; set; }
+    }
+    public class StatsTracker
+    {
+        public ObjectId Id { get; set; } = new ObjectId("60941203bd1ee1cd03d32943");
+        public int Servercount { get; set; } = 0;
+        public int ApiRequest { get; set; } = 0;
+        public int Commands { get; set; } = 0;
+        public int LiveMatches { get; set; } = 0;
+        public int OngoingEvents { get; set; } = 0;
+        public int MatchesSent { get; set; } = 0;
+        public int NewsSent { get; set; } = 0;
+        public int MessagesSent { get; set; } = 0;
+        public List<PlayerReq> Players { get; set; } = new List<PlayerReq>();
+        public List<TeamReq> Teams { get; set; } = new List<TeamReq>();
+    }
+
+
+
+
+    public class StatsUpdater
+    {
+        public static StatsTracker StatsTracker = new();
+        private static IMongoCollection<StatsTracker> GetCollection()
         {
             MongoClient dbClient = new(Config.LoadConfig().DatabaseLink);
 #if RELEASE
@@ -26,11 +64,12 @@ namespace HLTVDiscordBridge.Modules
 #if DEBUG
             IMongoDatabase db = dbClient.GetDatabase("hltv-dev");
 #endif
-            return db.GetCollection<StatsStruct>("stats");
+            return db.GetCollection<StatsTracker>("stats");
         }
-        public static void AddApiRequests(ushort count)
+        public static void UpdateStats()
         {
-            IMongoCollection<StatsStruct> collection = GetCollection();
-        }
+            IMongoCollection<StatsTracker> collection = GetCollection();
+            collection.FindOneAndReplace(x => x.Id == ObjectId.Parse("60941203bd1ee1cd03d32943"), StatsTracker);
+        } 
     }
 }

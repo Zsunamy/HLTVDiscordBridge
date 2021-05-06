@@ -22,6 +22,8 @@ namespace HLTVDiscordBridge.Modules
                         totalUser++;
                     }
                 }
+                StatsUpdater.StatsTracker.MessagesSent += 1;
+                StatsUpdater.UpdateStats();
                 await ReplyAsync($"{Context.Client.Guilds.Count} server and {totalUser} user");
             }
         }
@@ -42,7 +44,11 @@ namespace HLTVDiscordBridge.Modules
                 $"Also feel free to [donate](https://www.patreon.com/zsunamy) us to support this project.\n Another quick and easy way to show us your support is by [voting](https://top.gg/bot/807182830752628766/vote) for this bot on [top.gg](https://top.gg/bot/807182830752628766) to increase awareness.")
                         .WithColor(Color.Green)
                         .WithCurrentTimestamp();
-                    try { await channel.SendMessageAsync(embed: builder.Build()); }
+                    try { 
+                        await channel.SendMessageAsync(embed: builder.Build());
+                        StatsUpdater.StatsTracker.MessagesSent += 1;
+                        StatsUpdater.UpdateStats();
+                    }
                     catch (Discord.Net.HttpException)
                     {
                         Program.WriteLog($"not enough permission in channel {channel}");

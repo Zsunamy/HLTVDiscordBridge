@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Svg;
 using System.Drawing;
+using System.Collections.Generic;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -28,12 +29,16 @@ namespace HLTVDiscordBridge.Modules
                 typingState.Dispose();
                 await msg.DeleteAsync();
                 if (req.Item2 == "") { await Context.Channel.SendMessageAsync(embed: req.Item1); }
+                StatsUpdater.StatsTracker.MessagesSent += 2;
+                StatsUpdater.UpdateStats();
                 await Context.Channel.SendFileAsync(req.Item2, embed: req.Item1);
             }   
             else
             {
                 var req = await GetTeamCard(name);
                 if (req.Item2 == "") { await Context.Channel.SendMessageAsync(embed: req.Item1); }
+                StatsUpdater.StatsTracker.MessagesSent += 1;
+                StatsUpdater.UpdateStats();
                 await Context.Channel.SendFileAsync(req.Item2, embed: req.Item1);
             }            
         }
@@ -249,6 +254,25 @@ namespace HLTVDiscordBridge.Modules
 
             builder.WithCurrentTimestamp();
             builder.WithFooter("The stats shown were collected during the last 3 months");
+
+            bool tracked = false;
+            foreach (TeamReq teamReq in StatsUpdater.StatsTracker.Teams)
+            {
+                if (teamReq.Name == teamJObj.GetValue("name").ToString())
+                {
+                    StatsUpdater.StatsTracker.Teams.Remove(teamReq);
+                    teamReq.Reqs += 1;
+                    StatsUpdater.StatsTracker.Teams.Add(new TeamReq(teamJObj.GetValue("name").ToString(), int.Parse(teamJObj.GetValue("id").ToString()), teamReq.Reqs));
+                    tracked = true;
+                    break;
+                }
+            }
+            if (!tracked)
+            {
+                StatsUpdater.StatsTracker.Teams.Add(new TeamReq(teamJObj.GetValue("name").ToString(), int.Parse(teamJObj.GetValue("id").ToString()), 1));
+            }
+            StatsUpdater.UpdateStats();
+
             return (builder.Build(), res.Item4);
         }
         #endregion

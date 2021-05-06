@@ -54,6 +54,8 @@ namespace HLTVDiscordBridge
             //PlayerCard.PlayerTest();
             //catch if serverconfigs exist
             await Task.Delay(3000);
+            StatsUpdater.StatsTracker.Servercount = _client.Guilds.Count;
+            StatsUpdater.UpdateStats();
             foreach (SocketGuild guild in _client.Guilds)
             {
                 await Config.GuildJoined(guild, null, true);
@@ -69,11 +71,15 @@ namespace HLTVDiscordBridge
         {
             IMongoCollection<ServerConfig> collection = Config.GetCollection();
             collection.DeleteOne(x => x.GuildID == arg.Id);
+            StatsUpdater.StatsTracker.Servercount = _client.Guilds.Count;
+            StatsUpdater.UpdateStats();
             return Task.CompletedTask;
         }
 
         private async Task GuildJoined(SocketGuild guild)
         {
+            StatsUpdater.StatsTracker.Servercount = _client.Guilds.Count;
+            StatsUpdater.UpdateStats();
             await Config.GuildJoined(guild);
         }
 
@@ -204,6 +210,11 @@ namespace HLTVDiscordBridge
 
                     if (!Result.IsSuccess)
                         WriteLog(Result.ErrorReason);
+                    else
+                    {
+                        StatsUpdater.StatsTracker.Commands += 1;
+                        StatsUpdater.UpdateStats();
+                    }
                 }                
             });
         }

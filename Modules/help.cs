@@ -119,6 +119,8 @@ namespace HLTVDiscordBridge.Modules
                         .WithFooter($"For more details type: \"{prefix}help [command]\"");
                     break;
             }
+            StatsUpdater.StatsTracker.MessagesSent += 1;
+            StatsUpdater.UpdateStats();
             await ReplyAsync(embed: builder.Build());
         }
     }

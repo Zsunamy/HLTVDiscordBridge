@@ -78,6 +78,8 @@ namespace HLTVDiscordBridge.Modules
 
             if (!sent)
             {
+                StatsUpdater.StatsTracker.NewsSent += 1;
+                StatsUpdater.UpdateStats();
                 Embed embed = GetNewsEmbed(bam);
                 File.WriteAllText("./cache/news/ids.txt", bam.id.ToString() + "\n" + File.ReadAllText("./cache/news/ids.txt"));
                 foreach (SocketTextChannel channel in channels)
@@ -85,7 +87,11 @@ namespace HLTVDiscordBridge.Modules
                     ServerConfig config = Config.GetServerConfig(channel);
                     if(config.NewsOutput)
                     {
-                        try { await channel.SendMessageAsync(embed: embed); }
+                        try { 
+                            await channel.SendMessageAsync(embed: embed);
+                            StatsUpdater.StatsTracker.MessagesSent += 1;
+                            StatsUpdater.UpdateStats();
+                        }
                         catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); continue; }
                     }
                 }                

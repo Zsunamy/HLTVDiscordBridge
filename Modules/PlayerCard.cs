@@ -236,7 +236,24 @@ namespace HLTVDiscordBridge.Modules
                     break;
             }
 
-            builder.WithFooter(Tools.GetRandomFooter(context.Guild, context.Client));            
+            builder.WithFooter(Tools.GetRandomFooter(context.Guild, context.Client)); 
+            bool tracked = false;
+            foreach(PlayerReq plReq in StatsUpdater.StatsTracker.Players)
+            {
+                if(plReq.Name == jObj.GetValue("ign").ToString())
+                {
+                    StatsUpdater.StatsTracker.Players.Remove(plReq);
+                    plReq.Reqs += 1;
+                    StatsUpdater.StatsTracker.Players.Add(new PlayerReq(jObj.GetValue("ign").ToString(), int.Parse(req.Item2.ToString()), plReq.Reqs));
+                    tracked = true;
+                    break;
+                }
+            }
+            if(!tracked)
+            {
+                StatsUpdater.StatsTracker.Players.Add(new PlayerReq(jObj.GetValue("ign").ToString(), int.Parse(req.Item2.ToString()), 1));
+            }
+            StatsUpdater.UpdateStats();
             return builder.Build();
         }
 
@@ -253,6 +270,8 @@ namespace HLTVDiscordBridge.Modules
                     .WithTitle("syntax error")
                     .WithDescription($"Please mind the syntax: \"{prefix}player [name]\"")
                     .WithFooter($"Example: \"{prefix}player s1mple\"");
+                StatsUpdater.StatsTracker.MessagesSent += 1;
+                StatsUpdater.UpdateStats();
                 await ReplyAsync(embed: builder.Build());
                 return;
             }
@@ -264,13 +283,18 @@ namespace HLTVDiscordBridge.Modules
                     .WithCurrentTimestamp();
                 var msg = await Context.Channel.SendMessageAsync(embed: builder.Build());
                 IDisposable typingState = Context.Channel.EnterTypingState();
-                var req = await GetPlayerCard(Context, playername);
+                
+                Embed embed = await GetPlayerCard(Context, playername);
                 typingState.Dispose();
-                await msg.DeleteAsync();                
-                await ReplyAsync(embed: req);
+                await msg.DeleteAsync();
+                StatsUpdater.StatsTracker.MessagesSent += 2;
+                StatsUpdater.UpdateStats();
+                await ReplyAsync(embed: embed);
             }
             else
             {
+                StatsUpdater.StatsTracker.MessagesSent += 1;
+                StatsUpdater.UpdateStats();
                 await ReplyAsync(embed: await GetPlayerCard(Context, playername));
             }            
         }

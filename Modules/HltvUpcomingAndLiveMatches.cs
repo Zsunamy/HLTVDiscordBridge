@@ -279,6 +279,8 @@ namespace HLTVDiscordBridge.Modules
             (Embed, ushort) res = await GetLiveMatchesEmbed();
             typingState.Dispose();
             await LoadingMsg.DeleteAsync();
+            StatsUpdater.StatsTracker.MessagesSent += 1;
+            StatsUpdater.UpdateStats();
             RestUserMessage msg = (RestUserMessage)await ReplyAsync(embed: res.Item1);
             for (int i = 1; i <= res.Item2; i++)
             {
@@ -293,6 +295,8 @@ namespace HLTVDiscordBridge.Modules
         public async Task GetUpcoming([Remainder] string arg = "")
         {
             //Ausgabe nach Team oder Event oder Tag
+            StatsUpdater.StatsTracker.MessagesSent += 1;
+            StatsUpdater.UpdateStats();
             await ReplyAsync(embed: BuildUpcomingMatchesEmbed(arg, Context));
         }
         #endregion

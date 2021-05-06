@@ -48,6 +48,8 @@ namespace HLTVDiscordBridge.Modules
             {
                 //OK
                 Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
+                StatsUpdater.StatsTracker.ApiRequest =+ 1;
+                StatsUpdater.UpdateStats();
                 return (JObject.Parse(resultString), true);
             }
         }
@@ -72,6 +74,8 @@ namespace HLTVDiscordBridge.Modules
             {
                 //OK
                 Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
+                StatsUpdater.StatsTracker.ApiRequest += 1;
+                StatsUpdater.UpdateStats();
                 return (JArray.Parse(resultString), true);
             }
         }
