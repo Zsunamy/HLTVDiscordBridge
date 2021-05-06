@@ -3,11 +3,7 @@ using Discord.Commands;
 using Discord.Rest;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
@@ -48,7 +44,8 @@ namespace HLTVDiscordBridge.Modules
                 JArray oldLiveMatches = JArray.Parse(File.ReadAllText("./cache/matches/liveMatches.json"));
                 if (oldLiveMatches.ToString() != liveMatches.ToString()) { File.WriteAllText("./cache/matches/liveMatches.json", liveMatches.ToString()); }
             }
-
+            StatsUpdater.StatsTracker.LiveMatches = liveMatches.Count;
+            StatsUpdater.UpdateStats();
             return (upcomingMatches, liveMatches);
         }
         #endregion

@@ -5,7 +5,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
@@ -84,6 +83,13 @@ namespace HLTVDiscordBridge.Modules
                 {
                     File.WriteAllText("./cache/events/events.json", events.ToString());
                 }
+                List<JObject> ongoingEvents = new();
+                foreach (JObject jObj in events)
+                {
+                    if (!jObj.TryGetValue("location", out _)) { ongoingEvents.Add(jObj); }
+                }
+                StatsUpdater.StatsTracker.OngoingEvents = ongoingEvents.Count;
+                StatsUpdater.UpdateStats();
                 return events;
             }
         }

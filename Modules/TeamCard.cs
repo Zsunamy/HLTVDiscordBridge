@@ -7,7 +7,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Svg;
 using System.Drawing;
-using System.Collections.Generic;
 
 namespace HLTVDiscordBridge.Modules
 {
