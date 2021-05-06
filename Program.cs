@@ -35,6 +35,7 @@ namespace HLTVDiscordBridge
                 .BuildServiceProvider();
 
             Botconfig = Config.LoadConfig();
+            StatsUpdater.InitStats();
 
             string BotToken = Botconfig.BotToken;
 
@@ -54,7 +55,6 @@ namespace HLTVDiscordBridge
             //PlayerCard.PlayerTest();
             //catch if serverconfigs exist
             await Task.Delay(3000);
-            StatsUpdater.InitStats();
             foreach (SocketGuild guild in _client.Guilds)
             {
                 await Config.GuildJoined(guild, null, true);
