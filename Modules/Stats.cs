@@ -69,6 +69,7 @@ namespace HLTVDiscordBridge.Modules
         public static void UpdateStats()
         {
             IMongoCollection<StatsTracker> collection = GetCollection();
+            if(StatsTracker.ApiRequest < 10) { InitStats(); }
             collection.FindOneAndReplace(x => x.Id == ObjectId.Parse("60941203bd1ee1cd03d32943"), StatsTracker);
         } 
     }

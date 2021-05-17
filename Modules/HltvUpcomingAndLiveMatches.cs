@@ -24,26 +24,8 @@ namespace HLTVDiscordBridge.Modules
                 if(bool.Parse(jObj.GetValue("live").ToString())) { liveMatches.Add(jObj); } 
                 else { upcomingMatches.Add(jObj); }
             }
-
-            if(!File.Exists("./cache/matches/upcomingMatches.json"))
-            {
-                File.WriteAllText("./cache/matches/upcomingMatches.json", upcomingMatches.ToString());                
-            } 
-            else
-            {
-                JArray oldUpcomingMatches = JArray.Parse(File.ReadAllText("./cache/matches/upcomingMatches.json"));
-                if(oldUpcomingMatches.ToString() != upcomingMatches.ToString()) { File.WriteAllText("./cache/matches/upcomingMatches.json", upcomingMatches.ToString()); }
-            }
-
-            if (!File.Exists("./cache/matches/liveMatches.json"))
-            {
-                File.WriteAllText("./cache/matches/liveMatches.json", liveMatches.ToString());
-            }
-            else
-            {
-                JArray oldLiveMatches = JArray.Parse(File.ReadAllText("./cache/matches/liveMatches.json"));
-                if (oldLiveMatches.ToString() != liveMatches.ToString()) { File.WriteAllText("./cache/matches/liveMatches.json", liveMatches.ToString()); }
-            }
+            File.WriteAllText("./cache/matches/upcomingMatches.json", upcomingMatches.ToString());
+            File.WriteAllText("./cache/matches/liveMatches.json", liveMatches.ToString());            
             StatsUpdater.StatsTracker.LiveMatches = liveMatches.Count;
             StatsUpdater.UpdateStats();
             return (upcomingMatches, liveMatches);
@@ -141,8 +123,10 @@ namespace HLTVDiscordBridge.Modules
 
         private static async Task<(Embed, ushort)> GetLiveMatchesEmbed()
         {
-            JArray matches = (await AktUpcomingAndLiveMatches()).Item2;
-            
+            //JArray matches = (await AktUpcomingAndLiveMatches()).Item2;
+            File.WriteAllText("./cache/text.json",new JArray().ToString());
+            JArray matches = JArray.Parse(File.ReadAllText("./cache/text.json"));
+
             EmbedBuilder builder = new();
             if (matches == null)
             {
