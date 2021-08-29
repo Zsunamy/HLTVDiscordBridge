@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.Rest;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -14,7 +15,7 @@ namespace HLTVDiscordBridge.Modules
         public static async Task<(JArray, JArray)> AktUpcomingAndLiveMatches()
         {
             Directory.CreateDirectory("./cache/matches");
-            var req = await Tools.RequestApiJArray("matches");
+            var req = await Tools.RequestApiJArray("getMatches", new List<string>(), new List<string>());
             if(!req.Item2) { return (null, null); }
             JArray jArr = req.Item1;
             JArray upcomingMatches = new();

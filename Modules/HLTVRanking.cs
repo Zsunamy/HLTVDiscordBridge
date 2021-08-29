@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -14,7 +15,9 @@ namespace HLTVDiscordBridge.Modules
         public async Task GetRanking([Remainder]string arg = "GLOBAL")
         {
             EmbedBuilder embed = new();
-            string endpoint;
+            List<string> properties = new();
+            List<string> values = new();
+            string[] months = { "january", "febuary", "march", "april", "may", "junl", "july", "august", "september", "october", "november", "december" };
             if (arg.Contains('-'))
             {
                 arg = "";
@@ -22,16 +25,36 @@ namespace HLTVDiscordBridge.Modules
             }
             if (arg == "GLOBAL")
             {
-                endpoint = "ranking";
+                properties.Add("year");
+                properties.Add("month");
+                properties.Add("day");
+                values.Add(DateTime.UtcNow.Year.ToString());
+                values.Add(months[DateTime.UtcNow.Month - 1]);
+                var day = DateTime.UtcNow.Day.ToString().Length == 1 ? $"0{DateTime.UtcNow.Day}" : DateTime.UtcNow.Day.ToString();
+                values.Add(day);
             }
             else if (DateTime.TryParse(arg, out DateTime time))
             {
-                string[] months = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
-                endpoint = $"ranking/{time.Day}/{months[time.Month - 1]}/{time.Year}";
+                properties.Add("year");
+                properties.Add("month");
+                properties.Add("day");
+                values.Add(time.Year.ToString());
+                values.Add(months[time.Month - 1]);
+                var day = time.Day.ToString().Length == 1 ? $"0{time.Day}" : time.Day.ToString();
+                values.Add(day);
+                
             }
             else
             {
-                endpoint = "ranking/" + arg.ToLower();
+                properties.Add("year");
+                properties.Add("month");
+                properties.Add("day");
+                properties.Add("country");
+                values.Add(DateTime.UtcNow.Year.ToString());
+                values.Add(months[DateTime.UtcNow.Month - 1]);
+                var day = DateTime.UtcNow.Day.ToString().Length == 1 ? $"0{DateTime.UtcNow.Day}" : DateTime.UtcNow.Day.ToString();
+                values.Add(day);
+                values.Add(arg.ToLower());
             }
 
             //cache
@@ -39,7 +62,7 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/ranking");
             if(!File.Exists($"./cache/ranking/ranking_{arg.ToLower().Replace(' ','-')}.json"))
             {
-                var req = await Tools.RequestApiJArray(endpoint);
+                var req = await Tools.RequestApiJArray("getRanking", properties, values);
                 if(!req.Item2) {
                     embed.WithColor(Color.Red)
                         .WithTitle($"error")

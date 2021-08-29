@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Svg;
 using System.Drawing;
+using System.Collections.Generic;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -55,14 +56,20 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/teamcards");
             if(!Directory.Exists($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}"))
             {
-                var req = await Tools.RequestApiJObject($"team/{name}");
+                List<string> properties = new();
+                List<string> values = new();
+                properties.Add("name");
+                values.Add(name);
+                var req = await Tools.RequestApiJObject("getTeamByName", properties, values);
                 if(!req.Item2) { return (null, null, false, ""); }
                 JObject fullTeamJObject;
                 fullTeamJObject = req.Item1;
                 if (fullTeamJObject == null) { return (null, null, true, ""); }
 
                 await Task.Delay(3000);
-                req = await Tools.RequestApiJObject($"teamstats/{fullTeamJObject.GetValue("id")}");
+                properties.Clear(); properties.Add("id");
+                values.Clear(); values.Add(fullTeamJObject.GetValue("id").ToString());
+                req = await Tools.RequestApiJObject("getTeamStats", properties, values);
                 if(!req.Item2) { return (null, null, false, ""); }
                 JObject teamStats = req.Item1;
                 

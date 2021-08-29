@@ -70,13 +70,19 @@ namespace HLTVDiscordBridge.Modules
                 //Get non cached Player 
 
                 //DATABASE
+                List<string> properties = new();
+                List<string> values = new();
+
                 IMongoCollection<PlayerDocument> collection = GetCollection();
                 (JObject, bool) req = (null, false);
                 var find1 = collection.Find(x => x.Name == playername.ToLower());
                 var find2 = collection.Find(x => x.Alias.Contains(playername.ToLower()));
                 if (find1.CountDocuments() == 0 && find2.CountDocuments() == 0)
                 {
-                    req = await Tools.RequestApiJObject("player/" + playername);
+
+                    properties.Add("name");
+                    values.Add(playername);
+                    req = await Tools.RequestApiJObject("getPlayerByName", properties, values);
                     if (!req.Item2) { return (null, 0, null); }
                     idJObj = req.Item1;
                     if (idJObj == null) { return (null, 0, JArray.Parse("[]")); }
@@ -103,7 +109,9 @@ namespace HLTVDiscordBridge.Modules
                         return (statsJObj, Id, Achievements);
                     } else
                     {
-                        req = await Tools.RequestApiJObject("playerById/" + playerId);
+                        properties.Add("id");
+                        values.Add(playerId.ToString());
+                        req = await Tools.RequestApiJObject("getPlayer", properties, values);
                         if (!req.Item2) { return (null, 0, null); }
                         idJObj = req.Item1;
                         if (idJObj == null) { return (null, 0, JArray.Parse("[]")); }
@@ -114,8 +122,10 @@ namespace HLTVDiscordBridge.Modules
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/id.json", idJObj.ToString());
                 ushort playerID = ushort.Parse(idJObj.GetValue("id").ToString());
                 JArray achievements = JArray.Parse(idJObj.GetValue("achievements").ToString());
+                properties.Clear(); properties.Add("id");
+                values.Clear(); values.Add(playerID.ToString());
 
-                req = await Tools.RequestApiJObject("playerstats/" + playerID.ToString());
+                req = await Tools.RequestApiJObject("getPlayerStats", properties, values);
                 if (!req.Item2) { return (null, 0, null); }
                 statsJObj = req.Item1;
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/stats.json", statsJObj.ToString());

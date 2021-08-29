@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.Rest;
 using Discord.WebSocket;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -13,21 +14,21 @@ namespace HLTVDiscordBridge.Modules
     {
         public static async Task<JObject> GetMatchByMatchId(uint matchId)
         {
-            var req = await Tools.RequestApiJObject("match/" + matchId);
+            List<string> properties = new();
+            List<string> values = new();
+            properties.Add("id");
+            values.Add(matchId.ToString());
+            var req = await Tools.RequestApiJObject("getMatch", properties, values);
             return req.Item1;
         }
 
         #region Results
         public static async Task<JArray> GetResults(ushort teamId)
         {
-            string idsString = $"[{teamId}]";
-            var req = await Tools.RequestApiJArray($"results/teams/{idsString}");
-            return req.Item1;
-        }
-        public static async Task<JArray> GetUpcomingMatches(ushort teamId)
-        {
-            string idsString = $"[{teamId}]";
-            var req = await Tools.RequestApiJArray($"matches/teams/{idsString}");
+            List<string> teamIds = new(); teamIds.Add(teamId.ToString());
+            List<List<string>> values = new();  values.Add(teamIds);
+            List<string> properties = new(); properties.Add("teamIds");
+            var req = await Tools.RequestApiJArray("getResults", properties, values);
             return req.Item1;
         }
         
@@ -37,7 +38,18 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>The latest results as JArray</returns>
         private static async Task<JArray> UpdateResultsCache()
         {
-            var req = await Tools.RequestApiJArray("results");
+            List<string> properties = new();
+            List<string> values = new();
+            properties.Add("startDate"); properties.Add("endDate");
+            string startMonth = DateTime.UtcNow.AddDays(-1).Month.ToString().Length == 1 ? $"0{DateTime.UtcNow.AddDays(-1).Month}" : DateTime.UtcNow.AddDays(-1).Month.ToString();
+            string startDay = DateTime.UtcNow.AddDays(-1).Day.ToString().Length == 1 ? $"0{DateTime.UtcNow.AddDays(-1).Day}" : DateTime.UtcNow.AddDays(-1).Day.ToString();
+            string endMonth = DateTime.UtcNow.Month.ToString().Length == 1 ? $"0{DateTime.UtcNow.Month}" : DateTime.UtcNow.Month.ToString();
+            string endDay = DateTime.UtcNow.Day.ToString().Length == 1 ? $"0{DateTime.UtcNow.Day}" : DateTime.UtcNow.Day.ToString();
+            string startDate = $"{DateTime.UtcNow.Year}-{startMonth}-{startDay}";
+            string endDate = $"{DateTime.UtcNow.Year}-{endMonth}-{endDay}";
+            values.Add(startDate); values.Add(endDate);
+
+            var req = await Tools.RequestApiJArray("getResults", properties, values);
             if(!req.Item2) { return null; }
             JArray jArr = req.Item1;
 
@@ -83,7 +95,11 @@ namespace HLTVDiscordBridge.Modules
                 if(newResult)
                 {
                     await Task.Delay(5000);
-                    var req = await Tools.RequestApiJObject("match/" + jObj.GetValue("id").ToString());
+                    List<string> properties = new();
+                    List<string> values = new();
+                    properties.Add("id");
+                    values.Add(jObj.GetValue("id").ToString());
+                    var req = await Tools.RequestApiJObject("getMatch", properties, values);
                     if(!req.Item2) { continue; }
                     JObject matchStats = req.Item1;
                     newMatches.Add((matchStats, ushort.Parse(jObj.GetValue("stars").ToString())));
@@ -195,13 +211,18 @@ namespace HLTVDiscordBridge.Modules
         #endregion
 
         #region PlayerStatsOfResult
-        private static async Task<JObject> GetPlStats(string matchid)
+        private static async Task<JObject> GetPlStats(string matchId)
         {
-            var req = await Tools.RequestApiJObject("match/" + matchid);
+            List<string> properties = new();
+            List<string> values = new();
+            properties.Add("id");
+            values.Add(matchId.ToString());
+            var req = await Tools.RequestApiJObject("getMatch", properties, values);
             if(!req.Item2) { return null; }
             JObject match = req.Item1;
+            values.Clear(); values.Add(match.GetValue("statsId").ToString());
 
-            req = await Tools.RequestApiJObject("matchstats/" + match.GetValue("statsId"));
+            req = await Tools.RequestApiJObject("getMatchStats", properties, values);
             return req.Item1;
         }
         private static async Task<Embed> GetPlStatsEmbed(string matchlink)

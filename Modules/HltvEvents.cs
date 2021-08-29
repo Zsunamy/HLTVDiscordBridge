@@ -67,7 +67,8 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>All ongoing and upcoming events as JArray</returns>
         private static async Task<JArray> UpdateEvents()
         {
-            var req = await Tools.RequestApiJArray("events");
+            var req = await Tools.RequestApiJArray("getEvents", new List<string>(), new List<string>());
+
             if(!req.Item2) { return null; }
             JArray events = req.Item1;
             Directory.CreateDirectory("./cache/events");
@@ -95,7 +96,28 @@ namespace HLTVDiscordBridge.Modules
         }
         private static async Task<JArray> UpdatePastEvents() 
         {
-            var req = await Tools.RequestApiJArray("pastevents");
+            List<string> properties = new();
+            List<string> values = new();
+            properties.Add("startDate");
+            properties.Add("endDate");
+
+            DateTime date = DateTime.Now.AddDays(-32);
+            string startMonth = date.AddMonths(1).Month.ToString();
+            string startDay = date.Day.ToString();
+            string endMonth = DateTime.Now.AddMonths(1).Month.ToString();
+            string endDay = DateTime.Now.Day.ToString();
+            if (startMonth.Length == 1)
+                startMonth = $"0{startMonth}";
+            if (startDay.Length == 1)
+                startDay = $"0{startDay}";
+            if (endMonth.Length == 1)
+                endMonth = $"0{endMonth}";
+            if (endDay.Length == 1)
+                endDay = $"0{endDay}";
+            values.Add($"{date.Year}-{startMonth}-{startDay}");
+            values.Add($"{DateTime.Now.Year}-{endMonth}-{endDay}");            
+
+            var req = await Tools.RequestApiJArray("getPastEvents", properties, values);
             if(!req.Item2) { return null; }
             JArray events = req.Item1;
             Directory.CreateDirectory("./cache/events");
@@ -122,17 +144,28 @@ namespace HLTVDiscordBridge.Modules
         /// <returns>JObject with stats of the event</returns>
         private static async Task<JObject> GetEventStats(ushort eventId)
         {
-            var req = await Tools.RequestApiJObject($"eventbyid/{eventId}");
+            List<string> properties = new();
+            List<string> values = new();
+            properties.Add("id");
+            values.Add(eventId.ToString());
+            var req = await Tools.RequestApiJObject("getEvent", properties, values);
             return req.Item1;
         }
         private static async Task<(JObject, bool)> GetEventStats(string eventName)
         {
-            var req = await Tools.RequestApiJObject($"event/{eventName}");
+            List<string> properties = new();
+            List<string> values = new();
+            properties.Add("name");
+            values.Add(eventName.ToString());
+            var req = await Tools.RequestApiJObject("getEventByName", properties, values);
             return req;
         }
         private static async Task<JArray> GetLatestResultsOfEvent(ushort eventId)
         {
-            var req = await Tools.RequestApiJArray($"events/[{eventId}]");
+            List<string> ids = new(); ids.Add(eventId.ToString());
+            List<List<string>> values = new(); values.Add(ids);
+            List<string> properties = new(); properties.Add("attendingTeamIds");
+            var req = await Tools.RequestApiJArray("getEvents", properties, values);
             return req.Item1;
         }
         #endregion
@@ -359,20 +392,19 @@ namespace HLTVDiscordBridge.Modules
         [Command("event")]
         public async Task GetEventByName([Remainder]string arg = "")
         {
-            EmbedBuilder builder = new();
+            /*EmbedBuilder builder = new();
             builder.WithTitle("error")
                 .WithColor(Color.Red)
                 .WithDescription("This command is currently not available. Sorry for the inconvenience.")
                 .WithCurrentTimestamp();
-            await ReplyAsync(embed: builder.Build());
-            return;
-            /*
-            Config _cfg = new();
+            await ReplyAsync(embed: builder.Build());*/
+            
+
             EmbedBuilder builder = new();
 
-            string prefix;
+            string prefix;            
             if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) { prefix = "!"; } 
-            else { prefix = _cfg.GetServerConfig(Context.Guild).Prefix; }            
+            else { prefix = Config.GetServerConfig(Context.Guild).Prefix; }            
             if(arg == "")
             {
                 builder.WithColor(Color.Red)
@@ -415,7 +447,8 @@ namespace HLTVDiscordBridge.Modules
                 return;
             }
             JObject location = JObject.Parse(eventStats.GetValue("location").ToString());
-            builder.WithTitle($"{eventStats.GetValue("name")}");
+            builder.WithTitle($"{eventStats.GetValue("name")}")
+                .WithDescription("");
             if(UnixTimeStampToDateTime(eventStats.GetValue("dateEnd").ToString()).CompareTo(DateTime.Now) > 0 && UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).CompareTo(DateTime.Now) > 0)
             {
                 builder.AddField("starting:", UnixTimeStampToDateTime(eventStats.GetValue("dateStart").ToString()).ToString().Substring(0, 16) + " UTC", true)
@@ -531,7 +564,7 @@ namespace HLTVDiscordBridge.Modules
             builder.WithCurrentTimestamp();
             builder.WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
             await ReplyAsync(embed: builder.Build());
-            */
+            
         }
         #endregion
     }
