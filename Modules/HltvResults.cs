@@ -319,6 +319,7 @@ namespace HLTVDiscordBridge.Modules
                 "de_tuscan" => "Tuscan",
                 "de_vertigo" => "Vertigo",
                 "de_season" => "Season",
+                "de_ancient" => "Ancient",
                 _ => arg[0].ToString().ToUpper() + arg.Substring(1),
             };
         }

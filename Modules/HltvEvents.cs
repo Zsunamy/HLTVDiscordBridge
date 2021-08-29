@@ -391,15 +391,7 @@ namespace HLTVDiscordBridge.Modules
 
         [Command("event")]
         public async Task GetEventByName([Remainder]string arg = "")
-        {
-            /*EmbedBuilder builder = new();
-            builder.WithTitle("error")
-                .WithColor(Color.Red)
-                .WithDescription("This command is currently not available. Sorry for the inconvenience.")
-                .WithCurrentTimestamp();
-            await ReplyAsync(embed: builder.Build());*/
-            
-
+        {     
             EmbedBuilder builder = new();
 
             string prefix;            
