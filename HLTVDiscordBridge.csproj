@@ -7,10 +7,10 @@
 
   <ItemGroup>
     <PackageReference Include="Discord.Net" Version="2.4.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
-    <PackageReference Include="MongoDB.Bson" Version="2.12.3" />
-    <PackageReference Include="MongoDB.Driver" Version="2.12.3" />
-    <PackageReference Include="Svg" Version="3.2.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
+    <PackageReference Include="MongoDB.Bson" Version="2.13.2" />
+    <PackageReference Include="MongoDB.Driver" Version="2.13.2" />
+    <PackageReference Include="Svg" Version="3.3.0" />
   </ItemGroup>
 
 </Project>
