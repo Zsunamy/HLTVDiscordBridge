@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
 {
-    public class Help : ModuleBase<SocketCommandContext>
+    public class Commands : ModuleBase<SocketCommandContext>
     {
         [Command("help")]
         public async Task HelpCommand(string arg = "")
@@ -121,6 +121,18 @@ namespace HLTVDiscordBridge.Modules
             }
             StatsUpdater.StatsTracker.MessagesSent += 1;
             StatsUpdater.UpdateStats();
+            await ReplyAsync(embed: builder.Build());
+        }
+
+        [Command("invite")]
+        public async Task InviteCommand()
+        {
+            EmbedBuilder builder = new();
+            builder.WithTitle("Invite me!")
+                .WithDescription("Click [here](https://discord.com/oauth2/authorize?client_id=807182830752628766&permissions=1073785936&scope=bot) to invite me to your server!")
+                .WithColor(Color.Green)
+                .WithCurrentTimestamp()
+                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
             await ReplyAsync(embed: builder.Build());
         }
     }
