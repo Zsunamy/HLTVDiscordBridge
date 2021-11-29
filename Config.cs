@@ -97,7 +97,7 @@ namespace HLTVDiscordBridge
             XmlSerializer _xml;
             ConfigClass conf = new();
             _xml = new XmlSerializer(typeof(ConfigClass));
-            FileStream stream = new("../config.xml", FileMode.Open);
+            FileStream stream = new("./config.xml", FileMode.Open);
             conf = (ConfigClass)_xml.Deserialize(stream);
             stream.Close();
             return conf;

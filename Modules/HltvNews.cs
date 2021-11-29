@@ -54,11 +54,16 @@ namespace HLTVDiscordBridge.Modules
         public static Embed GetNewsEmbed(News news)
         {
             EmbedBuilder builder = new();
-            builder.WithTitle(news.title)
+
+            string title = news.title != null ? news.title : "n.A";
+            string description = news.description != null ? news.description : "n.A";
+            string link = news.link != null ? news.link : "";
+
+            builder.WithTitle(title)
                 .WithColor(Color.Blue);       
 
-            builder.AddField("description:", news.description);
-            builder.WithAuthor("full story on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", news.link);
+            builder.AddField("description:", description);
+            builder.WithAuthor("full story on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", link);
             builder.WithCurrentTimestamp();
 
             return builder.Build();

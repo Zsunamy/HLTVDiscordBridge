@@ -176,8 +176,8 @@ namespace HLTVDiscordBridge.Modules
         /// </summary>
         /// <returns>List of eventIds</returns>
         private static async Task<List<ushort>> GetStartedEvents() 
-        {
-            JArray oldEvents = JArray.Parse(File.ReadAllText("./cache/events/events.json"));
+        {            
+            JArray oldEvents = File.Exists("./cache/events/events.json") ? JArray.Parse(File.ReadAllText("./cache/events/events.json")) : JArray.Parse("[]");
             JArray newEvents = await UpdateEvents();
             if(newEvents == null) { return null; }
             if (oldEvents.ToString() == newEvents.ToString()) { return null; }
