@@ -2,7 +2,6 @@
 [![Discord Bots](https://top.gg/api/widget/status/807182830752628766.svg)](https://top.gg/bot/807182830752628766)
 [![Discord Bots](https://top.gg/api/widget/servers/807182830752628766.svg)](https://top.gg/bot/807182830752628766)
 [![Discord Bots](https://top.gg/api/widget/upvotes/807182830752628766.svg)](https://top.gg/bot/807182830752628766)
-<iframe src="https://discord.com/widget?id=926464160718544946&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
 # HLTV
 ## A bot that interacts with HLTV to inform you about the latest news and matches!
 ## Click [here](https://discord.com/oauth2/authorize?client_id=807182830752628766&permissions=1073785936&scope=bot) to add the bot to your server.
