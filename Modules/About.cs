@@ -1,5 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
+using System;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
@@ -9,6 +11,9 @@ namespace HLTVDiscordBridge.Modules
         [Command("about")]
         public async Task DispAbout()
         {
+            ComponentBuilder componentBuilder = new();
+            componentBuilder.WithButton("playerstats","id");
+
             EmbedBuilder builder = new();
             builder.WithColor(Color.Green)
                 .WithTitle("About Us")
@@ -17,7 +22,14 @@ namespace HLTVDiscordBridge.Modules
                 .WithCurrentTimestamp();
             StatsUpdater.StatsTracker.MessagesSent += 1;
             StatsUpdater.UpdateStats();
-            await ReplyAsync(embed: builder.Build());
+            await ReplyAsync(embed: builder.Build(), components: componentBuilder.Build());
+        }
+
+        public static Embed buttonClicked(SocketMessageComponent arg)
+        {
+            EmbedBuilder builder = new();
+            builder.WithTitle("tit");
+            return builder.Build();
         }
     }
 }

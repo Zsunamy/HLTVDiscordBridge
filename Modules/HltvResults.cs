@@ -173,9 +173,7 @@ namespace HLTVDiscordBridge.Modules
                     highlightsString += $"[{DoNewLines(highlight.GetValue("title").ToString(), 35)}]({highlight.GetValue("link")})\n\n";
                 }
                 builder.AddField("highlights:", highlightsString);
-            }
-            
-
+            }   
             return builder.Build();
         }
 
@@ -196,9 +194,11 @@ namespace HLTVDiscordBridge.Modules
                         ServerConfig config = Config.GetServerConfig(channel);
                         if (config.MinimumStars <= stars && config.ResultOutput)
                         {
-                            try { 
-                                RestUserMessage msg = await channel.SendMessageAsync(embed: GetResultEmbed(latestMatch, stars)); 
-                                await msg.AddReactionAsync(await Config.GetEmote(client));
+                            try {
+                                ComponentBuilder compBuilder = new ComponentBuilder();
+                                compBuilder.WithButton("playerstats", "playerstats");
+                                RestUserMessage msg = await channel.SendMessageAsync(embed: GetResultEmbed(latestMatch, stars), components: compBuilder.Build());
+                                    
                                 StatsUpdater.StatsTracker.MessagesSent += 1;
                                 StatsUpdater.UpdateStats();
                             }
@@ -225,7 +225,7 @@ namespace HLTVDiscordBridge.Modules
             req = await Tools.RequestApiJObject("getMatchStats", properties, values);
             return req.Item1;
         }
-        private static async Task<Embed> GetPlStatsEmbed(string matchlink)
+        public static async Task<Embed> GetPlStatsEmbed(string matchlink)
         {
             EmbedBuilder builder = new();
             
@@ -282,12 +282,6 @@ namespace HLTVDiscordBridge.Modules
             builder.WithCurrentTimestamp();
 
             return builder.Build();
-        }
-        public static async Task SendPlStats(string matchLink, ITextChannel channel)
-        {
-            await channel.SendMessageAsync(embed: await GetPlStatsEmbed(matchLink));
-            StatsUpdater.StatsTracker.MessagesSent += 1;
-            StatsUpdater.UpdateStats();
         }
         #endregion
 

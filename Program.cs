@@ -5,6 +5,7 @@ using HLTVDiscordBridge.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -40,9 +41,10 @@ namespace HLTVDiscordBridge
             string BotToken = Botconfig.BotToken;
 
             _client.Log += Log;
-            _client.ReactionAdded += ReactionAdd;
+            //_client.ReactionAdded += ReactionAdd;
             _client.JoinedGuild += GuildJoined;
             _client.LeftGuild += GuildLeft;
+            _client.ButtonExecuted += ButtonExecuted;
 
             await RegisterCommandsAsync();
 
@@ -59,12 +61,26 @@ namespace HLTVDiscordBridge
             {
                 await Config.GuildJoined(guild, null, true);
             }
-            await BGTask();
 #if RELEASE
             await BGTask();
 #endif
 
             await Task.Delay(-1);
+        }
+
+        private async Task ButtonExecuted(SocketMessageComponent arg)
+        {
+            switch (arg.Data.CustomId)
+            {
+                case "playerstats":
+                    string matchLink = "";
+                    foreach (Embed e in arg.Message.Embeds)
+                    {
+                        matchLink = ((EmbedAuthor)e.Author).Url;
+                    }
+                    await arg.RespondAsync(embed: await HltvResults.GetPlStatsEmbed(matchLink)); 
+                    break;
+            }
         }
 
         private Task GuildLeft(SocketGuild arg)
@@ -128,8 +144,7 @@ namespace HLTVDiscordBridge
             var Handler = Task.Run(async () =>
             {
                 string[] numberEmoteStrings = { "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣" };
-                GuildEmote emote = await Config.GetEmote(_client);
-                if (emote.ToString() == reaction.Emote.ToString() || Array.IndexOf(numberEmoteStrings, reaction.Emote.ToString()) > -1)
+                if (Array.IndexOf(numberEmoteStrings, reaction.Emote.ToString()) > -1)
                 {
                     IUserMessage msg;
                     try { msg = await cacheable.GetOrDownloadAsync(); }
@@ -141,22 +156,6 @@ namespace HLTVDiscordBridge
                         foreach (string emoteString in numberEmoteStrings)
                         {
                             if (emoteString == reaction.Emote.ToString()) { /*HltvLive.StartScoreboard(msg, new Emoji(reaction.Emote.ToString()), (channel as SocketGuildChannel).Guild); return;*/ }
-                        }
-                    }
-                    else if (emote.ToString() == reaction.Emote.ToString())
-                    {
-                        IEmbed embedReac = null;
-                        foreach (IEmbed em in msg.Embeds)
-                        {
-                            embedReac = em;
-                        }
-
-                        if (embedReac == null) { return; }
-                        if (embedReac.Author == null) { return; }
-                        if (embedReac.Author.Value.Name.ToString().ToLower() == "click here for more details")
-                        {
-                            await msg.RemoveAllReactionsAsync();
-                            await HltvResults.SendPlStats(embedReac.Author.Value.Url, (ITextChannel)reaction.Channel);
                         }
                     }
                 }
