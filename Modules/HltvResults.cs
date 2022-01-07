@@ -50,7 +50,7 @@ namespace HLTVDiscordBridge.Modules
             values.Add(startDate); values.Add(endDate);
 
             var req = await Tools.RequestApiJArray("getResults", properties, values);
-            if(!req.Item2) { return null; }
+            if(!req.Item2 || req.Item1 == null) { return null; }
             JArray jArr = req.Item1;
 
             Directory.CreateDirectory("./cache/results");
