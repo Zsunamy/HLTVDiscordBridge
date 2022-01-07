@@ -69,7 +69,7 @@ namespace HLTVDiscordBridge.Modules
         {
             var req = await Tools.RequestApiJArray("getEvents", new List<string>(), new List<string>());
 
-            if(!req.Item2) { return null; }
+            if(!req.Item2 || req.Item1 == null) { return null; }
             JArray events = req.Item1;
             Directory.CreateDirectory("./cache/events");
             if (!File.Exists("./cache/events/events.json"))
