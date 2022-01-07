@@ -11,58 +11,68 @@ namespace HLTVDiscordBridge.Modules
 {
     public class HltvRanking : ModuleBase<SocketCommandContext>
     {
+        string[] months = { "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december" };
         [Command("ranking")]
         public async Task GetRanking([Remainder]string arg = "GLOBAL")
         {
             EmbedBuilder embed = new();
             List<string> properties = new();
             List<string> values = new();
-            string[] months = { "january", "febuary", "march", "april", "may", "junl", "july", "august", "september", "october", "november", "december" };
+            DateTime lastMonday = new();
+
+
             if (arg.Contains('-'))
             {
                 arg = "";
                 foreach (string str in arg.Split('-')) { arg += $"{str} "; }
             }
+
             if (arg == "GLOBAL")
             {
+                lastMonday = GetLastMonday(DateTime.UtcNow.Day.ToString(), DateTime.UtcNow.Month.ToString(), DateTime.UtcNow.Year.ToString());
                 properties.Add("year");
                 properties.Add("month");
                 properties.Add("day");
-                values.Add(DateTime.UtcNow.Year.ToString());
-                values.Add(months[DateTime.UtcNow.Month - 1]);
-                var day = DateTime.UtcNow.Day.ToString().Length == 1 ? $"0{DateTime.UtcNow.Day}" : DateTime.UtcNow.Day.ToString();
+                values.Add(lastMonday.Year.ToString());
+                values.Add(months[lastMonday.Month - 1]);
+                var day = lastMonday.Day.ToString().Length == 1 ? $"0{lastMonday.Day}" : lastMonday.Day.ToString();
                 values.Add(day);
+                Console.WriteLine();
             }
             else if (DateTime.TryParse(arg, out DateTime time))
             {
+                lastMonday = GetLastMonday(time.Day.ToString(), time.Month.ToString(), time.Year.ToString());
                 properties.Add("year");
                 properties.Add("month");
                 properties.Add("day");
-                values.Add(time.Year.ToString());
-                values.Add(months[time.Month - 1]);
-                var day = time.Day.ToString().Length == 1 ? $"0{time.Day}" : time.Day.ToString();
+                values.Add(lastMonday.Year.ToString());
+                values.Add(months[lastMonday.Month - 1]);
+                var day = lastMonday.Day.ToString().Length == 1 ? $"0{lastMonday.Day}" : lastMonday.Day.ToString();
                 values.Add(day);
                 
             }
             else
             {
+                lastMonday = GetLastMonday(DateTime.UtcNow.Day.ToString(), DateTime.UtcNow.Month.ToString(), DateTime.UtcNow.Year.ToString());
                 properties.Add("year");
                 properties.Add("month");
                 properties.Add("day");
                 properties.Add("country");
-                values.Add(DateTime.UtcNow.Year.ToString());
-                values.Add(months[DateTime.UtcNow.Month - 1]);
-                var day = DateTime.UtcNow.Day.ToString().Length == 1 ? $"0{DateTime.UtcNow.Day}" : DateTime.UtcNow.Day.ToString();
+                values.Add(lastMonday.Year.ToString());
+                values.Add(months[lastMonday.Month - 1]);
+                var day = lastMonday.Day.ToString().Length == 1 ? $"0{lastMonday.Day}" : lastMonday.Day.ToString();
                 values.Add(day);
                 values.Add(arg.ToLower());
             }
+
+            
 
             //cache
             JArray jArr;
             Directory.CreateDirectory("./cache/ranking");
             if(!File.Exists($"./cache/ranking/ranking_{arg.ToLower().Replace(' ','-')}.json"))
             {
-                var req = await Tools.RequestApiJArray("getRanking", properties, values);
+                var req = await Tools.RequestApiJArray("getTeamRanking", properties, values);
                 if(!req.Item2) {
                     embed.WithColor(Color.Red)
                         .WithTitle($"error")
@@ -113,7 +123,7 @@ namespace HLTVDiscordBridge.Modules
                     break;
                 }
             }
-            embed.WithTitle($"TOP {teamsDisplayed} {arg.ToUpper()}")
+            embed.WithTitle($"TOP {teamsDisplayed} {lastMonday.ToShortDateString()}")
                 .AddField("teams:", val)
                 .WithColor(Color.Blue)
                 .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
@@ -121,5 +131,17 @@ namespace HLTVDiscordBridge.Modules
             StatsUpdater.UpdateStats();
             await ReplyAsync(embed: embed.Build());
         }        
+
+        private DateTime GetLastMonday(string day, string month, string year)
+        {
+            DateTime date = DateTime.Parse($"{day}/{month}/{year}");
+            
+            while (date.DayOfWeek != DayOfWeek.Monday)
+            {
+                date = date.AddDays(-1);
+            }
+
+            return date;
+        }
     }
 }

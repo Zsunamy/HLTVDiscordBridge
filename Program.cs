@@ -104,22 +104,30 @@ namespace HLTVDiscordBridge
             int lastUpdate = 0;
             while (true)
             {
-                //top.gg API & bots.gg API             
-                if (DateTime.Now.Hour > lastUpdate && _client.CurrentUser.Id == 807182830752628766)
+                //top.gg API & bots.gg API
+                try
                 {
-                    lastUpdate = DateTime.Now.Hour;
-                    HttpClient http = new();
-                    //top.gg
-                    http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(Botconfig.TopGGApiKey);
-                    HttpRequestMessage req = new(HttpMethod.Post, "https://top.gg/api/bots/807182830752628766/stats");
-                    req.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
-                    await http.SendAsync(req);
-                    //bots.gg
-                    http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(Botconfig.BotsGGApiKey);
-                    req = new(HttpMethod.Post, "https://discord.bots.gg/api/v1/bots/807182830752628766/stats");
-                    req.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
-                    await http.SendAsync(req);
+                    if (DateTime.Now.Hour > lastUpdate && _client.CurrentUser.Id == 807182830752628766)
+                    {
+                        lastUpdate = DateTime.Now.Hour;
+                        HttpClient http = new();
+                        //top.gg
+                        http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(Botconfig.TopGGApiKey);
+                        HttpRequestMessage req = new(HttpMethod.Post, "https://top.gg/api/bots/807182830752628766/stats");
+                        req.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+                        await http.SendAsync(req);
+                        //bots.gg
+                        http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(Botconfig.BotsGGApiKey);
+                        req = new(HttpMethod.Post, "https://discord.bots.gg/api/v1/bots/807182830752628766/stats");
+                        req.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+                        await http.SendAsync(req);
+                    }
                 }
+                catch(Exception ex)
+                {
+                    Console.Write(ex.ToString());
+                }
+                
                 Stopwatch watch = new(); watch.Start();
                 await HltvUpcomingAndLiveMatches.AktUpcomingAndLiveMatches();
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tLiveAndUpcomingMatches aktualisiert ({watch.ElapsedMilliseconds}ms)");
