@@ -126,7 +126,7 @@ namespace HLTVDiscordBridge.Modules
             embed.WithTitle($"TOP {teamsDisplayed} {lastMonday.ToShortDateString()}")
                 .AddField("teams:", val)
                 .WithColor(Color.Blue)
-                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
             StatsUpdater.StatsTracker.MessagesSent += 1;
             StatsUpdater.UpdateStats();
             await ReplyAsync(embed: embed.Build());

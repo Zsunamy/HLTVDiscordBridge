@@ -1,33 +1,24 @@
 ﻿using Discord;
-using System;
-using System.IO;
 using Discord.WebSocket;
-using System.Net.Http;
-using Newtonsoft.Json.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using Newtonsoft.Json;
-using System.Net.Http.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
 {
     public class Tools
     {
-        public static EmbedFooterBuilder GetRandomFooter (SocketGuild guild, DiscordSocketClient client)
+        public static EmbedFooterBuilder GetRandomFooter ()
         {
             EmbedFooterBuilder builder = new();
             string[] footerStrings = File.ReadAllText("./cache/footer.txt").Split("\n");
             Random _rnd = new();
             string footerString = footerStrings[_rnd.Next(0, footerStrings.Length)];
-            if (footerString.Contains("<prefix>")) { footerString = footerString.Replace("<prefix>", Config.GetServerConfig(guild).Prefix); }
-            if (footerString.Contains("<servercount>")) { footerString = footerString.Replace("<servercount>", client.Guilds.Count.ToString()); }
-            int totalUser = 0;
-            foreach (SocketGuild g in client.Guilds)
-            {
-                totalUser += g.Users.Count;
-            }
-            if (footerString.Contains("<playercount>")) { footerString = footerString.Replace("<playercount>", totalUser.ToString()); }
             builder.Text = footerString;
             return builder;
         }
@@ -39,7 +30,7 @@ namespace HLTVDiscordBridge.Modules
             Uri uri = new($"{Config.LoadConfig().APILink}/api/{endpoint}");
 
             StringBuilder sb = new();
-            StringWriter sw = new StringWriter(sb);
+            StringWriter sw = new(sb);
 
             using (JsonWriter writer = new JsonTextWriter(sw))
             {

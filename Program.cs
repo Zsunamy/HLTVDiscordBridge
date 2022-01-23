@@ -1,9 +1,12 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Net;
 using Discord.WebSocket;
 using HLTVDiscordBridge.Modules;
+using HLTVDiscordBridge.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,10 +27,12 @@ namespace HLTVDiscordBridge
         private IServiceProvider _services;
         private ConfigClass Botconfig;
 
+        
+
         public async Task RunBotAsync()
         {
-            DiscordSocketConfig _config = new() { };
-            _client = new DiscordSocketClient();
+            DiscordSocketConfig _config = new() { GatewayIntents = GatewayIntents.All };
+            _client = new DiscordSocketClient(_config);
             _commands = new CommandService();
 
             _services = new ServiceCollection()
@@ -36,51 +41,137 @@ namespace HLTVDiscordBridge
                 .BuildServiceProvider();
 
             Botconfig = Config.LoadConfig();
-            StatsUpdater.InitStats();
+            //StatsUpdater.InitStats();
 
             string BotToken = Botconfig.BotToken;
 
             _client.Log += Log;
-            //_client.ReactionAdded += ReactionAdd;
             _client.JoinedGuild += GuildJoined;
             _client.LeftGuild += GuildLeft;
             _client.ButtonExecuted += ButtonExecuted;
+            _client.Ready += Ready;
+            _client.SlashCommandExecuted += SlashCommandHandler;
+            _client.SelectMenuExecuted += SelectMenuExecuted;
 
             await RegisterCommandsAsync();
 
             await _client.LoginAsync(TokenType.Bot, BotToken);
             await _client.StartAsync();
-
             await _client.SetGameAsync("!help");
 
             //await _scoreboard.ConnectWebSocket();
             //PlayerCard.PlayerTest();
             //catch if serverconfigs exist
-            await Task.Delay(3000);
+            /*await Task.Delay(3000);
             foreach (SocketGuild guild in _client.Guilds)
             {
                 await Config.GuildJoined(guild, null, true);
-            }
+            }*/
+            //await HltvMatchStats.GetMatchStats(2353876);
+            //await HltvResults.SendNewResults(_client);
+
+            //await Test.test();
+
+            //return;
 #if RELEASE
             await BGTask();
 #endif
 
+            // Let's do our global command
+
+            
+            
             await Task.Delay(-1);
         }
 
-        private async Task ButtonExecuted(SocketMessageComponent arg)
+        private Task SelectMenuExecuted(SocketMessageComponent arg)
         {
-            switch (arg.Data.CustomId)
+            var Handler = Task.Run(async () =>
             {
-                case "playerstats":
-                    string matchLink = "";
-                    foreach (Embed e in arg.Message.Embeds)
-                    {
-                        matchLink = ((EmbedAuthor)e.Author).Url;
-                    }
-                    await arg.RespondAsync(embed: await HltvResults.GetPlStatsEmbed(matchLink)); 
-                    break;
-            }
+                switch (arg.Data.CustomId)
+                {
+                    case "upcomingEventsMenu":
+                        await HltvEvents.SendEvent(arg);
+                        break;
+                    case "ongoingEventsMenu":
+                        await HltvEvents.SendEvent(arg);
+                        break;
+                }
+            });
+            return Handler;
+        }
+
+        private Task SlashCommandHandler(SocketSlashCommand arg)
+        {
+            var Handler = Task.Run(async () =>
+            {
+                switch (arg.CommandName)
+                {
+                    case "player":
+                        await HltvPlayer.SendPlayerCard(arg);
+                        break;
+                    case "event":
+                        await HltvEvents.SendEvent(arg);
+                        break;
+                }
+            });
+            return Handler;
+        }
+
+        private async Task Ready()
+        {
+            await HltvNews.GetNews();
+            //await HltvEvents_new.GetUpcomingEvents();
+            //wait HltvEvents_new.GetOngoingEvents();
+            //await HltvEvents_new.GetStartedEvents();
+            //await HltvEvents_new.GetPastEvents();
+            //await HltvEvents_new.GetEndedEvents();
+            var user = await _client.GetUserAsync(248110264610848778);
+            //await user.SendMessageAsync(embed: HltvEvents_new.GetEventStartedEmbed(await HltvEvents_new.GetFullEvent(6341)));
+            //await HltvEvents_new.SendUpcomingEvents();
+            
+            ulong guildId = 792139588743331841;
+            var guildCommand = new SlashCommandBuilder()
+            .WithName("event")
+            .WithDescription("Gives you selected information about an event.")
+            .AddOption(new SlashCommandOptionBuilder()
+                .WithName("name")
+                .WithDescription("name of event")
+                .WithRequired(true)
+                .WithType(ApplicationCommandOptionType.String)
+            );
+            await _client.Rest.CreateGuildCommand(guildCommand.Build(), guildId);
+
+            /*var guildCommand = new SlashCommandBuilder()
+            .WithName("player")
+            .WithDescription("Gives you selected information about a player.")
+            .AddOption(new SlashCommandOptionBuilder()
+                .WithName("name")
+                .WithDescription("name of player")
+                .WithRequired(true)
+                .WithType(ApplicationCommandOptionType.String)
+            );*/
+        }
+
+        private Task ButtonExecuted(SocketMessageComponent arg)
+        {
+            var Handler = Task.Run(async () =>
+            {
+                switch (arg.Data.CustomId)
+                {
+                    case "playerstats":
+                        string matchLink = "";
+                        foreach (Embed e in arg.Message.Embeds)
+                        {
+                            matchLink = ((EmbedAuthor)e.Author).Url;
+                        }
+                        Match match = await HltvMatch.GetMatch(matchLink);
+                        MatchStats stats = await HltvMatchStats.GetMatchStats(match);
+                        await arg.RespondAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(stats));
+                        break;
+                }
+            });
+            return Handler;
         }
 
         private Task GuildLeft(SocketGuild arg)
@@ -132,7 +223,7 @@ namespace HLTVDiscordBridge
                 await HltvUpcomingAndLiveMatches.AktUpcomingAndLiveMatches();
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tLiveAndUpcomingMatches aktualisiert ({watch.ElapsedMilliseconds}ms)");
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                await HltvResults.AktResults(_client);
+                await HltvResults.SendNewResults(_client);
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)"); 
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvEvents.AktEvents(await Config.GetChannels(_client));
@@ -143,31 +234,6 @@ namespace HLTVDiscordBridge
                 CacheCleaner.Cleaner(_client);
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4);
             }
-        }
-
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        private async Task ReactionAdd(Cacheable<IUserMessage, ulong> cacheable, ISocketMessageChannel channel, SocketReaction reaction)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
-        {
-            var Handler = Task.Run(async () =>
-            {
-                string[] numberEmoteStrings = { "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣" };
-                if (Array.IndexOf(numberEmoteStrings, reaction.Emote.ToString()) > -1)
-                {
-                    IUserMessage msg;
-                    try { msg = await cacheable.GetOrDownloadAsync(); }
-                    catch (Discord.Net.HttpException) { return; }
-                    if (!msg.Author.IsBot || reaction.User.Value.IsBot) { return; }
-
-                    if (Array.IndexOf(numberEmoteStrings, reaction.Emote.ToString()) > -1)
-                    {
-                        foreach (string emoteString in numberEmoteStrings)
-                        {
-                            if (emoteString == reaction.Emote.ToString()) { /*HltvLive.StartScoreboard(msg, new Emoji(reaction.Emote.ToString()), (channel as SocketGuildChannel).Guild); return;*/ }
-                        }
-                    }
-                }
-            });                      
         }
 
         public static void WriteLog(string arg)
@@ -189,9 +255,7 @@ namespace HLTVDiscordBridge
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
 
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        private async Task HandleCommandAsync(SocketMessage arg)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
+        private Task HandleCommandAsync(SocketMessage arg)
         {
             var Handler = Task.Run(async ()=>
             {
@@ -224,6 +288,7 @@ namespace HLTVDiscordBridge
                     }
                 }                
             });
+            return Handler;
         }
     }
 }

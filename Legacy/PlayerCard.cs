@@ -5,12 +5,13 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using HLTVDiscordBridge.Modules;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using Newtonsoft.Json.Linq;
 
-namespace HLTVDiscordBridge.Modules
+namespace HLTVDiscordBridge.Legacy
 {
     class PlayerDocument
     {
@@ -245,7 +246,7 @@ namespace HLTVDiscordBridge.Modules
                     break;
             }
 
-            builder.WithFooter(Tools.GetRandomFooter(context.Guild, context.Client)); 
+            //builder.WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/)); 
             bool tracked = false;
             foreach(PlayerReq plReq in StatsUpdater.StatsTracker.Players)
             {
@@ -266,7 +267,7 @@ namespace HLTVDiscordBridge.Modules
             return builder.Build();
         }
 
-        [Command("player")]
+        //[Command("player")]
         public async Task Player([Remainder]string playername = "")
         {
             EmbedBuilder builder = new();

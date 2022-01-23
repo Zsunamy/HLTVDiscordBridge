@@ -7,46 +7,35 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml;
+using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge.Modules
 {
-    public class News
-    {
-        public string title { get; set; }
-        public string description { get; set; }
-        public string link { get; set; }
-        public ushort id { get; set; }
-    }
 
 
     public class HltvNews : ModuleBase<SocketCommandContext>
     {
+        
         //official RSS Feed       
         public static async Task<News> GetNews()
         {
             HttpClient http = new();
             HttpRequestMessage req = new();
             req.RequestUri = new Uri("https://www.hltv.org/rss/news");
+            req.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0");
             HttpResponseMessage res = await http.SendAsync(req);
             string result = await res.Content.ReadAsStringAsync();
-            if(result == "error")
-            {
 
-            }
             if (!File.Exists("./cache/news/news.xml")) { var fs = File.Create("./cache/news/news.xml");  fs.Close(); }
-
             if (File.ReadAllText("./cache/news/news.xml") == result) { return null; }
+
             File.WriteAllText("./cache/news/news.xml", result);
 
             XmlDocument doc = new();
             doc.Load("./cache/news/news.xml");
             XmlNodeList nodes = doc.GetElementsByTagName("item");
             XmlNodeList latestNews = nodes[0].ChildNodes;
-            News news = new();
-            news.title = latestNews[0].InnerText;
-            news.description = latestNews[1].InnerText;
-            news.link = latestNews[2].InnerText;
-            news.id = ushort.Parse(news.link.Substring(26, 5));
+            News news = new(latestNews);           
             
             return news;
         }
@@ -55,9 +44,9 @@ namespace HLTVDiscordBridge.Modules
         {
             EmbedBuilder builder = new();
 
-            string title = news.title != null ? news.title : "n.A";
-            string description = news.description != null ? news.description : "n.A";
-            string link = news.link != null ? news.link : "";
+            string title = news.title ?? "n.A";
+            string description = news.description ?? "n.A";
+            string link = news.link ?? "";
 
             builder.WithTitle(title)
                 .WithColor(Color.Blue);       

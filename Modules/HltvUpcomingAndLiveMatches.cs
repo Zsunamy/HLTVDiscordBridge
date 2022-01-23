@@ -16,7 +16,7 @@ namespace HLTVDiscordBridge.Modules
         {
             Directory.CreateDirectory("./cache/matches");
             var req = await Tools.RequestApiJArray("getMatches", new List<string>(), new List<string>());
-            if(!req.Item2) { return (null, null); }
+            if(!req.Item2 || req.Item1 == null) { return (null, null); }
             JArray jArr = req.Item1;
             JArray upcomingMatches = new();
             JArray liveMatches = new();
@@ -118,7 +118,7 @@ namespace HLTVDiscordBridge.Modules
 
             builder.WithCurrentTimestamp()
                 .WithColor(Color.Blue)
-                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
             return builder.Build();
         }
 

@@ -14,7 +14,7 @@ namespace HLTVDiscordBridge.Modules
     public class TeamCard : ModuleBase<SocketCommandContext>
     {
         #region Commands
-        [Command("team")] 
+        //[Command("team")] 
         public async Task SendTeamCard([Remainder]string name = "")
         {
             if(!Directory.Exists($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}"))
@@ -208,7 +208,7 @@ namespace HLTVDiscordBridge.Modules
 
             //recentResults
             await Task.Delay(3000);
-            JArray recentResults = await HltvResults.GetResults(ushort.Parse(teamStatsJObj.GetValue("id").ToString()));
+            JArray recentResults = await HltvResults_old.GetResults(ushort.Parse(teamStatsJObj.GetValue("id").ToString()));
             string recentResultsString = "";
             if (recentResults == null)
             {

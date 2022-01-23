@@ -168,7 +168,7 @@ namespace HLTVDiscordBridge
                                     .WithTitle("SUCCESS")
                                     .WithDescription($"You successfully changed the minimum stars to output a HLTV match to `{newStars}`")
                                     .WithCurrentTimestamp()
-                                    .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                    .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                             }
                             else
                             {
@@ -176,7 +176,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a number between 0-5")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                             }
                         }
                         else
@@ -185,7 +185,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a number between 0-5")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         break;
                     case "featuredevents":
@@ -199,7 +199,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("SUCCESS")
                                 .WithDescription($"You successfully changed the automatic event output to `{featured}`")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         else
                         {
@@ -207,7 +207,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         break;
                     case "prefix":
@@ -216,7 +216,7 @@ namespace HLTVDiscordBridge
                             .WithTitle("SUCCESS")
                             .WithDescription($"You successfully changed the prefix to `{arg}`")
                             .WithCurrentTimestamp()
-                            .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                            .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         break;
                     case "news":
                     case "newsoutput":
@@ -227,7 +227,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("SUCCESS")
                                 .WithDescription($"You successfully changed the automatic news output to `{newsoutput}`")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         else
                         {
@@ -235,7 +235,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         break;
                     case "result":
@@ -248,7 +248,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("SUCCESS")
                                 .WithDescription($"You successfully changed the automatic result output to `{resultoutput}`")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         else
                         {
@@ -256,7 +256,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         break;
                     case "event":
@@ -269,7 +269,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("SUCCESS")
                                 .WithDescription($"You successfully changed the automatic event output to `{eventoutput}`")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         else
                         {
@@ -277,7 +277,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         break;
                     default:
@@ -286,7 +286,7 @@ namespace HLTVDiscordBridge
                                 .WithDescription($"{option.ToLower()} is not valid! Please state one of the following options:\n`stars`\n`featuredevents`\n`prefix`\n" +
                                 $"`news`\n`results`\n`events`")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         break;
                 }
             }
