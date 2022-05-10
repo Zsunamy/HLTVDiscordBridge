@@ -125,7 +125,7 @@ namespace HLTVDiscordBridge.Modules
         {
             //JArray matches = (await AktUpcomingAndLiveMatches()).Item2;
             File.WriteAllText("./cache/text.json",new JArray().ToString());
-            JArray matches = JArray.Parse(File.ReadAllText("./cache/text.json"));
+            JArray matches = JArray.Parse(File.ReadAllText("./cache/matches/liveMatches.json"));
 
             EmbedBuilder builder = new();
             if (matches == null)
