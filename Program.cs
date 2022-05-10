@@ -18,7 +18,6 @@ namespace HLTVDiscordBridge
     class Program
     {
         static void Main(string[] args) => new Program().RunBotAsync().GetAwaiter().GetResult();
-
         private DiscordSocketClient _client;
         private CommandService _commands;
         private IServiceProvider _services;
