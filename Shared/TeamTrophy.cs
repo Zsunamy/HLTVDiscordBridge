@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Shared
 {
-    public class TeamTrophie
+    public class TeamTrophy
     {
-        public TeamTrophie(JObject jObject)
+        public TeamTrophy(JObject jObject)
         {
             id = jObject.TryGetValue("id", out JToken idTok) ? uint.Parse(idTok.ToString()) : 0;
             name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;

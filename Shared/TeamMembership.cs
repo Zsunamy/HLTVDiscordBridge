@@ -15,12 +15,12 @@ namespace HLTVDiscordBridge.Shared
             name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;
             startDate = jObject.TryGetValue("startDate", out JToken startDateTok) ? ulong.Parse(startDateTok.ToString()) : 0;
             leaveDate = jObject.TryGetValue("leaveDate", out JToken leaveDateTok) ? ulong.Parse(leaveDateTok.ToString()) : 0;
-            List<TeamTrophie> teamTrophies = new();
+            List<TeamTrophy> teamTrophies = new();
             if (jObject.TryGetValue("trophies", out JToken trophiesTok))
             {
                 foreach(JToken trophieTok in trophiesTok)
                 {
-                    teamTrophies.Add(new TeamTrophie(trophieTok as JObject));
+                    teamTrophies.Add(new TeamTrophy(trophieTok as JObject));
                 }
                 this.teamTrophies = teamTrophies;
             }
@@ -30,6 +30,6 @@ namespace HLTVDiscordBridge.Shared
         public string name { get; set; }
         public ulong startDate { get; set; }
         public ulong leaveDate { get; set; }
-        public List<TeamTrophie> teamTrophies { get; set; }
+        public List<TeamTrophy> teamTrophies { get; set; }
     }
 }
