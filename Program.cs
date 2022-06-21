@@ -27,11 +27,9 @@ namespace HLTVDiscordBridge
         private IServiceProvider _services;
         private ConfigClass Botconfig;
 
-        
-
         public async Task RunBotAsync()
         {
-            DiscordSocketConfig _config = new() { GatewayIntents = GatewayIntents.All };
+            DiscordSocketConfig _config = new() { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites };
             _client = new DiscordSocketClient(_config);
             _commands = new CommandService();
 
@@ -50,7 +48,7 @@ namespace HLTVDiscordBridge
             _client.LeftGuild += GuildLeft;
             _client.ButtonExecuted += ButtonExecuted;
             _client.Ready += Ready;
-            _client.SlashCommandExecuted += SlashCommandHandler;
+            _client.SlashCommandExecuted += SlashCommands.SlashCommandHandler;
             _client.SelectMenuExecuted += SelectMenuExecuted;
 
             await RegisterCommandsAsync();
@@ -59,8 +57,6 @@ namespace HLTVDiscordBridge
             await _client.StartAsync();
             await _client.SetGameAsync("!help");
 
-            //await _scoreboard.ConnectWebSocket();
-            //PlayerCard.PlayerTest();
             //catch if serverconfigs exist
             /*await Task.Delay(3000);
             foreach (SocketGuild guild in _client.Guilds)
@@ -75,11 +71,7 @@ namespace HLTVDiscordBridge
             //return;
 #if RELEASE
             await BGTask();
-#endif
-
-            // Let's do our global command
-
-            
+#endif      
             
             await Task.Delay(-1);
         }
@@ -101,56 +93,25 @@ namespace HLTVDiscordBridge
             return Handler;
         }
 
-        private Task SlashCommandHandler(SocketSlashCommand arg)
-        {
-            var Handler = Task.Run(async () =>
-            {
-                switch (arg.CommandName)
-                {
-                    case "player":
-                        await HltvPlayer.SendPlayerCard(arg);
-                        break;
-                    case "event":
-                        await HltvEvents.SendEvent(arg);
-                        break;
-                }
-            });
-            return Handler;
-        }
-
         private async Task Ready()
         {
-            await HltvNews.GetNews();
+            foreach (SocketGuild guild in _client.Guilds)
+            {
+                await Config.GuildJoined(guild, null, true);
+            }            
+
+            await SlashCommands.InitSlashCommands(_client);
+
+
+
             //await HltvEvents_new.GetUpcomingEvents();
             //wait HltvEvents_new.GetOngoingEvents();
             //await HltvEvents_new.GetStartedEvents();
             //await HltvEvents_new.GetPastEvents();
             //await HltvEvents_new.GetEndedEvents();
-            var user = await _client.GetUserAsync(248110264610848778);
+            //var user = await _client.GetUserAsync(248110264610848778);
             //await user.SendMessageAsync(embed: HltvEvents_new.GetEventStartedEmbed(await HltvEvents_new.GetFullEvent(6341)));
-            //await HltvEvents_new.SendUpcomingEvents();
-            
-            ulong guildId = 792139588743331841;
-            var guildCommand = new SlashCommandBuilder()
-            .WithName("event")
-            .WithDescription("Gives you selected information about an event.")
-            .AddOption(new SlashCommandOptionBuilder()
-                .WithName("name")
-                .WithDescription("name of event")
-                .WithRequired(true)
-                .WithType(ApplicationCommandOptionType.String)
-            );
-            await _client.Rest.CreateGuildCommand(guildCommand.Build(), guildId);
-
-            /*var guildCommand = new SlashCommandBuilder()
-            .WithName("player")
-            .WithDescription("Gives you selected information about a player.")
-            .AddOption(new SlashCommandOptionBuilder()
-                .WithName("name")
-                .WithDescription("name of player")
-                .WithRequired(true)
-                .WithType(ApplicationCommandOptionType.String)
-            );*/
+            //await HltvEvents_new.SendUpcomingEvents();            
         }
 
         private Task ButtonExecuted(SocketMessageComponent arg)
@@ -239,8 +200,6 @@ namespace HLTVDiscordBridge
         public static void WriteLog(string arg)
         {
             Console.WriteLine(arg);
-            if(!File.Exists($"./cache/log/{DateTime.Now.ToLongDateString()}.log")) { var fs = File.Create($"./cache/log/{DateTime.Now.ToLongDateString()}.log"); fs.Close(); }
-            File.WriteAllText($"./cache/log/{DateTime.Now.ToLongDateString()}.log", File.ReadAllText($"./cache/log/{DateTime.Now.ToLongDateString()}.log") + "\n" + arg);
         }
         private Task Log(LogMessage arg)
         {
@@ -254,7 +213,6 @@ namespace HLTVDiscordBridge
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
-
         private Task HandleCommandAsync(SocketMessage arg)
         {
             var Handler = Task.Run(async ()=>

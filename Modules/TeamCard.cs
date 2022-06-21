@@ -61,17 +61,15 @@ namespace HLTVDiscordBridge.Modules
                 properties.Add("name");
                 values.Add(name);
                 var req = await Tools.RequestApiJObject("getTeamByName", properties, values);
-                if(!req.Item2) { return (null, null, false, ""); }
                 JObject fullTeamJObject;
-                fullTeamJObject = req.Item1;
+                fullTeamJObject = req;
                 if (fullTeamJObject == null) { return (null, null, true, ""); }
 
                 await Task.Delay(3000);
                 properties.Clear(); properties.Add("id");
                 values.Clear(); values.Add(fullTeamJObject.GetValue("id").ToString());
                 req = await Tools.RequestApiJObject("getTeamStats", properties, values);
-                if(!req.Item2) { return (null, null, false, ""); }
-                JObject teamStats = req.Item1;
+                JObject teamStats = req;
                 
                 Directory.CreateDirectory($"./cache/teamcards/{teamStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}");
                 File.WriteAllText($"./cache/teamcards/{teamStats.GetValue("name").ToString().ToLower().Replace(' ', '-')}/fullteam.json", fullTeamJObject.ToString());

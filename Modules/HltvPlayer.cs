@@ -52,7 +52,8 @@ namespace HLTVDiscordBridge.Modules
         {
             List<string> properties = new(); properties.Add("name");            
             List<string> values = new(); values.Add(playername);
-            return new FullPlayer((await Tools.RequestApiJObject("getPlayerByName", properties, values)).Item1);
+            try { return new FullPlayer(await Tools.RequestApiJObject("getPlayerByName", properties, values)); }
+            catch (HltvApiException) { throw; }
         }
         private static async Task<(FullPlayer, FullPlayerStats)> GetPlayerStats_new(string playername)
         {            
@@ -80,15 +81,16 @@ namespace HLTVDiscordBridge.Modules
                 if (query1.CountDocuments() == 0 && query2.CountDocuments() == 0)
                 {
                     //nicht in Datenbank
-                    try { player = new FullPlayer((await Tools.RequestApiJObject("getPlayerByName", properties, values)).Item1); } 
-                    catch (Exception) { throw; }
+                    try { player = new FullPlayer(await Tools.RequestApiJObject("getPlayerByName", properties, values)); }
+                    catch (HltvApiException) { throw; }
 
                     collection.InsertOne(new PlayerDocument_new(player));
                 }
-                else if(query2.CountDocuments() != 0)
+                else if (query2.CountDocuments() != 0)
                 {
                     //unter Alias in Datenbank
                     playername = query2.FirstOrDefault().Name;
+                    values.Clear(); values.Add(playername);
                     if (Directory.Exists($"./cache/playercards/{playername.ToLower()}"))
                     {
                         //Ist unter "richtigem Namen" doch gecached
@@ -97,20 +99,22 @@ namespace HLTVDiscordBridge.Modules
                         return (player, fullPlayerStats);
                     }
 
-                    player = new FullPlayer((await Tools.RequestApiJObject("getPlayerByName", properties, values)).Item1);
+                    try { player = new FullPlayer(await Tools.RequestApiJObject("getPlayerByName", properties, values)); }
+                    catch (HltvApiException) { throw; }
                 }
                 else
                 {
                     //in Datenbank aber nicht lokal
-                    player = new FullPlayer((await Tools.RequestApiJObject("getPlayerByName", properties, values)).Item1);
+                    try { player = new FullPlayer(await Tools.RequestApiJObject("getPlayerByName", properties, values)); }
+                    catch(HltvApiException) { throw; }
                 }
 
                 Directory.CreateDirectory($"./cache/playercards/{playername.ToLower()}");
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/id.json", JObject.FromObject(player).ToString());
                 properties.Clear(); properties.Add("id");
                 values.Clear(); values.Add(player.id.ToString());
-
-                fullPlayerStats = new((await Tools.RequestApiJObject("getPlayerStats", properties, values)).Item1);
+                try { fullPlayerStats = new(await Tools.RequestApiJObject("getPlayerStats", properties, values)); }
+                catch { throw; }
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/stats.json", JObject.FromObject(fullPlayerStats).ToString());
                 return (player, fullPlayerStats);
             }
@@ -120,7 +124,7 @@ namespace HLTVDiscordBridge.Modules
             EmbedBuilder builder = new();
             (FullPlayer, FullPlayerStats) req;
             try { req = await GetPlayerStats_new(playername); }
-            catch (Exception ex) { return null; }
+            catch (Exception) { throw; }
 
             FullPlayer fullPlayer = req.Item1;
             FullPlayerStats fullPlayerStats = req.Item2;
@@ -132,9 +136,9 @@ namespace HLTVDiscordBridge.Modules
             }
             if(fullPlayerStats.country.code != null && fullPlayerStats.ign != null) { builder.WithTitle(fullPlayerStats.ign + $" :flag_{fullPlayerStats.country.code}:"); }
             if(fullPlayerStats.name != null) { builder.AddField("Name:", fullPlayerStats.name, true); }
-            if(fullPlayerStats.age != null) { builder.AddField("Age:", fullPlayerStats.age, true); }
-            if(fullPlayerStats.team != null) { builder.AddField("Team:", $"[{fullPlayerStats.team.name}]({fullPlayerStats.team.link})", true); }
-            if(fullPlayerStats.overviewStatistics != null) 
+            if(fullPlayerStats.age != null) { builder.AddField("Age:", fullPlayerStats.age, true); } else { builder.AddField("\u200b", "\u200b"); }
+            if(fullPlayerStats.team != null) { builder.AddField("Team:", $"[{fullPlayerStats.team.name}]({fullPlayerStats.team.link})", true); } else { builder.AddField("Team:", "none"); }
+            if (fullPlayerStats.overviewStatistics != null) 
             {
                 builder.AddField("Stats:", "Maps played:\nKills/Deaths:\nHeadshot %:\nADR:\nKills per round:\nAssists per round:\nDeaths per round:", true);
                 builder.AddField("\u200b", $"{fullPlayerStats.overviewStatistics.mapsPlayed}\n{fullPlayerStats.overviewStatistics.kills}/{fullPlayerStats.overviewStatistics.deaths} " +
@@ -177,52 +181,19 @@ namespace HLTVDiscordBridge.Modules
             }
             StatsUpdater.UpdateStats();
             return builder.Build();
-        }
-        
-        /*[Command("player")]
-        public async Task Player([Remainder] string playername = "")
-        {
-            EmbedBuilder builder = new();
-
-            if (!Directory.Exists($"./cache/playercards/{playername.ToLower()}"))
-            {
-                builder.WithTitle("Your request is loading!")
-                    .WithDescription("This may take up to 30 seconds")
-                    .WithCurrentTimestamp();
-                var msg = await Context.Channel.SendMessageAsync(embed: builder.Build());
-                IDisposable typingState = Context.Channel.EnterTypingState();
-
-                Embed embed = await GetPlayerCard(Context, playername);
-                typingState.Dispose();
-                await msg.DeleteAsync();
-                StatsUpdater.StatsTracker.MessagesSent += 2;
-                StatsUpdater.UpdateStats();
-                await ReplyAsync(embed: embed);
-            }
-            else
-            {
-                StatsUpdater.StatsTracker.MessagesSent += 1;
-                StatsUpdater.UpdateStats();
-                await ReplyAsync(embed: await GetPlayerCard(Context, playername));
-            }
-        }*/
-
+        }        
         public static async Task SendPlayerCard(SocketSlashCommand arg)
         {
-            EmbedBuilder builder = new();
 
             if (!Directory.Exists($"./cache/playercards/{arg.Data.Options.First().Value.ToString().ToLower()}"))
             {
-                builder.WithTitle("Your request is loading!")
-                    .WithDescription("This may take up to 30 seconds")
-                    .WithCurrentTimestamp();
-                //var msg = await arg.Channel.SendMessageAsync(embed: builder.Build());
                 await arg.DeferAsync();
-                //IDisposable typingState = arg.Channel.EnterTypingState();
 
-                Embed embed = await GetPlayerCard(arg.Data.Options.First().Value.ToString());
-                //typingState.Dispose();
-                //await msg.DeleteAsync();
+                Embed embed;
+                try { embed = await GetPlayerCard(arg.Data.Options.First().Value.ToString()); }
+                catch(HltvApiException e) { embed = ErrorHandling.GetErrorEmbed(e); }
+                
+
                 StatsUpdater.StatsTracker.MessagesSent += 2;
                 StatsUpdater.UpdateStats();
                 await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);

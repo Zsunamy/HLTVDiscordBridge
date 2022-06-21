@@ -69,8 +69,7 @@ namespace HLTVDiscordBridge.Modules
         {
             var req = await Tools.RequestApiJArray("getEvents", new List<string>(), new List<string>());
 
-            if(!req.Item2 || req.Item1 == null) { return null; }
-            JArray events = req.Item1;
+            JArray events = req;
             Directory.CreateDirectory("./cache/events");
             if (!File.Exists("./cache/events/events.json"))
             {
@@ -118,8 +117,7 @@ namespace HLTVDiscordBridge.Modules
             values.Add($"{DateTime.Now.Year}-{endMonth}-{endDay}");            
 
             var req = await Tools.RequestApiJArray("getPastEvents", properties, values);
-            if(!req.Item2 || req.Item1 == null) { return null; }
-            JArray events = req.Item1;
+            JArray events = req;
             Directory.CreateDirectory("./cache/events");
             if (!File.Exists("./cache/events/pastevents.json"))
             {
@@ -149,9 +147,9 @@ namespace HLTVDiscordBridge.Modules
             properties.Add("id");
             values.Add(eventId.ToString());
             var req = await Tools.RequestApiJObject("getEvent", properties, values);
-            return req.Item1;
+            return req;
         }
-        private static async Task<(JObject, bool)> GetEventStats(string eventName)
+        private static async Task<JObject> GetEventStats(string eventName)
         {
             List<string> properties = new();
             List<string> values = new();
@@ -166,7 +164,7 @@ namespace HLTVDiscordBridge.Modules
             List<List<string>> values = new(); values.Add(ids);
             List<string> properties = new(); properties.Add("attendingTeamIds");
             var req = await Tools.RequestApiJArray("getResults", properties, values);
-            return req.Item1;
+            return req;
         }
         #endregion
 
@@ -418,11 +416,11 @@ namespace HLTVDiscordBridge.Modules
             var msg = await Context.Channel.SendMessageAsync(embed: builder.Build());
             IDisposable typingState = Context.Channel.EnterTypingState();
             var req = await GetEventStats(arg);
-            JObject eventStats = req.Item1;
+            JObject eventStats = req;
             typingState.Dispose();
             await msg.DeleteAsync();
             
-            if(eventStats == null && !req.Item2) 
+            if(eventStats == null) 
             {
                 builder.WithColor(Color.Red)
                     .WithTitle($"error")
@@ -432,7 +430,7 @@ namespace HLTVDiscordBridge.Modules
                 typingState.Dispose();
                 return; 
             }
-            else if(eventStats == null && req.Item2)
+            else if(eventStats == null)
             {
                 builder.WithColor(Color.Red)
                     .WithTitle("error")

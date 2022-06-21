@@ -32,7 +32,7 @@ namespace HLTVDiscordBridge.Modules
             var req = await Tools.RequestApiJArray("getResults", properties, values);
 
             List<MatchResult> matchResults = new();
-            foreach(JToken matchResult in req.Item1)
+            foreach(JToken matchResult in req)
             {
                 matchResults.Add(new MatchResult(matchResult as JObject));
             }
@@ -49,7 +49,7 @@ namespace HLTVDiscordBridge.Modules
             var req = await Tools.RequestApiJArray("getResults", properties, values);
 
             List<MatchResult> results = new();
-            foreach(JToken result in req.Item1)
+            foreach(JToken result in req)
             {
                 results.Add(new MatchResult(JObject.Parse(result.ToString())));
             }
@@ -69,7 +69,6 @@ namespace HLTVDiscordBridge.Modules
             values.Add(startDate); values.Add(endDate);
 
             var req = await Tools.RequestApiJArray("getResults", properties, values);
-            if (!req.Item2 || req.Item1 == null) { return null; }
 
             Directory.CreateDirectory("./archive/results_new");
             Directory.CreateDirectory("./cache/results_new");
@@ -77,7 +76,7 @@ namespace HLTVDiscordBridge.Modules
             List<MatchResult> results = new();
             List<MatchResult> oldResults = new();
             
-            foreach (JToken jTok in req.Item1)
+            foreach (JToken jTok in req)
             {
                 results.Add(new MatchResult(jTok as JObject));
             }

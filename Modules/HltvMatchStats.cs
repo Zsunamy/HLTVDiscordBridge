@@ -16,7 +16,7 @@ namespace HLTVDiscordBridge.Modules
             List<string> properties = new();
             List<string> values = new();
             properties.Add("id"); values.Add(match.statsId.ToString());            
-            return new MatchStats((await Tools.RequestApiJObject("getMatchStats", properties, values)).Item1);
+            return new MatchStats(await Tools.RequestApiJObject("getMatchStats", properties, values));
         }
         public static Embed GetPlayerStatsEmbed(MatchStats matchStats)
         {

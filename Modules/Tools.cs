@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,8 +23,7 @@ namespace HLTVDiscordBridge.Modules
             builder.Text = footerString;
             return builder;
         }
-
-        public static async Task<(JObject, bool)> RequestApiJObject(string endpoint, List<string> properties, List<string> values)
+        public static async Task<JObject> RequestApiJObject(string endpoint, List<string> properties, List<string> values)
         {
             HttpClient http = new();
 
@@ -54,22 +54,19 @@ namespace HLTVDiscordBridge.Modules
                 Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
                 StatsUpdater.StatsTracker.ApiRequest = +1;
                 StatsUpdater.UpdateStats();
-                return (JObject.Parse(res), true);
+                return JObject.Parse(res);
             }
             else
             {
-                if (res.Contains("Cloudflare"))
+                try
                 {
-                    Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} returned cloudflare ban");
-                    return (null, false);
+                    var error = JObject.Parse(await resp.Content.ReadAsStringAsync());
+                    throw new HltvApiException(error);
                 }
-                else
-                {
-                    return (null, true);
-                }
+                catch(JsonReaderException) { throw new Exception("Deployment Error"); }                
             }
         }
-        public static async Task<(JArray, bool)> RequestApiJArray(string endpoint, List<string> properties, List<string> values)
+        public static async Task<JArray> RequestApiJArray(string endpoint, List<string> properties, List<string> values)
         {
             HttpClient http = new();
             Uri uri = new($"{Config.LoadConfig().APILink}/api/{endpoint}");
@@ -102,23 +99,19 @@ namespace HLTVDiscordBridge.Modules
                 Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
                 StatsUpdater.StatsTracker.ApiRequest = +1;
                 StatsUpdater.UpdateStats();
-                return (JArray.Parse(res), true);
+                return JArray.Parse(res);
             }
             else
             {
-                if (res.Contains("Cloudflare"))
+                try
                 {
-                    Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} returned cloudflare ban");
-                    return (null, false);
+                    var error = JObject.Parse(await resp.Content.ReadAsStringAsync());
+                    throw new HltvApiException(error);
                 }
-                else
-                {
-                    return (null, true);
-                }
+                catch (JsonReaderException) { throw new Exception("Deployment Error"); }
             }
         }
-        //overload
-        public static async Task<(JArray, bool)> RequestApiJArray(string endpoint, List<string> properties, List<List<string>> values)
+        public static async Task<JArray> RequestApiJArray(string endpoint, List<string> properties, List<List<string>> values)
         {
             HttpClient http = new();
             Uri uri = new($"{Config.LoadConfig().APILink}/api/{endpoint}");
@@ -154,19 +147,16 @@ namespace HLTVDiscordBridge.Modules
                 Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
                 StatsUpdater.StatsTracker.ApiRequest = +1;
                 StatsUpdater.UpdateStats();
-                return (JArray.Parse(res), true);
+                return JArray.Parse(res);
             }
             else
             {
-                if (res.Contains("Cloudflare"))
+                try
                 {
-                    Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} returned cloudflare ban");
-                    return (null, false);
+                    var error = JObject.Parse(await resp.Content.ReadAsStringAsync());
+                    throw new HltvApiException(error);
                 }
-                else
-                {
-                    return (null, true);
-                }
+                catch (JsonReaderException) { throw new Exception("Deployment Error"); }
             }
         }
     }

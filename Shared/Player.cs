@@ -13,7 +13,7 @@ namespace HLTVDiscordBridge.Shared
         {
             id = jObject.TryGetValue("id", out JToken idTok) ? uint.Parse(idTok.ToString()) : 0;
             name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;
-            link = id != 0 && name != null ? $"https://www.hltv.org/player/{id}/{name}" : null;
+            link = id != 0 && name != null ? $"https://www.hltv.org/player/{id}/{name.Replace(" ", "%20")}" : null;
         }
 
         public uint id { get; set; }

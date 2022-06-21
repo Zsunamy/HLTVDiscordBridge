@@ -16,8 +16,7 @@ namespace HLTVDiscordBridge.Modules
         {
             Directory.CreateDirectory("./cache/matches");
             var req = await Tools.RequestApiJArray("getMatches", new List<string>(), new List<string>());
-            if(!req.Item2 || req.Item1 == null) { return (null, null); }
-            JArray jArr = req.Item1;
+            JArray jArr = req;
             JArray upcomingMatches = new();
             JArray liveMatches = new();
             foreach(JObject jObj in jArr)
@@ -122,7 +121,7 @@ namespace HLTVDiscordBridge.Modules
             return builder.Build();
         }
 
-        private static async Task<(Embed, ushort)> GetLiveMatchesEmbed()
+        private static (Embed, ushort) GetLiveMatchesEmbed()
         {
             //JArray matches = (await AktUpcomingAndLiveMatches()).Item2;
             File.WriteAllText("./cache/text.json",new JArray().ToString());
@@ -258,7 +257,7 @@ namespace HLTVDiscordBridge.Modules
                    .WithCurrentTimestamp();
             var LoadingMsg = await Context.Channel.SendMessageAsync(embed: builder.Build());
             IDisposable typingState = Context.Channel.EnterTypingState();
-            (Embed, ushort) res = await GetLiveMatchesEmbed();
+            (Embed, ushort) res = GetLiveMatchesEmbed();
             typingState.Dispose();
             await LoadingMsg.DeleteAsync();
             StatsUpdater.StatsTracker.MessagesSent += 1;

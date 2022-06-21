@@ -18,8 +18,8 @@ namespace HLTVDiscordBridge.Modules
             properties.Add("id");
             values.Add(url.Substring(29, 7));
             var req = await Tools.RequestApiJObject("getMatch", properties, values);
-            if (!req.Item2 || req.Item1 == null) { return null; }
-            Match match = new(req.Item1);
+            if (req == null) { return null; }
+            Match match = new(req);
             return match;
         }
         public static async Task<Match> GetMatch(MatchResult matchResult)
@@ -29,8 +29,8 @@ namespace HLTVDiscordBridge.Modules
             properties.Add("id");
             values.Add(matchResult.id.ToString());
             var req = await Tools.RequestApiJObject("getMatch", properties, values);
-            if (!req.Item2 || req.Item1 == null) { return null; }
-            Match match = new(req.Item1);
+            if (req == null) { return null; }
+            Match match = new(req);
             return match;
         }
     }

@@ -73,14 +73,7 @@ namespace HLTVDiscordBridge.Modules
             if(!File.Exists($"./cache/ranking/ranking_{arg.ToLower().Replace(' ','-')}.json"))
             {
                 var req = await Tools.RequestApiJArray("getTeamRanking", properties, values);
-                if(!req.Item2) {
-                    embed.WithColor(Color.Red)
-                        .WithTitle($"error")
-                        .WithDescription("Our API is currently not available! Please try again later or contact us on [github](https://github.com/Zsunamy/HLTVDiscordBridge/issues). We're sorry for the inconvience");
-                    await ReplyAsync(embed: embed.Build());
-                    return;
-                }
-                jArr = req.Item1;
+                jArr = req;
                 if (jArr.Count == 0) 
                 {
                     embed.WithColor(Color.Red)

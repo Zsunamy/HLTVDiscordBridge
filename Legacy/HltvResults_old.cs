@@ -19,7 +19,7 @@ namespace HLTVDiscordBridge.Modules
             properties.Add("id");
             values.Add(matchId.ToString());
             var req = await Tools.RequestApiJObject("getMatch", properties, values);
-            return req.Item1;
+            return req;
         }
 
         #region Results
@@ -29,7 +29,7 @@ namespace HLTVDiscordBridge.Modules
             List<List<string>> values = new();  values.Add(teamIds);
             List<string> properties = new(); properties.Add("teamIds");
             var req = await Tools.RequestApiJArray("getResults", properties, values);
-            return req.Item1;
+            return req;
         }
         
         /// <summary>
@@ -50,8 +50,7 @@ namespace HLTVDiscordBridge.Modules
             values.Add(startDate); values.Add(endDate);
 
             var req = await Tools.RequestApiJArray("getResults", properties, values);
-            if(!req.Item2 || req.Item1 == null) { return null; }
-            JArray jArr = req.Item1;
+            JArray jArr = req;
 
             Directory.CreateDirectory("./cache/results");
             Directory.CreateDirectory("./archive/results");
@@ -100,8 +99,7 @@ namespace HLTVDiscordBridge.Modules
                     properties.Add("id");
                     values.Add(jObj.GetValue("id").ToString());
                     var req = await Tools.RequestApiJObject("getMatch", properties, values);
-                    if(!req.Item2) { continue; }
-                    JObject matchStats = req.Item1;
+                    JObject matchStats = req;
                     newMatches.Add((matchStats, ushort.Parse(jObj.GetValue("stars").ToString())));
                 }
             }
@@ -219,12 +217,11 @@ namespace HLTVDiscordBridge.Modules
             properties.Add("id");
             values.Add(matchId.ToString());
             var req = await Tools.RequestApiJObject("getMatch", properties, values);
-            if(!req.Item2) { return null; }
-            JObject match = req.Item1;
+            JObject match = req;
             values.Clear(); values.Add(match.GetValue("statsId").ToString());
 
             req = await Tools.RequestApiJObject("getMatchStats", properties, values);
-            return req.Item1;
+            return req;
         }
         public static async Task<Embed> GetPlStatsEmbed(string matchlink)
         {

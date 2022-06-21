@@ -75,7 +75,7 @@ namespace HLTVDiscordBridge.Legacy
                 List<string> values = new();
 
                 IMongoCollection<PlayerDocument> collection = GetCollection();
-                (JObject, bool) req = (null, false);
+                JObject req = null;
                 var find1 = collection.Find(x => x.Name == playername.ToLower());
                 var find2 = collection.Find(x => x.Alias.Contains(playername.ToLower()));
                 if (find1.CountDocuments() == 0 && find2.CountDocuments() == 0)
@@ -84,8 +84,7 @@ namespace HLTVDiscordBridge.Legacy
                     properties.Add("name");
                     values.Add(playername);
                     req = await Tools.RequestApiJObject("getPlayerByName", properties, values);
-                    if (!req.Item2) { return (null, 0, null); }
-                    idJObj = req.Item1;
+                    idJObj = req;
                     if (idJObj == null) { return (null, 0, JArray.Parse("[]")); }
                     PlayerDocument doc = new();
                     doc.PlayerId = ushort.Parse(idJObj.GetValue("id").ToString());
@@ -113,8 +112,7 @@ namespace HLTVDiscordBridge.Legacy
                         properties.Add("id");
                         values.Add(playerId.ToString());
                         req = await Tools.RequestApiJObject("getPlayer", properties, values);
-                        if (!req.Item2) { return (null, 0, null); }
-                        idJObj = req.Item1;
+                        idJObj = req;
                         if (idJObj == null) { return (null, 0, JArray.Parse("[]")); }
                     }
                 }
@@ -127,8 +125,7 @@ namespace HLTVDiscordBridge.Legacy
                 values.Clear(); values.Add(playerID.ToString());
 
                 req = await Tools.RequestApiJObject("getPlayerStats", properties, values);
-                if (!req.Item2) { return (null, 0, null); }
-                statsJObj = req.Item1;
+                statsJObj = req;
                 File.WriteAllText($"./cache/playercards/{playername.ToLower()}/stats.json", statsJObj.ToString());
                 return (statsJObj, playerID, achievements);
             }            

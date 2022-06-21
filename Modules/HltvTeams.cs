@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
 using Newtonsoft.Json.Linq;
 using Svg;
@@ -17,31 +18,18 @@ namespace HLTVDiscordBridge.Modules
 {
     public class HltvTeams : ModuleBase<SocketCommandContext>
     {
-
-        [Command("team")]
-        public async Task SendTeamCard([Remainder] string name = "")
+        public static async Task SendTeamCard(SocketSlashCommand arg)
         {
-            if (!Directory.Exists($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}"))
+            await arg.DeferAsync();
+            try 
             {
-                EmbedBuilder builder = new();
-                builder.WithTitle("Your request is loading!")
-                    .WithDescription("This may take up to 30 seconds")
-                    .WithCurrentTimestamp();
-                var msg = await Context.Channel.SendMessageAsync(embed: builder.Build());
-                IDisposable typingState = Context.Channel.EnterTypingState();
-                var req = await GetTeamCard(name);
-                typingState.Dispose();
-                await msg.DeleteAsync();
-                await Context.Channel.SendFileAsync(req.Item2, embed: req.Item1);
+                var res = await GetTeamCard(arg.Data.Options.First().Value.ToString());
+                await arg.DeleteOriginalResponseAsync();
+                await arg.Channel.SendFileAsync(res.Item2, embed: res.Item1);
             }
-            else
-            {
-                var req = await GetTeamCard(name);
-                if (req.Item2 == "") { await Context.Channel.SendMessageAsync(embed: req.Item1); }
-                StatsUpdater.StatsTracker.MessagesSent += 1;
-                StatsUpdater.UpdateStats();
-                await Context.Channel.SendFileAsync(req.Item2, embed: req.Item1);
-            }
+            catch(HltvApiException e) { await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ErrorHandling.GetErrorEmbed(e)); }
+            
+            
         }
         public static async Task<(FullTeam, FullTeamStats)> GetFullTeamAndFullTeamStats(string name)
         {
@@ -52,10 +40,21 @@ namespace HLTVDiscordBridge.Modules
                 List<string> values = new();
                 properties.Add("name");
                 values.Add(name);
-                var req = await Tools.RequestApiJObject("getTeamByName", properties, values);
+                JObject req;
+                try
+                {
+                    req = await Tools.RequestApiJObject("getTeamByName", properties, values);
+                }
+                catch (HltvApiException) { throw; }
+                
 
-                FullTeam fullTeam = new FullTeam(req.Item1);
-                FullTeamStats fullTeamStats = await HltvFullTeamStats.GetFullTeamStats(fullTeam.id);
+                FullTeam fullTeam = new FullTeam(req);
+                FullTeamStats fullTeamStats;
+                try
+                {
+                    fullTeamStats = await HltvFullTeamStats.GetFullTeamStats(fullTeam.id);
+                }
+                catch(HltvApiException) { throw; }
 
                 Directory.CreateDirectory($"./cache/teamcards/{fullTeam.name.ToLower().Replace(' ', '-')}");
                 File.WriteAllText($"./cache/teamcards/{fullTeam.name.ToLower().Replace(' ', '-')}/fullteam.json", fullTeam.ToString());
@@ -85,7 +84,13 @@ namespace HLTVDiscordBridge.Modules
         }
         private static async Task<(Embed, string)> GetTeamCard(string name)
         {
-            var res = await GetFullTeamAndFullTeamStats(name);
+            (FullTeam, FullTeamStats) res;
+            try
+            {
+                res = await GetFullTeamAndFullTeamStats(name);
+            }
+            catch (HltvApiException) { throw; }
+            
             EmbedBuilder builder = new();
             FullTeam fullTeam = res.Item1;
             FullTeamStats fullTeamStats = res.Item2;
@@ -144,13 +149,14 @@ namespace HLTVDiscordBridge.Modules
 
             //mapstats
             string mapsStatsString = "";
-            if (fullTeamStats.mapStats.GetType().GetProperties().Length == 0) { mapsStatsString = "n.A"; }
+            if (JObject.FromObject(fullTeamStats.mapStats).Count == 0) { mapsStatsString = "n.A"; }
             else
             {
-                foreach (var prop in fullTeamStats.mapStats.GetType().GetProperties())
+                for(int i = 0; i < 2; i++)
                 {
-                    //TeamMapStats map = new(JObject.FromObject(prop.GetValue(fullTeamStats)));
-                    //mapsStatsString = $"\n**{GetMapNameByAcronym(nameof(prop))}** ({map.winRate}% winrate):\n{map.wins} wins, {map.losses} losses\n\n";
+                    var prop = JObject.FromObject(fullTeamStats.mapStats).Properties().ElementAt(i);
+                    TeamMapStats map = new(prop.Value as JObject);
+                    mapsStatsString += $"\n**{GetMapNameByAcronym(prop.Name)}** ({map.winRate}% winrate):\n{map.wins} wins, {map.losses} losses\n\n";
                 }
             }
 
@@ -160,6 +166,7 @@ namespace HLTVDiscordBridge.Modules
             //recentResults
             await Task.Delay(3000);
             List<Shared.MatchResult> recentResults = await HltvResults.GetMatchResults(fullTeam.id);
+            File.WriteAllText("./cache/test.json", JArray.FromObject(recentResults).ToString());
             string recentResultsString = "";
             if (recentResults.Count == 0)
             {
@@ -170,12 +177,14 @@ namespace HLTVDiscordBridge.Modules
                 foreach (Shared.MatchResult matchResult in recentResults)
                 {
                     string opponentTeam;
-                    string link;
                     if (matchResult.team1.name == fullTeam.name)
-                    { opponentTeam = matchResult.team2.name; link = matchResult.team2.link; }
-                    else { opponentTeam = matchResult.team1.name; link = matchResult.team1.link; }
-                    recentResultsString += $"[vs. {opponentTeam}]({link})\n";
-                }            }
+                    { opponentTeam = matchResult.team2.name; }
+                    else { opponentTeam = matchResult.team1.name; }
+                    recentResultsString += $"[vs. {opponentTeam}]({matchResult.link})\n";
+
+                    if(recentResults.IndexOf(matchResult) == 3) { break; }
+                }            
+            }
 
             builder.AddField("recent results:", recentResultsString, true);
 
@@ -201,8 +210,8 @@ namespace HLTVDiscordBridge.Modules
                     j++;
                 }
             }
-            builder.AddField("upcoming matches:", upcomingMatchesString, true);
-            builder.AddField("\u200b", "\u200b", true);*/
+            builder.AddField("upcoming matches:", upcomingMatchesString, true);*/
+            builder.AddField("\u200b", "\u200b", true);
 
             builder.WithCurrentTimestamp();
             builder.WithFooter("The stats shown were collected during the last 3 months");
@@ -227,7 +236,6 @@ namespace HLTVDiscordBridge.Modules
 
             return (builder.Build(), fullTeam.localThumbnailPath);
         }
-
         private static string ConvertSVGtoPNG(byte[] svgFile, string teamname)
         {
             string resString = $"./cache/teamcards/{teamname.ToLower().Replace(' ', '-')}/{teamname.ToLower().Replace(' ', '-')}_logo.png";

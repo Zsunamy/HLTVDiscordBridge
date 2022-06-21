@@ -79,17 +79,17 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/events");
 
             var req = await Tools.RequestApiJArray("getEvents", new List<string>(), new List<string>());
-            if (!req.Item2 || req.Item1 == null) { return null; }
 
             List<EventPreview> UpcomingAndOngoingEvents = new();
-            foreach(JToken eventTok in req.Item1)
-            {
+            foreach(JToken eventTok in req)
+            {                
                 UpcomingAndOngoingEvents.Add(new EventPreview(eventTok as JObject));
             }
+            
 
             foreach(EventPreview eventPreview in UpcomingAndOngoingEvents)
             {
-                if(eventPreview.location == null)
+                if(UnixTimeStampToDateTime(eventPreview.dateEnd) > DateTime.UtcNow && UnixTimeStampToDateTime(eventPreview.dateStart) < DateTime.UtcNow)
                 {
                     ongoingEvents.Add(new OngoingEventPreview(JObject.FromObject(eventPreview)));
                 }
@@ -105,10 +105,9 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/events");
 
             var req = await Tools.RequestApiJArray("getEvents", new List<string>(), new List<string>());
-            if (!req.Item2 || req.Item1 == null) { return null; }
 
             List<EventPreview> UpcomingAndOngoingEvents = new();
-            foreach (JToken eventTok in req.Item1)
+            foreach (JToken eventTok in req)
             {
                 UpcomingAndOngoingEvents.Add(new EventPreview(eventTok as JObject));
             }
@@ -153,9 +152,8 @@ namespace HLTVDiscordBridge.Modules
 
             var req = await Tools.RequestApiJArray("getPastEvents", properties, values);
 
-            if (!req.Item2 || req.Item1 == null) { return null; }
 
-            foreach (JToken eventTok in req.Item1)
+            foreach (JToken eventTok in req)
             {
                 pastEvents.Add(new EventPreview(eventTok as JObject));
             }
@@ -164,8 +162,6 @@ namespace HLTVDiscordBridge.Modules
 
             return pastEvents;
         }
-
-
         public static async Task<List<OngoingEventPreview>> GetStartedEvents()
         {
             Directory.CreateDirectory("./cache/events");
@@ -232,7 +228,6 @@ namespace HLTVDiscordBridge.Modules
             File.WriteAllText("./cache/events/newendedevents.json", JArray.FromObject(endedEvents).ToString());
             return newPastEvents;
         }
-
         static async Task<FullEvent> GetFullEvent(OngoingEventPreview eventPreview)
         {
             return await GetFullEvent(eventPreview.id);
@@ -247,8 +242,8 @@ namespace HLTVDiscordBridge.Modules
             List<string> values = new();
             properties.Add("id");
             values.Add(eventId.ToString());
-            var req = await Tools.RequestApiJObject("getEvent", properties, values);
-            return new FullEvent(req.Item1);
+            try { var req = await Tools.RequestApiJObject("getEvent", properties, values); return new FullEvent(req); }
+            catch (HltvApiException) { throw; }
         }
         public static async Task<FullEvent> GetFullEvent(string eventName)
         {
@@ -256,10 +251,13 @@ namespace HLTVDiscordBridge.Modules
             List<string> values = new();
             properties.Add("name");
             values.Add(eventName);
-            var req = await Tools.RequestApiJObject("getEventByName", properties, values);
-            return new FullEvent(req.Item1);
+            try
+            {
+                var req = await Tools.RequestApiJObject("getEventByName", properties, values);
+                return new FullEvent(req);
+            }
+            catch (HltvApiException) { throw; }
         }
-
         public static Embed GetEventEndedEmbed(FullEvent eventObj)
         {
             File.WriteAllText("./cache/test.json", JObject.FromObject(eventObj).ToString());
@@ -282,7 +280,7 @@ namespace HLTVDiscordBridge.Modules
                     break;
                 }
                 List<string> prizes = new();
-                if(prize != null)
+                if(prize.prize != null)
                     prizes.Add($"wins: {prize.prize}"); 
                 if(prize.qualifiesFor != null)
                     prizes.Add($"qualifies for: [{prize.qualifiesFor.name}]({prize.qualifiesFor.link})"); 
@@ -418,13 +416,14 @@ namespace HLTVDiscordBridge.Modules
 
             return builder.Build();
         }
-        [Command("events")]
-        public async Task SendEvents()
+        public static async Task SendEvents(SocketSlashCommand arg)
         {
+            await arg.DeferAsync();
+
             EmbedBuilder builder = new();
 
             List<OngoingEventPreview> ongoingEvents = new();
-            if (!File.Exists("./cache/events/ongoing.json") || File.GetCreationTimeUtc("./cache/events/ongoing.json") > DateTime.UtcNow.AddMinutes(-10))
+            if (!File.Exists("./cache/events/ongoing.json") || File.GetCreationTimeUtc("./cache/events/ongoing.json") < DateTime.UtcNow.AddMinutes(-10))
             {
                 ongoingEvents = await GetOngoingEvents();
             }
@@ -463,19 +462,20 @@ namespace HLTVDiscordBridge.Modules
             var compBuilder = new ComponentBuilder()
                 .WithSelectMenu(menuBuilder);
 
-            await ReplyAsync(embed: builder.Build(), components: compBuilder.Build());
+            await arg.ModifyOriginalResponseAsync(msg => { msg.Embed = builder.Build(); msg.Components = compBuilder.Build(); });
         }
-
-        [Command("upcomingevents")]
-        public async Task SendUpcomingEvents()
+        public static async Task SendUpcomingEvents(SocketSlashCommand arg)
         {
+            await arg.DeferAsync();
+
             EmbedBuilder builder = new();
 
             List<EventPreview> upcomingEvents = new();
-            if(!File.Exists("./cache/events/upcoming.json") || File.GetCreationTimeUtc("./cache/events/upcoming.json") > DateTime.UtcNow.AddMinutes(-10))
+            if(!File.Exists("./cache/events/upcoming.json") || File.GetCreationTimeUtc("./cache/events/upcoming.json") < DateTime.UtcNow.AddMinutes(-10))
             {
                 upcomingEvents = await GetUpcomingEvents();
-            } else
+            } 
+            else
             {
                 foreach(JToken upcomingEvent in JArray.Parse(File.ReadAllText("./cache/events/upcoming.json")))
                 {
@@ -500,46 +500,58 @@ namespace HLTVDiscordBridge.Modules
                 if(upcomingEvent.featured)
                 {
                     menuBuilder.AddOption(upcomingEvent.name, upcomingEvent.id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.location.name}", new Emoji("⭐"));
-                } else
+                } 
+                else
                 {
                     menuBuilder.AddOption(upcomingEvent.name, upcomingEvent.id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.location.name}");
+                }
+                if(menuBuilder.Options.Count > 24)
+                {
+                    break;
                 }
             }
 
             var compBuilder = new ComponentBuilder()
                 .WithSelectMenu(menuBuilder);
 
-            await ReplyAsync(embed: builder.Build(),components: compBuilder.Build());
+            await arg.ModifyOriginalResponseAsync(msg => { msg.Embed = builder.Build(); msg.Components = compBuilder.Build(); });
         }
         public static async Task SendEvent(SocketMessageComponent arg)
         {
             await arg.DeferAsync();
-            Embed embed = await GetEventEmbed(await GetFullEvent(uint.Parse(arg.Data.Values.First())));
-            var msg = arg.Message;
-
-            SelectMenuComponent menu = msg.Components.First().Components.First() as SelectMenuComponent;
-            SelectMenuBuilder builder = menu.ToBuilder();
-
-            foreach (SelectMenuOptionBuilder option in builder.Options)
+            Embed embed;
+            try
             {
-                if(option.IsDefault == true) { option.IsDefault = false; break; }
-            }
-            foreach (SelectMenuOptionBuilder option in builder.Options)
-            {
-                if(option.Value == arg.Data.Values.First())
+                FullEvent fullEvent = await GetFullEvent(uint.Parse(arg.Data.Values.First()));
+                embed = await GetEventEmbed(fullEvent);
+                var msg = arg.Message;
+
+                SelectMenuComponent menu = msg.Components.First().Components.First() as SelectMenuComponent;
+                SelectMenuBuilder builder = menu.ToBuilder();
+
+                foreach (SelectMenuOptionBuilder option in builder.Options)
                 {
-                     option.IsDefault = true; break;
+                    if (option.IsDefault == true) { option.IsDefault = false; break; }
                 }
+                foreach (SelectMenuOptionBuilder option in builder.Options)
+                {
+                    if (option.Value == arg.Data.Values.First())
+                    {
+                        option.IsDefault = true; break;
+                    }
+                }
+                var compBuilder = new ComponentBuilder()
+                    .WithSelectMenu(builder);
+                await arg.ModifyOriginalResponseAsync(msg => { msg.Embed = embed; msg.Components = compBuilder.Build(); });
             }
-            var compBuilder = new ComponentBuilder()
-                .WithSelectMenu(builder);
-            await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
-            await arg.ModifyOriginalResponseAsync(msg => msg.Components = compBuilder.Build());
+            catch (HltvApiException e) { embed = ErrorHandling.GetErrorEmbed(e); await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed); }  
         }
         public static async Task SendEvent(SocketSlashCommand arg)
         {
             await arg.DeferAsync();
-            Embed embed = await GetEventEmbed(await GetFullEvent(6226));
+            Embed embed; 
+            try { embed = await GetEventEmbed(await GetFullEvent(arg.Data.Options.First().Value.ToString())); }
+            catch (HltvApiException e) { embed = ErrorHandling.GetErrorEmbed(e); }
             await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
         }
         private static DateTime UnixTimeStampToDateTime(ulong unixTimeStamp)

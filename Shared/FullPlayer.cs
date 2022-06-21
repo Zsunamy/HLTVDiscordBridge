@@ -15,7 +15,15 @@ namespace HLTVDiscordBridge.Shared
             id = jObject.TryGetValue("id", out JToken idTok) ? uint.Parse(idTok.ToString()) : 0;
             name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;
             ign = jObject.TryGetValue("ign", out JToken ignTok) ? ignTok.ToString() : null;
-            image = jObject.TryGetValue("image", out JToken imageTok) ? imageTok.ToString() : null;
+            if (jObject.TryGetValue("image", out JToken imageTok))
+            {
+                string imageLink = imageTok.ToString();
+                if (!imageLink.Contains("http"))
+                {
+                    image = "https://www.hltv.org" + imageLink;
+                }
+                else { image = imageLink; }
+            }
             age = jObject.TryGetValue("age", out JToken ageTok) ? ageTok.ToString() : null;
             twitter = jObject.TryGetValue("twitter", out JToken twitterTok) ? twitterTok.ToString() : null;
             twitch = jObject.TryGetValue("twitch", out JToken twitchTok) ? twitchTok.ToString() : null;

@@ -16,7 +16,7 @@ namespace HLTVDiscordBridge.Shared
             timeOnTeam = jObject.TryGetValue("timeOnTeam", out JToken timeOnTeamTok) ? timeOnTeamTok.ToString() : null;
             mapsPlayed = jObject.TryGetValue("mapsPlayed", out JToken mapsPlayedTok) ? uint.Parse(mapsPlayedTok.ToString()) : 0;
             type = jObject.TryGetValue("type", out JToken typeTok) ? typeTok.ToString() : null;
-            link = id != 0 && name != null ? $"https://www.hltv.org/player/{id}/{name}" : null;
+            link = id != 0 && name != null ? $"https://www.hltv.org/player/{id}/{name.Replace(" ", "%20")}" : null;
         }
 
         public uint id { get; set; }

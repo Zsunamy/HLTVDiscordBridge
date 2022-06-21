@@ -13,7 +13,15 @@ namespace HLTVDiscordBridge.Shared
         {
             id = jObject.TryGetValue("id", out JToken idTok) ? uint.Parse(idTok.ToString()) : 0;
             name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;
-            logo = jObject.TryGetValue("logo", out JToken logoTok) ? logoTok.ToString() : null;
+            if (jObject.TryGetValue("logo", out JToken logoTok))
+            {
+                string logoLink = logoTok.ToString();
+                if (!logoLink.Contains("http"))
+                {
+                    logo = "https://www.hltv.org" + logoLink;
+                }
+                else { logo = logoLink; }
+            }
             dateStart = jObject.TryGetValue("dateStart", out JToken dateStartTok) ? ulong.Parse(dateStartTok.ToString()) : 0;
             dateEnd = jObject.TryGetValue("dateEnd", out JToken dateEndTok) ? ulong.Parse(dateEndTok.ToString()) : 0;
             prizePool = jObject.TryGetValue("prizePool", out JToken prizePoolTok) ? prizePoolTok.ToString() : null;

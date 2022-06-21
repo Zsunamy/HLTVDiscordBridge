@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HLTVDiscordBridge.Shared;
+using Newtonsoft.Json.Linq;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -15,7 +16,13 @@ namespace HLTVDiscordBridge.Modules
             List<string> values = new();
             properties.Add("id");
             values.Add(id.ToString());
-            return new FullTeamStats((await Tools.RequestApiJObject("getTeamStats", properties, values)).Item1);
+            JObject jObject;
+            try
+            {
+                jObject = await Tools.RequestApiJObject("getTeamStats", properties, values);
+            }
+            catch(HltvApiException) { throw; }
+            return new FullTeamStats(jObject);
         }
     }
 }
