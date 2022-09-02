@@ -74,28 +74,10 @@ namespace HLTVDiscordBridge.Modules
             Directory.CreateDirectory("./cache/results_new");
 
             List<MatchResult> results = new();
-            List<MatchResult> oldResults = new();
             
             foreach (JToken jTok in req)
             {
                 results.Add(new MatchResult(jTok as JObject));
-            }
-
-            if (File.Exists("./cache/results_new/results.json"))
-            {
-                JArray oldResultsJArray = JArray.Parse(File.ReadAllText("./cache/results_new/results.json"));
-                foreach (JToken jToken in oldResultsJArray)
-                {
-                    JObject jObj = JObject.Parse(jToken.ToString());
-                    MatchResult oldResult = new(jObj);
-                    oldResults.Add(oldResult);
-                }
-                var fs = File.Create("./cache/results_new/results.json"); fs.Close();
-            }
-
-            if (results != oldResults) 
-            { 
-                File.WriteAllText("./cache/results_new/results.json", JArray.FromObject(results).ToString());
             }
             
             return results;
@@ -113,9 +95,8 @@ namespace HLTVDiscordBridge.Modules
                 oldResults.Add(oldResult);
             }
 
-
-
-            if (newResults == oldResults || newResults == null) { return null; }
+            if (newResults.First().id == oldResults.First().id) { return null; }
+            else { File.WriteAllText("./cache/results_new/results.json", JArray.FromObject(newResults).ToString()); }
 
             List<MatchResult> results = new();
             foreach(MatchResult newResult in newResults)
@@ -182,6 +163,22 @@ namespace HLTVDiscordBridge.Modules
 
             return builder.Build();
         }
+
+        private static MessageComponent GetMessageComponent(Match match)
+        {
+            ComponentBuilder compBuilder = new();
+            switch (match.format.type)
+            {
+                case "bo1":
+                    compBuilder.WithButton("match statistics", "overallstats_bo1");
+                    break;
+                default:
+                    compBuilder.WithButton("match statistics", "overallstats_def");
+                    break;
+            }
+            
+            return compBuilder.Build();
+        }
         public static async Task SendNewResults(DiscordSocketClient client)
         {
             List<MatchResult> newMatchResults = await GetNewMatchResults();
@@ -207,9 +204,7 @@ namespace HLTVDiscordBridge.Modules
                     {
                         try
                         {
-                            ComponentBuilder compBuilder = new();
-                            compBuilder.WithButton("playerstats", "playerstats");
-                            RestUserMessage msg = await channel.SendMessageAsync(embed: GetResultEmbed(matchResult, newMatch), components: compBuilder.Build());
+                            RestUserMessage msg = await channel.SendMessageAsync(embed: GetResultEmbed(matchResult, newMatch), components: GetMessageComponent(newMatch));
                            
                             StatsUpdater.StatsTracker.MessagesSent += 1;
                             StatsUpdater.UpdateStats();
@@ -219,7 +214,6 @@ namespace HLTVDiscordBridge.Modules
                 }
             }
         }
-
         private static string GetFormatFromAcronym(string arg)
         {
             return arg switch

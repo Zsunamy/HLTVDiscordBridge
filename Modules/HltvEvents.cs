@@ -343,8 +343,8 @@ namespace HLTVDiscordBridge.Modules
             DateTime endDate = UnixTimeStampToDateTime(eventObj.dateEnd);
             string start = startDate > DateTime.UtcNow ? "starting" : "started";
             string end = endDate > DateTime.UtcNow ? "ending" : "ended";
-            builder.AddField(start, startDate.ToShortDateString() + " UTC", true)
-                .AddField(end, endDate.ToShortDateString() + " UTC", true)
+            builder.AddField(start, startDate.ToShortDateString(), true)
+                .AddField(end, endDate.ToShortDateString(), true)
                 .AddField("\u200b", "\u200b", true)
                 .AddField("prize pool:", eventObj.prizePool, true)
                 .AddField("location:", eventObj.location.name, true)

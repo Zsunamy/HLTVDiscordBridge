@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -11,121 +12,86 @@ namespace HLTVDiscordBridge.Modules
 {
     public class HltvRanking : ModuleBase<SocketCommandContext>
     {
-        string[] months = { "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december" };
-        [Command("ranking")]
-        public async Task GetRanking([Remainder]string arg = "GLOBAL")
+        readonly static string[] months = { "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december" };
+        
+        public static async Task SendRanking(SocketSlashCommand cmd)
         {
-            EmbedBuilder embed = new();
+            await cmd.DeferAsync();
+            EmbedBuilder embedBuilder = new();
             List<string> properties = new();
             List<string> values = new();
-            DateTime lastMonday = new();
+            DateTime now = DateTime.UtcNow;
+            DateTime lastMonday = GetLastMonday(now.Day.ToString(), now.Month.ToString(), now.Year.ToString());
+            string region = "GLOBAL";
 
-
-            if (arg.Contains('-'))
-            {
-                arg = "";
-                foreach (string str in arg.Split('-')) { arg += $"{str} "; }
-            }
-
-            if (arg == "GLOBAL")
-            {
-                lastMonday = GetLastMonday(DateTime.UtcNow.Day.ToString(), DateTime.UtcNow.Month.ToString(), DateTime.UtcNow.Year.ToString());
-                properties.Add("year");
-                properties.Add("month");
-                properties.Add("day");
-                values.Add(lastMonday.Year.ToString());
-                values.Add(months[lastMonday.Month - 1]);
-                var day = lastMonday.Day.ToString().Length == 1 ? $"0{lastMonday.Day}" : lastMonday.Day.ToString();
-                values.Add(day);
-                Console.WriteLine();
-            }
-            else if (DateTime.TryParse(arg, out DateTime time))
-            {
-                lastMonday = GetLastMonday(time.Day.ToString(), time.Month.ToString(), time.Year.ToString());
-                properties.Add("year");
-                properties.Add("month");
-                properties.Add("day");
-                values.Add(lastMonday.Year.ToString());
-                values.Add(months[lastMonday.Month - 1]);
-                var day = lastMonday.Day.ToString().Length == 1 ? $"0{lastMonday.Day}" : lastMonday.Day.ToString();
-                values.Add(day);
-                
-            }
-            else
-            {
-                lastMonday = GetLastMonday(DateTime.UtcNow.Day.ToString(), DateTime.UtcNow.Month.ToString(), DateTime.UtcNow.Year.ToString());
-                properties.Add("year");
-                properties.Add("month");
-                properties.Add("day");
-                properties.Add("country");
-                values.Add(lastMonday.Year.ToString());
-                values.Add(months[lastMonday.Month - 1]);
-                var day = lastMonday.Day.ToString().Length == 1 ? $"0{lastMonday.Day}" : lastMonday.Day.ToString();
-                values.Add(day);
-                values.Add(arg.ToLower());
-            }
-
-            
-
-            //cache
-            JArray jArr;
-            Directory.CreateDirectory("./cache/ranking");
-            if(!File.Exists($"./cache/ranking/ranking_{arg.ToLower().Replace(' ','-')}.json"))
-            {
-                var req = await Tools.RequestApiJArray("getTeamRanking", properties, values);
-                jArr = req;
-                if (jArr.Count == 0) 
+            foreach(SocketSlashCommandDataOption opt in cmd.Data.Options)
+            { 
+                if(opt.Name == "date" && DateTime.TryParse(opt.Value.ToString(), out DateTime time))
                 {
-                    embed.WithColor(Color.Red)
-                    .WithTitle($"{arg} does not exist")
-                    .WithDescription("Please state a valid country!");
-                    await ReplyAsync(embed: embed.Build());
-                    return;
-                } else
+                    lastMonday = GetLastMonday(time.Day.ToString(), time.Month.ToString(), time.Year.ToString());
+                    properties.Add("year");
+                    properties.Add("month");
+                    properties.Add("day");
+                    values.Add(lastMonday.Year.ToString());
+                    values.Add(months[lastMonday.Month - 1]);
+                    var day = lastMonday.Day.ToString().Length == 1 ? $"0{lastMonday.Day}" : lastMonday.Day.ToString();
+                    values.Add(day);
+                }
+                else if(opt.Name == "region")
                 {
-                    FileStream fs = File.Create($"./cache/ranking/ranking_{arg.ToLower().Replace(' ', '-')}.json");
-                    fs.Close();
-                    File.WriteAllText($"./cache/ranking/ranking_{arg.ToLower().Replace(' ', '-')}.json", jArr.ToString());
+                    region = opt.Value.ToString();
+                    if (region.Contains('-'))
+                    {
+                        region = "";
+                        foreach (string str in region.Split('-')) { region += $"{str} "; }
+                    }
+                    properties.Add("country");
+                    values.Add(region.ToLower());
                 }
             }
-            else
-            {
-                jArr = JArray.Parse(File.ReadAllText($"./cache/ranking/ranking_{arg.ToLower().Replace(' ', '-')}.json"));
-            }
 
-            int teamsDisplayed = jArr.Count;
+            JArray jArr = new();
+            try
+            {
+                jArr = await Tools.RequestApiJArray("getTeamRanking", properties, values);
+            } 
+            catch(HltvApiException ex)
+            {
+                await cmd.Channel.SendMessageAsync(embed: ErrorHandling.GetErrorEmbed(ex));
+                return;
+            }
+            
             string val = "";
             int maxTeams = 10;
-            for (int i = 0; i < jArr.Count; i++)
+            for (int i = 0; i < maxTeams && i < jArr.Count; i++)
             {
                 JObject jObj = JObject.Parse(jArr[i].ToString());
-                short change = short.Parse(jObj.GetValue("change").ToString());
-                string development = change switch
+                string development = "";
+                if (bool.Parse(jObj.GetValue("isNew").ToString())) { development = "(🆕)"; }
+                else
                 {
-                    < 0 => "(⬇️ " + Math.Abs(change) + ")",
-                    > 0 => "(⬆️ " + Math.Abs(change) + ")",
-                    _ => "(⏺️ 0)",
-                };
-                if(bool.Parse(jObj.GetValue("isNew").ToString())) { development = "(🆕)"; }
+                    short change = jObj.TryGetValue("change", out JToken changeTok) ? short.Parse(changeTok.ToString()) : (short)-20;
+                    development = change switch
+                    {
+                        < 0 => "(⬇️ " + Math.Abs(change) + ")",
+                        > 0 => "(⬆️ " + Math.Abs(change) + ")",
+                        _ => "(⏺️ 0)",
+                    };
+                }
                 JObject teamJObj = JObject.Parse(JObject.Parse(jArr[i].ToString()).GetValue("team").ToString());
                 string teamLink = $"https://www.hltv.org/team/{teamJObj.GetValue("id")}/{teamJObj.GetValue("name").ToString().Replace(' ', '-')}";
                 val += $"{i + 1}.\t[{teamJObj.GetValue("name")}]({teamLink}) {development}\n";
-                if(i + 1 == maxTeams)
-                {
-                    teamsDisplayed = i + 1;
-                    break;
-                }
             }
-            embed.WithTitle($"TOP {teamsDisplayed} {lastMonday.ToShortDateString()}")
+            embedBuilder.WithTitle($"TOP {Math.Max(maxTeams, jArr.Count)} {lastMonday.ToShortDateString()}")
                 .AddField("teams:", val)
                 .WithColor(Color.Blue)
-                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-            StatsUpdater.StatsTracker.MessagesSent += 1;
-            StatsUpdater.UpdateStats();
-            await ReplyAsync(embed: embed.Build());
+                .WithFooter(Tools.GetRandomFooter());
+            /*StatsUpdater.StatsTracker.MessagesSent += 1;
+            StatsUpdater.UpdateStats();*/
+            await cmd.Channel.SendMessageAsync(embed: embedBuilder.Build());
         }        
 
-        private DateTime GetLastMonday(string day, string month, string year)
+        private static DateTime GetLastMonday(string day, string month, string year)
         {
             DateTime date = DateTime.Parse($"{day}/{month}/{year}");
             

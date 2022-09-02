@@ -69,7 +69,7 @@ namespace HLTVDiscordBridge
             //await Test.test();
 
             //return;
-#if RELEASE
+#if DEBUG
             await BGTask();
 #endif      
             
@@ -93,14 +93,19 @@ namespace HLTVDiscordBridge
             return Handler;
         }
 
-        private async Task Ready()
+        private Task Ready()
         {
-            foreach (SocketGuild guild in _client.Guilds)
+            return Task.Run(async () =>
             {
-                await Config.GuildJoined(guild, null, true);
-            }            
 
-            await SlashCommands.InitSlashCommands(_client);
+                foreach (SocketGuild guild in _client.Guilds)
+                {
+                    await Config.GuildJoined(guild, null, true);
+                }
+
+
+                await SlashCommands.InitSlashCommands(_client);
+            });
 
 
 
@@ -118,17 +123,32 @@ namespace HLTVDiscordBridge
         {
             var Handler = Task.Run(async () =>
             {
+                string matchLink = "";
+                Match match;
+                MatchMapStats mapStats;
+                MatchStats matchStats;
                 switch (arg.Data.CustomId)
                 {
-                    case "playerstats":
-                        string matchLink = "";
+                    case "overallstats_bo1":
+                        await arg.DeferAsync();
                         foreach (Embed e in arg.Message.Embeds)
                         {
                             matchLink = ((EmbedAuthor)e.Author).Url;
                         }
-                        Match match = await HltvMatch.GetMatch(matchLink);
-                        MatchStats stats = await HltvMatchStats.GetMatchStats(match);
-                        await arg.RespondAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(stats));
+                        match = await HltvMatch.GetMatch(matchLink);
+                        mapStats = await HltvMatchMapStats.GetMatchMapStats(match.maps[0]);
+                        await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(mapStats));
+                        break;
+                    case "overallstats_def":
+                        await arg.DeferAsync();
+                        
+                        foreach (Embed e in arg.Message.Embeds)
+                        {
+                            matchLink = ((EmbedAuthor)e.Author).Url;
+                        }
+                        match = await HltvMatch.GetMatch(matchLink);
+                        matchStats = await HltvMatchStats.GetMatchStats(match);
+                        await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(matchStats));
                         break;
                 }
             });
@@ -157,7 +177,7 @@ namespace HLTVDiscordBridge
             while (true)
             {
                 //top.gg API & bots.gg API
-                try
+                /*try
                 {
                     if (DateTime.Now.Hour > lastUpdate && _client.CurrentUser.Id == 807182830752628766)
                     {
@@ -178,14 +198,15 @@ namespace HLTVDiscordBridge
                 catch(Exception ex)
                 {
                     Console.Write(ex.ToString());
-                }
+                }*/
                 
                 Stopwatch watch = new(); watch.Start();
-                await HltvUpcomingAndLiveMatches.AktUpcomingAndLiveMatches();
-                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tLiveAndUpcomingMatches aktualisiert ({watch.ElapsedMilliseconds}ms)");
-                await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
+                //await HltvUpcomingAndLiveMatches.AktUpcomingAndLiveMatches();
+                //WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tLiveAndUpcomingMatches aktualisiert ({watch.ElapsedMilliseconds}ms)");
+                await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); //watch.Restart();
                 await HltvResults.SendNewResults(_client);
-                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)"); 
+                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)");
+                return;
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvEvents.AktEvents(await Config.GetChannels(_client));
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tEvents aktualisiert ({watch.ElapsedMilliseconds}ms)");

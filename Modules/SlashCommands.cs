@@ -188,17 +188,34 @@ namespace HLTVDiscordBridge.Modules
                 .WithDescription("gets upcoming matches")
                 .AddOption(new SlashCommandOptionBuilder()
                     .WithName("teamdateevent")
-                    .WithDescription("date")
+                    .WithDescription("team/date/event")
                     .WithRequired(false)
                     .WithType(ApplicationCommandOptionType.String)
                     );
             await client.Rest.CreateGuildCommand(guildUpcomingMatchesCommand.Build(), guildId);
-        }
-        public static Task SlashCommandHandler(SocketSlashCommand arg)
-        {
-            if(_client==null) { throw new InvalidOperationException("client wasn't initialized"); }
 
-            var Handler = Task.Run(async () =>
+            var guildRankingCommand = new SlashCommandBuilder()
+                .WithName("ranking")
+                .WithDescription("gets the ranking of a specified region/date")
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("region")
+                    .WithDescription("region")
+                    .WithRequired(false)
+                    .WithType(ApplicationCommandOptionType.String)
+                    )
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("date")
+                    .WithDescription("date")
+                    .WithRequired(false)
+                    .WithType(ApplicationCommandOptionType.String)
+                    );
+            await client.Rest.CreateGuildCommand(guildRankingCommand.Build(), guildId);
+        }
+        public async static Task SlashCommandHandler(SocketSlashCommand arg)
+        {
+            if (_client == null) { throw new InvalidOperationException("client wasn't initialized"); }
+            
+            Task.Run(async () =>
             {
                 switch (arg.CommandName)
                 {
@@ -235,10 +252,12 @@ namespace HLTVDiscordBridge.Modules
                     case "upcomingmatches":
                         await HltvUpcomingMatches.SendUpcomingMatches(arg);
                         break;
+                    case "ranking":
+                        await HltvRanking.SendRanking(arg);
+                        break;
 
                 }
             });
-            return Handler;
         }
     }
 }
