@@ -10,6 +10,7 @@ using System.Xml.Serialization;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Bson.Serialization.Attributes;
+using System.Linq;
 
 namespace HLTVDiscordBridge
 {
@@ -89,7 +90,7 @@ namespace HLTVDiscordBridge
         }
 
         /// <summary>
-        /// Loads the generel bot config
+        /// Loads the general bot config
         /// </summary>
         /// <returns>Config</returns>
         public static ConfigClass LoadConfig()
@@ -105,7 +106,7 @@ namespace HLTVDiscordBridge
 
 #region Commands
         [Command("set")]
-        public async Task ChangeServerConfig(string option = "", [Remainder]string arg = "")
+        public async Task ChangeServerConfig_legacy(string option = "", [Remainder]string arg = "")
         {
             EmbedBuilder builder = new();
 
@@ -138,7 +139,7 @@ namespace HLTVDiscordBridge
             {
                 builder.WithTitle("SYNTAX")
                     .WithColor(Color.Green)
-                    .WithDescription($"You can change the following options by using {_cfg.Prefix}set [option] [new state]:")
+                    .WithDescription($"You can change the following options by using /set [option] [new state]:")
                     .AddField("options:", "`stars`\n`featuredevents`\n`prefix`\n`newsoutput`\n`resultoutput`\n`eventoutput`", true)
                     .AddField("possible states:", "number between 0-5\ntrue/false\nany string\ntrue/false\ntrue/false\ntrue/false", true)
                     .WithCurrentTimestamp();
@@ -148,7 +149,7 @@ namespace HLTVDiscordBridge
             {
                 builder.WithTitle("syntax error")
                     .WithColor(Color.Red)
-                    .WithDescription($"You can't change {option} to nothing! Please use a valid state: {_cfg.Prefix}set [option] [new state]!")
+                    .WithDescription($"You can't change {option} to nothing! Please use a valid state: /set [option] [new state]!")
                     .WithCurrentTimestamp();
                 await ReplyAsync(embed: builder.Build());
                 return;
@@ -168,7 +169,7 @@ namespace HLTVDiscordBridge
                                     .WithTitle("SUCCESS")
                                     .WithDescription($"You successfully changed the minimum stars to output a HLTV match to `{newStars}`")
                                     .WithCurrentTimestamp()
-                                    .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                    .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                             }
                             else
                             {
@@ -176,7 +177,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a number between 0-5")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                             }
                         }
                         else
@@ -185,7 +186,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a number between 0-5")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         break;
                     case "featuredevents":
@@ -199,7 +200,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("SUCCESS")
                                 .WithDescription($"You successfully changed the automatic event output to `{featured}`")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         else
                         {
@@ -207,16 +208,8 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
-                        break;
-                    case "prefix":
-                        update = Builders<ServerConfig>.Update.Set(x => x.Prefix, arg);
-                        builder.WithColor(Color.Green)
-                            .WithTitle("SUCCESS")
-                            .WithDescription($"You successfully changed the prefix to `{arg}`")
-                            .WithCurrentTimestamp()
-                            .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
                         break;
                     case "news":
                     case "newsoutput":
@@ -227,7 +220,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("SUCCESS")
                                 .WithDescription($"You successfully changed the automatic news output to `{newsoutput}`")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         else
                         {
@@ -235,7 +228,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         break;
                     case "result":
@@ -248,7 +241,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("SUCCESS")
                                 .WithDescription($"You successfully changed the automatic result output to `{resultoutput}`")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         else
                         {
@@ -256,7 +249,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         break;
                     case "event":
@@ -269,7 +262,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("SUCCESS")
                                 .WithDescription($"You successfully changed the automatic event output to `{eventoutput}`")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         else
                         {
@@ -277,7 +270,7 @@ namespace HLTVDiscordBridge
                                 .WithTitle("error")
                                 .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
                         break;
                     default:
@@ -286,7 +279,7 @@ namespace HLTVDiscordBridge
                                 .WithDescription($"{option.ToLower()} is not valid! Please state one of the following options:\n`stars`\n`featuredevents`\n`prefix`\n" +
                                 $"`news`\n`results`\n`events`")
                                 .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
+                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         break;
                 }
             }
@@ -294,41 +287,108 @@ namespace HLTVDiscordBridge
             await ReplyAsync(embed: builder.Build());
         }
 
-        [Command("init")]
-        public async Task InitTextChannel(SocketTextChannel channel = null)
+        public static async Task ChangeServerConfig(SocketSlashCommand arg)
         {
+            await arg.DeferAsync();
             EmbedBuilder builder = new();
-            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
+            if (!(arg.User is SocketGuildUser))
             {
                 builder.WithTitle("error")
                     .WithColor(Color.Red)
                     .WithDescription("Please use this command only on guilds!")
                     .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
+                await arg.ModifyOriginalResponseAsync(msg => msg.Embed = builder.Build());
                 return;
-            }
-            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
+            }            
+
+            IMongoCollection<ServerConfig> collection = GetCollection();
+
+            UpdateDefinition<ServerConfig> update = null;
+
+            if (!(arg.User as SocketGuildUser).GuildPermissions.Administrator)
             {
                 builder.WithTitle("error")
                     .WithColor(Color.Red)
-                    .WithDescription("You do not have enough permission to change the output-channel!")
+                    .WithDescription("You do not have enough permission to change the settings!")
                     .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
+                await arg.ModifyOriginalResponseAsync(msg => msg.Embed = builder.Build());
                 return;
             }
-            if (channel == null)
+
+            SocketSlashCommandDataOption option = arg.Data.Options.First();
+            string value = option.Options.First().Value.ToString();
+            switch (option.Name.ToString().ToLower())
             {
-                channel = (SocketTextChannel)Context.Channel;
-            }
-            IMongoCollection<ServerConfig> collection = GetCollection();
-            collection.UpdateOne(x => x.GuildID == Context.Guild.Id, Builders<ServerConfig>.Update.Set(x => x.NewsChannelID, channel.Id));
-            builder.WithTitle("Init")
-                    .WithDescription($"Success! You are now using the channel {channel.Mention} as default output for HLTV-NEWS")
-                    .WithCurrentTimestamp()
-                    .WithColor(Color.DarkBlue);
-            await ReplyAsync(embed: builder.Build());
+                case "stars":
+                    update = Builders<ServerConfig>.Update.Set(x => x.MinimumStars, ushort.Parse(value));
+                    builder.WithColor(Color.Green)
+                        .WithTitle("SUCCESS")
+                        .WithDescription($"You successfully changed the minimum stars to output a HLTV match to `{value}`")
+                        .WithCurrentTimestamp()
+                        .WithFooter(Tools.GetRandomFooter());
+                    break;
+                case "results":
+                    update = Builders<ServerConfig>.Update.Set(x => x.ResultOutput, bool.Parse(value));
+                    builder.WithColor(Color.Green)
+                        .WithTitle("SUCCESS")
+                        .WithDescription($"You successfully changed the automatic result output to `{value}`")
+                        .WithCurrentTimestamp()
+                        .WithFooter(Tools.GetRandomFooter());
+                    break;
+                case "events":
+                    update = Builders<ServerConfig>.Update.Set(x => x.EventOutput, bool.Parse(value));
+                    builder.WithColor(Color.Green)
+                        .WithTitle("SUCCESS")
+                        .WithDescription($"You successfully changed the automatic event output to `{value}`")
+                        .WithCurrentTimestamp()
+                        .WithFooter(Tools.GetRandomFooter());
+                    break;
+                case "news":
+                    update = Builders<ServerConfig>.Update.Set(x => x.NewsOutput, bool.Parse(value));
+                    builder.WithColor(Color.Green)
+                        .WithTitle("SUCCESS")
+                        .WithDescription($"You successfully changed the automatic news output to `{value}`")
+                        .WithCurrentTimestamp()
+                        .WithFooter(Tools.GetRandomFooter());
+                    break;
+                case "featuredeventsonly":
+                    update = Builders<ServerConfig>.Update.Set(x => x.OnlyFeaturedEvents, bool.Parse(value));
+                    string featured = bool.Parse(value) ? "only featured events" : "all events";
+                    builder.WithColor(Color.Green)
+                        .WithTitle("SUCCESS")
+                        .WithDescription($"You successfully changed the automatic event output to `{featured}`")
+                        .WithCurrentTimestamp()
+                        .WithFooter(Tools.GetRandomFooter());
+                    break;
+            }                        
+            
+            await collection.UpdateOneAsync(x => x.GuildID == (arg.User as SocketGuildUser).Guild.Id, update);
+            await arg.ModifyOriginalResponseAsync(msg => msg.Embed = builder.Build());
         }
-#endregion
+
+        public static async Task InitTextChannel(SocketSlashCommand arg)
+        {
+            IGuildChannel channel = arg.Data.Options.First().Value as IGuildChannel;
+            EmbedBuilder builder = new();
+            if (channel.GetType() != typeof(SocketTextChannel))
+            {
+                builder.WithTitle("ERROR")
+                    .WithDescription("Please select a valid channel!")
+                    .WithColor(Color.Red)
+                    .WithCurrentTimestamp();
+            }   
+            else
+            {
+                IMongoCollection<ServerConfig> collection = GetCollection();
+                collection.UpdateOne(x => x.GuildID == (arg.Channel as SocketTextChannel).Guild.Id, Builders<ServerConfig>.Update.Set(x => x.NewsChannelID, channel.Id));
+                builder.WithTitle("Init")
+                        .WithDescription($"Success! You are now using the channel {(channel as SocketTextChannel).Mention} as default output for HLTV-NEWS")
+                        .WithCurrentTimestamp()
+                        .WithColor(Color.DarkBlue);
+            }            
+            await arg.RespondAsync(embed: builder.Build());
+        }
+        #endregion
 
 
         /// <summary>
@@ -338,11 +398,9 @@ namespace HLTVDiscordBridge
         /// <param name="client">Bot Client</param>
         /// <param name="channel">Sets a custom Channel. null = default channel on guild</param>
         /// <param name="startup">Is this the startup?</param>
-        public static async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null, bool startup = false)
+        public static async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null)
         {
             IMongoCollection<ServerConfig> collection = GetCollection();
-
-            if (collection.Find(x => x.GuildID == guild.Id).CountDocuments() != 0 && startup) { return; }
 
             EmbedBuilder builder = new();
             if (channel == null)
@@ -371,7 +429,6 @@ namespace HLTVDiscordBridge
             _config.GuildID = guild.Id;
             _config.MinimumStars = 0;
             _config.OnlyFeaturedEvents = false;
-            _config.Prefix = "!";
             _config.EventOutput = true;
             _config.NewsOutput = true;
             _config.ResultOutput = true;
@@ -379,7 +436,7 @@ namespace HLTVDiscordBridge
             collection.InsertOne(_config);
 
             if(channel == null) {
-                builder.WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. To set a default HLTV-News output channel, type !init " +
+                builder.WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. To set a default HLTV-News output channel, type /init " +
                     $"in a channel of your choice, but make sure that the bot has enough permission to access and send messages in that channel. " +
                     $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
                     $"https://github.com/Zsunamy/HLTVDiscordBridge/issues \n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>");
@@ -398,6 +455,17 @@ namespace HLTVDiscordBridge
             
         }
 
+        public static async Task ServerconfigStartUp(DiscordSocketClient client)
+        {
+            IMongoCollection<ServerConfig> collection = GetCollection();
+            foreach(SocketGuild guild in client.Guilds)
+            {
+                if (collection.Find(x => x.GuildID == guild.Id).CountDocuments() == 0)
+                {
+                    await guild.LeaveAsync();
+                }
+            }
+        }
         public static async Task<GuildEmote> GetEmote(DiscordSocketClient client)
         {
             foreach (SocketGuild guild in client.Guilds)

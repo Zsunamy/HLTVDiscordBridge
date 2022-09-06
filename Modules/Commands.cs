@@ -1,139 +1,147 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
 {
     public class Commands : ModuleBase<SocketCommandContext>
     {
-        [Command("help")]
-        public async Task HelpCommand(string arg = "")
+        public static async Task SendHelpEmbed(SocketSlashCommand arg)
         {
-            string prefix;
-            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel))) { prefix = "!"; }
-            else { prefix = Config.GetServerConfig(Context.Guild).Prefix; }
             EmbedBuilder builder = new();
             builder.WithColor(Color.DarkMagenta)
                 .WithCurrentTimestamp();
-            switch (arg.ToLower())
+            switch (arg.Data.Options.Count)
             {
-                case "init":
-                    builder.WithTitle($"advanced help for {prefix}init")
-                        .AddField("syntax:", $"`{prefix}init [optional: #textchannelid]`", true)
-                        .AddField("example:", $"`{prefix}init {((SocketTextChannel)Context.Channel).Mention}`", true)
-                        .AddField("\u200b", "\u200b", true)
-                        .AddField("summary:", $"Sets the default channel for all automated messages.", true)
-                        .AddField("permissions:", "ManageChannels", true)
-                        .AddField("\u200b", "\u200b", true);
-                    break;
-                case "player":
-                    builder.WithTitle($"advanced help for {prefix}player")
-                        .AddField("syntax:", $"`{prefix}player [name]`", true)
-                        .AddField("example:", $"`{prefix}player Karrigan`", true)
-                        .AddField("\u200b", "\u200b", true)
-                        .AddField("summary:", $"Sends general information about the specified player. This may take up to 30 seconds depending several factors.", true)
-                        .AddField("permissions:", "@everyone", true)
-                        .AddField("\u200b", "\u200b", true);
-                    break;
-                case "set":
-                    builder.WithTitle($"advanced help for {prefix}set")
-                        .AddField("options:", "```\nstars\nfeaturedevents\nprefix\nnews\nresults\nevents```", true)
-                        .AddField("possible states:", "```number from 0-5\ntrue/false\nany string\ntrue/false\ntrue/false\ntrue/false```", true)
-                        .AddField("examples:", $"\u200b\n`{prefix}set prefix $`\n\n`{prefix}set news false`\n\n`{prefix}set stars 3`", true)
-                        .AddField("summary:", $"Changes the options for you personal server.", true)
-                        .AddField("permissions:", "admin", true)
-                        .AddField("\u200b", "\u200b", true)
-                        .WithFooter($"for more details type: {prefix}set");
-                    break;
-                case "ranking":
-                    builder.WithTitle($"advanced help for {prefix}ranking")
-                        .AddField("syntax:", $"`{prefix}ranking [country or region]`", true)
-                        .AddField("examples:", $"`{prefix}ranking`\n`{prefix}ranking north america`", true)
-                        .AddField("\u200b", "\u200b", true)
-                        .AddField("summary:", $"Displays the current world ranking or the specified country/region.", true)
-                        .AddField("permissions:", "@everyone", true)
-                        .AddField("\u200b", "\u200b", true);
-                    break;
-                case "upcoming":
-                    builder.WithTitle($"advanced help for {prefix} upcoming")
-                        .AddField("syntax:", $"`{prefix}upcoming [optional: date, team, event]`", true)
-                        .AddField("examples:", $"`{prefix}upcoming` or `{prefix}upcoming 2.2.2021` or\n {prefix}upcoming HAVU` or `{prefix}upcoming IEM New York 2020 Europe`", true)
-                        .AddField("\u200b", "\u200b", true)
-                        .AddField("summary:", $"Displays the upcoming matches for the specified date, team or event.", true)
-                        .AddField("permissions:", "@everyone", true)
-                        .AddField("\u200b", "\u200b", true);
-                    break;
-                case "event":
-                    builder.WithTitle($"advanced help for {prefix}event")
-                        .AddField("syntax:", $"`{prefix}event [name]`", true)
-                        .AddField("example:", $"`{prefix}event IEM New York 2020 Europe`", true)
-                        .AddField("\u200b", "\u200b", true)
-                        .AddField("summary:", $"Displays information about the specified event.", true)
-                        .AddField("permissions:", "@everyone", true)
-                        .AddField("\u200b", "\u200b", true);
-                    break;
-                case "events":
-                    builder.WithTitle($"advanced help for {prefix}events")
-                        .AddField("syntax:", $"`{prefix}events`", true)
-                        .AddField("example.", $"`{prefix}events`", true)
-                        .AddField("\u200b", "\u200b", true)
-                        .AddField("summary:", $"Displays all ongoing events.", true)
-                        .AddField("permissions:", "@everyone", true)
-                        .AddField("\u200b", "\u200b", true);
-                    break;
-                case "upcomingevents":
-                    builder.WithTitle($"advanced help for {prefix}upcomingevents")
-                        .AddField("syntax:", $"`{prefix}upcomingevents`", true)
-                        .AddField("example:", $"`{prefix}upcomingevents`", true)
-                        .AddField("\u200b", "\u200b", true)
-                        .AddField("summary:", $"Displays upcoming events for the next 30 days.", true)
-                        .AddField("permissions:", "@everyone", true)
-                        .AddField("\u200b", "\u200b", true);
-                    break;
-                case "live":
-                    builder.WithTitle($"advanced help for {prefix}live")
-                        .AddField("syntax:", $"`{prefix}live`", true)
-                        .AddField("example.", $"`{prefix}live`", true)
-                        .AddField("\u200b", "\u200b", true)
-                        .AddField("summary:", $"Displays all live matches and their livestreams.", true)
-                        .AddField("permissions:", "@everyone", true)
-                        .AddField("\u200b", "\u200b", true);
-                    break;
-                case "team":
-                    builder.WithTitle($"advanced help for {prefix}team")
-                        .AddField("syntax:", $"`{prefix}team [name]`", true)
-                        .AddField("example.", $"`{prefix}team astralis`", true)
-                        .AddField("\u200b", "\u200b", true)
-                        .AddField("summary:", $"Displays information about the specified team.", true)
-                        .AddField("permissions:", "@everyone", true)
-                        .AddField("\u200b", "\u200b", true);
-                    break;
-                default:
+                case 0:
                     builder.WithTitle("HELP")
-                        .AddField("commands:", $"```{prefix}init\n{prefix}set\n{prefix}about\n{prefix}ranking\n{prefix}upcoming\n{prefix}live\n{prefix}player\n{prefix}team\n{prefix}event\n{prefix}events\n{prefix}upcomingevents```", true)
+                        .AddField("commands:", $"```/init\n/set\n/about\n/ranking\n/upcomingmatches\n/live\n/player\n/team\n/event\n/events\n/upcomingevents```", true)
                         .AddField("short summary:", $"```sets the default channel for HLTV-NEWS\nchanges the options for your server\nabout us\n" +
                         $"displays the team ranking\ndisplays upcoming matches\nshows all live matches\n" +
                         $"gives information about a player\ngives information about a team\ngives information about an event\nshows all ongoing events\n" +
                         $"shows upcoming events```", true)
-                        .WithFooter($"For more details type: \"{prefix}help [command]\"");
+                        .WithFooter($"For more details type: \"/help [command]\"");
                     break;
+                case >0:
+                    switch(arg.Data.Options.First().Value.ToString()?.ToLower())
+                        {
+                            case "init":
+                                builder.WithTitle($"advanced help for /init")
+                                    .AddField("syntax:", $"`/init [required: #textchannelid]`", true)
+                                    .AddField("example:", $"`/init {(arg.Channel as SocketTextChannel)?.Mention}`", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .AddField("summary:", $"Sets the default channel for all automated messages.", true)
+                                    .AddField("permissions:", "ManageGuild", true)
+                                    .AddField("\u200b", "\u200b", true);
+                                break;
+                            case "player":
+                                builder.WithTitle($"advanced help for /player")
+                                    .AddField("syntax:", $"`/player [required: name]`", true)
+                                    .AddField("example:", $"`/player Karrigan`", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .AddField("summary:", $"Sends general information about the specified player. This may take up to 30 seconds depending several factors.", true)
+                                    .AddField("permissions:", "@everyone", true)
+                                    .AddField("\u200b", "\u200b", true);
+                                break;
+                            case "set":
+                                builder.WithTitle($"advanced help for /set")
+                                    .AddField("options:", "```\nstars\nfeaturedevents\nprefix\nnews\nresults\nevents```", true)
+                                    .AddField("possible states:", "```number from 0-5\ntrue/false\nany string\ntrue/false\ntrue/false\ntrue/false```", true)
+                                    .AddField("examples:", $"\u200b\n`/set prefix $`\n\n`/set news false`\n\n`/set stars 3`", true)
+                                    .AddField("summary:", $"Changes the options for you personal server.", true)
+                                    .AddField("permissions:", "ManageGuild", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .WithFooter($"for more details type: /set");
+                                break;
+                            case "ranking":
+                                builder.WithTitle($"advanced help for /ranking")
+                                    .AddField("syntax:", $"`/ranking [optional: country or region]`", true)
+                                    .AddField("examples:", $"`/ranking`\n`/ranking north america`", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .AddField("summary:", $"Displays the current world ranking or the specified country/region.", true)
+                                    .AddField("permissions:", "@everyone", true)
+                                    .AddField("\u200b", "\u200b", true);
+                                break;
+                            case "upcomingmatches":
+                                builder.WithTitle($"advanced help for /upcomingmatches")
+                                    .AddField("syntax:", $"`/upcomingmatches [optional: date, team, event]`", true)
+                                    .AddField("examples:", $"`/upcomingmatches` or `/upcomingmatches 2.2.2021` or\n /upcoming HAVU` or `/upcoming IEM New York 2020 Europe`", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .AddField("summary:", $"Displays the upcoming matches for the specified date, team or event.", true)
+                                    .AddField("permissions:", "@everyone", true)
+                                    .AddField("\u200b", "\u200b", true);
+                                break;
+                            case "event":
+                                builder.WithTitle($"advanced help for /event")
+                                    .AddField("syntax:", $"`/event [required: name]`", true)
+                                    .AddField("example:", $"`/event IEM New York 2020 Europe`", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .AddField("summary:", $"Displays information about the specified event.", true)
+                                    .AddField("permissions:", "@everyone", true)
+                                    .AddField("\u200b", "\u200b", true);
+                                break;
+                            case "events":
+                                builder.WithTitle($"advanced help for /events")
+                                    .AddField("syntax:", $"`/events`", true)
+                                    .AddField("example:", $"`/events`", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .AddField("summary:", $"Displays all ongoing events.", true)
+                                    .AddField("permissions:", "@everyone", true)
+                                    .AddField("\u200b", "\u200b", true);
+                                break;
+                            case "upcomingevents":
+                                builder.WithTitle($"advanced help for /upcomingevents")
+                                    .AddField("syntax:", $"`/upcomingevents`", true)
+                                    .AddField("example:", $"`/upcomingevents`", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .AddField("summary:", $"Displays upcoming events for the next 30 days.", true)
+                                    .AddField("permissions:", "@everyone", true)
+                                    .AddField("\u200b", "\u200b", true);
+                                break;
+                            case "live":
+                                builder.WithTitle($"advanced help for /live")
+                                    .AddField("syntax:", $"`/live`", true)
+                                    .AddField("example:", $"`/live`", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .AddField("summary:", $"Displays all live matches and their livestreams.", true)
+                                    .AddField("permissions:", "@everyone", true)
+                                    .AddField("\u200b", "\u200b", true);
+                                break;
+                            case "team":
+                                builder.WithTitle($"advanced help for /team")
+                                    .AddField("syntax:", $"`/team [name]`", true)
+                                    .AddField("example:", $"`/team astralis`", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .AddField("summary:", $"Displays information about the specified team.", true)
+                                    .AddField("permissions:", "@everyone", true)
+                                    .AddField("\u200b", "\u200b", true);
+                                break;
+                            case "support":
+                                builder.WithTitle($"advanced help for /support")
+                                    .AddField("syntax:", $"`/support`", true)
+                                    .AddField("example:", $"`/support`", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .AddField("summary:", $"Displays general information about the development team.", true)
+                                    .AddField("permissions:", "@everyone", true)
+                                    .AddField("\u200b", "\u200b", true);
+                            break;
+                            case "general":
+                            default:
+                                builder.WithTitle("HELP")
+                                    .AddField("commands:", $"```/init\n/set\n/about\n/ranking\n/upcomingmatches\n/live\n/player\n/team\n/event\n/events\n/upcomingevents```", true)
+                                    .AddField("short summary:", $"```sets the default channel for HLTV-NEWS\nchanges the options for your server\nabout us\n" +
+                                    $"displays the team ranking\ndisplays upcoming matches\nshows all live matches\n" +
+                                    $"gives information about a player\ngives information about a team\ngives information about an event\nshows all ongoing events\n" +
+                                    $"shows upcoming events```", true)
+                                    .WithFooter($"For more details type: \"/help [command]\"");
+                                break;
+                        }
+                break;
+                
             }
-            StatsUpdater.StatsTracker.MessagesSent += 1;
-            StatsUpdater.UpdateStats();
-            await ReplyAsync(embed: builder.Build());
-        }
-
-        [Command("invite")]
-        public async Task InviteCommand()
-        {
-            EmbedBuilder builder = new();
-            builder.WithTitle("Invite me!")
-                .WithDescription("Click [here](https://discord.com/oauth2/authorize?client_id=807182830752628766&permissions=1073785936&scope=bot) to invite me to your server!")
-                .WithColor(Color.Green)
-                .WithCurrentTimestamp()
-                .WithFooter(Tools.GetRandomFooter(Context.Guild, Context.Client));
-            await ReplyAsync(embed: builder.Build());
+            await arg.RespondAsync(embed: builder.Build());
         }
     }
 }

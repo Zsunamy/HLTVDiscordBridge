@@ -8,38 +8,38 @@
     ".NETCoreApp,Version=v6.0": {
       "HLTVDiscordBridge/1.0.0": {
         "dependencies": {
-          "Discord.Net": "3.1.0",
+          "Discord.Net": "3.7.2",
           "Microsoft.Extensions.DependencyInjection": "6.0.0",
-          "MongoDB.Bson": "2.14.1",
-          "MongoDB.Driver": "2.14.1",
-          "Svg": "3.3.0"
+          "MongoDB.Bson": "2.17.1",
+          "MongoDB.Driver": "2.17.1",
+          "Svg": "3.4.3"
         },
         "runtime": {
           "HLTVDiscordBridge.dll": {}
         }
       },
-      "Discord.Net/3.1.0": {
+      "Discord.Net/3.7.2": {
         "dependencies": {
-          "Discord.Net.Commands": "3.1.0",
-          "Discord.Net.Core": "3.1.0",
-          "Discord.Net.Interactions": "3.1.0",
-          "Discord.Net.Rest": "3.1.0",
-          "Discord.Net.WebSocket": "3.1.0",
-          "Discord.Net.Webhook": "3.1.0"
+          "Discord.Net.Commands": "3.7.2",
+          "Discord.Net.Core": "3.7.2",
+          "Discord.Net.Interactions": "3.7.2",
+          "Discord.Net.Rest": "3.7.2",
+          "Discord.Net.WebSocket": "3.7.2",
+          "Discord.Net.Webhook": "3.7.2"
         }
       },
-      "Discord.Net.Commands/3.1.0": {
+      "Discord.Net.Commands/3.7.2": {
         "dependencies": {
-          "Discord.Net.Core": "3.1.0"
+          "Discord.Net.Core": "3.7.2"
         },
         "runtime": {
           "lib/net6.0/Discord.Net.Commands.dll": {
-            "assemblyVersion": "3.1.0.0",
-            "fileVersion": "3.1.0.0"
+            "assemblyVersion": "3.7.2.0",
+            "fileVersion": "3.7.2.0"
           }
         }
       },
-      "Discord.Net.Core/3.1.0": {
+      "Discord.Net.Core/3.7.2": {
         "dependencies": {
           "Newtonsoft.Json": "13.0.1",
           "System.Collections.Immutable": "5.0.0",
@@ -48,67 +48,78 @@
         },
         "runtime": {
           "lib/net6.0/Discord.Net.Core.dll": {
-            "assemblyVersion": "3.1.0.0",
-            "fileVersion": "3.1.0.0"
+            "assemblyVersion": "3.7.2.0",
+            "fileVersion": "3.7.2.0"
           }
         }
       },
-      "Discord.Net.Interactions/3.1.0": {
+      "Discord.Net.Interactions/3.7.2": {
         "dependencies": {
-          "Discord.Net.Core": "3.1.0",
-          "Discord.Net.Rest": "3.1.0",
-          "Discord.Net.WebSocket": "3.1.0",
+          "Discord.Net.Core": "3.7.2",
+          "Discord.Net.Rest": "3.7.2",
+          "Discord.Net.WebSocket": "3.7.2",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0",
           "System.Collections.Immutable": "5.0.0",
           "System.Reactive": "5.0.0"
         },
         "runtime": {
           "lib/net6.0/Discord.Net.Interactions.dll": {
-            "assemblyVersion": "3.1.0.0",
-            "fileVersion": "3.1.0.0"
+            "assemblyVersion": "3.7.2.0",
+            "fileVersion": "3.7.2.0"
           }
         }
       },
-      "Discord.Net.Rest/3.1.0": {
+      "Discord.Net.Rest/3.7.2": {
         "dependencies": {
-          "Discord.Net.Core": "3.1.0"
+          "Discord.Net.Core": "3.7.2"
         },
         "runtime": {
           "lib/net6.0/Discord.Net.Rest.dll": {
-            "assemblyVersion": "3.1.0.0",
-            "fileVersion": "3.1.0.0"
+            "assemblyVersion": "3.7.2.0",
+            "fileVersion": "3.7.2.0"
           }
         }
       },
-      "Discord.Net.Webhook/3.1.0": {
+      "Discord.Net.Webhook/3.7.2": {
         "dependencies": {
-          "Discord.Net.Core": "3.1.0",
-          "Discord.Net.Rest": "3.1.0"
+          "Discord.Net.Core": "3.7.2",
+          "Discord.Net.Rest": "3.7.2"
         },
         "runtime": {
           "lib/net6.0/Discord.Net.Webhook.dll": {
-            "assemblyVersion": "3.1.0.0",
-            "fileVersion": "3.1.0.0"
+            "assemblyVersion": "3.7.2.0",
+            "fileVersion": "3.7.2.0"
           }
         }
       },
-      "Discord.Net.WebSocket/3.1.0": {
+      "Discord.Net.WebSocket/3.7.2": {
         "dependencies": {
-          "Discord.Net.Core": "3.1.0",
-          "Discord.Net.Rest": "3.1.0"
+          "Discord.Net.Core": "3.7.2",
+          "Discord.Net.Rest": "3.7.2"
         },
         "runtime": {
           "lib/net6.0/Discord.Net.WebSocket.dll": {
-            "assemblyVersion": "3.1.0.0",
-            "fileVersion": "3.1.0.0"
+            "assemblyVersion": "3.7.2.0",
+            "fileVersion": "3.7.2.0"
           }
         }
       },
-      "DnsClient/1.4.0": {
+      "DnsClient/1.6.1": {
+        "dependencies": {
+          "Microsoft.Win32.Registry": "5.0.0"
+        },
         "runtime": {
-          "lib/netstandard2.1/DnsClient.dll": {
-            "assemblyVersion": "1.4.0.0",
-            "fileVersion": "1.4.0.0"
+          "lib/net5.0/DnsClient.dll": {
+            "assemblyVersion": "1.6.1.0",
+            "fileVersion": "1.6.1.0"
+          }
+        }
+      },
+      "ExCSS/4.1.4": {
+        "runtime": {
+          "lib/net6.0/ExCSS.dll": {
+            "assemblyVersion": "4.1.4.0",
+            "fileVersion": "4.1.4.0"
           }
         }
       },
@@ -142,6 +153,12 @@
       },
       "Microsoft.NETCore.Platforms/5.0.0": {},
       "Microsoft.NETCore.Targets/1.1.0": {},
+      "Microsoft.Win32.Registry/5.0.0": {
+        "dependencies": {
+          "System.Security.AccessControl": "5.0.0",
+          "System.Security.Principal.Windows": "5.0.0"
+        }
+      },
       "Microsoft.Win32.SystemEvents/5.0.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "5.0.0"
@@ -161,42 +178,42 @@
           }
         }
       },
-      "MongoDB.Bson/2.14.1": {
+      "MongoDB.Bson/2.17.1": {
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
         },
         "runtime": {
           "lib/netstandard2.1/MongoDB.Bson.dll": {
-            "assemblyVersion": "2.14.1.0",
-            "fileVersion": "2.14.1.0"
+            "assemblyVersion": "2.17.1.0",
+            "fileVersion": "2.17.1.0"
           }
         }
       },
-      "MongoDB.Driver/2.14.1": {
+      "MongoDB.Driver/2.17.1": {
         "dependencies": {
-          "MongoDB.Bson": "2.14.1",
-          "MongoDB.Driver.Core": "2.14.1",
-          "MongoDB.Libmongocrypt": "1.3.0"
+          "MongoDB.Bson": "2.17.1",
+          "MongoDB.Driver.Core": "2.17.1",
+          "MongoDB.Libmongocrypt": "1.5.5"
         },
         "runtime": {
           "lib/netstandard2.1/MongoDB.Driver.dll": {
-            "assemblyVersion": "2.14.1.0",
-            "fileVersion": "2.14.1.0"
+            "assemblyVersion": "2.17.1.0",
+            "fileVersion": "2.17.1.0"
           }
         }
       },
-      "MongoDB.Driver.Core/2.14.1": {
+      "MongoDB.Driver.Core/2.17.1": {
         "dependencies": {
-          "DnsClient": "1.4.0",
-          "MongoDB.Bson": "2.14.1",
-          "MongoDB.Libmongocrypt": "1.3.0",
+          "DnsClient": "1.6.1",
+          "MongoDB.Bson": "2.17.1",
+          "MongoDB.Libmongocrypt": "1.5.5",
           "SharpCompress": "0.30.1",
           "System.Buffers": "4.5.1"
         },
         "runtime": {
           "lib/netstandard2.1/MongoDB.Driver.Core.dll": {
-            "assemblyVersion": "2.14.1.0",
-            "fileVersion": "2.14.1.0"
+            "assemblyVersion": "2.17.1.0",
+            "fileVersion": "2.17.1.0"
           }
         },
         "runtimeTargets": {
@@ -237,11 +254,11 @@
           }
         }
       },
-      "MongoDB.Libmongocrypt/1.3.0": {
+      "MongoDB.Libmongocrypt/1.5.5": {
         "runtime": {
           "lib/netstandard2.1/MongoDB.Libmongocrypt.dll": {
-            "assemblyVersion": "1.3.0.0",
-            "fileVersion": "1.3.0.0"
+            "assemblyVersion": "1.5.5.0",
+            "fileVersion": "1.5.5.0"
           }
         },
         "runtimeTargets": {
@@ -353,8 +370,9 @@
           }
         }
       },
-      "Svg/3.3.0": {
+      "Svg/3.4.3": {
         "dependencies": {
+          "ExCSS": "4.1.4",
           "Fizzler": "1.2.1",
           "System.Drawing.Common": "5.0.0",
           "System.Memory": "4.5.4",
@@ -363,8 +381,8 @@
         },
         "runtime": {
           "lib/net5.0/Svg.dll": {
-            "assemblyVersion": "3.3.0.0",
-            "fileVersion": "3.3.0.1"
+            "assemblyVersion": "3.4.0.0",
+            "fileVersion": "3.4.3.1"
           }
         }
       },
@@ -494,6 +512,13 @@
         }
       },
       "System.Runtime.CompilerServices.Unsafe/6.0.0": {},
+      "System.Security.AccessControl/5.0.0": {
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "5.0.0",
+          "System.Security.Principal.Windows": "5.0.0"
+        }
+      },
+      "System.Security.Principal.Windows/5.0.0": {},
       "System.Text.Encoding/4.3.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "5.0.0",
@@ -523,61 +548,68 @@
       "serviceable": false,
       "sha512": ""
     },
-    "Discord.Net/3.1.0": {
+    "Discord.Net/3.7.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-GAY7d+k8UN5BsObGpysvg7ca6YwTqvesTouM8S8eBWSmwGnK38iceVkURg0QNAG70tlJ4w8S/BOjocRRvXU2MQ==",
-      "path": "discord.net/3.1.0",
-      "hashPath": "discord.net.3.1.0.nupkg.sha512"
+      "sha512": "sha512-FAiCLGu5rp6+Z10FjKbbJ6LLpKjbMBGpozixkJlz5LZvuncPx8f4AWFAw7pBecKUuAh983qiZ8CZYZcNXsI4qg==",
+      "path": "discord.net/3.7.2",
+      "hashPath": "discord.net.3.7.2.nupkg.sha512"
     },
-    "Discord.Net.Commands/3.1.0": {
+    "Discord.Net.Commands/3.7.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-EZdtrAqj6Uspyz4CvIwFP/UQ4XUpXjIPG1b5LrfAKOo12ks4k6XO7up2h+UsHexk7mEz4sfZxkEXGrW6PSh+/Q==",
-      "path": "discord.net.commands/3.1.0",
-      "hashPath": "discord.net.commands.3.1.0.nupkg.sha512"
+      "sha512": "sha512-aOEGP04X64htsTr7ozKj9qHpmvOfitSw5gfR8Tw9TX0+FdswD2LNL2KfOAIaxRKZmRTm34aXQEJrVq0K8AptmQ==",
+      "path": "discord.net.commands/3.7.2",
+      "hashPath": "discord.net.commands.3.7.2.nupkg.sha512"
     },
-    "Discord.Net.Core/3.1.0": {
+    "Discord.Net.Core/3.7.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-Oxz3CiWVvenSaHRYZeCKgRqzcWqdjGYmpxVVN2vPikt6bTN+xHAR4jczk8plKDDdINt7Lac37iLsRaqzUtJZpQ==",
-      "path": "discord.net.core/3.1.0",
-      "hashPath": "discord.net.core.3.1.0.nupkg.sha512"
+      "sha512": "sha512-apwswc6LjN4dj3u27SO3Hr56Jzl91wzReahieoD7IQhV+BJQaRxhTRiEEWFTrBzHfeFHEOQ7r6vZnra3zeFhKA==",
+      "path": "discord.net.core/3.7.2",
+      "hashPath": "discord.net.core.3.7.2.nupkg.sha512"
     },
-    "Discord.Net.Interactions/3.1.0": {
+    "Discord.Net.Interactions/3.7.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-XzLChVRQGniUU8kdLMDYEOjifzvrcsOiAdKm/pO/PGPpZSMWSzPWlJUWaQlWMtOImrYULzRejOeoc2/3K3R30Q==",
-      "path": "discord.net.interactions/3.1.0",
-      "hashPath": "discord.net.interactions.3.1.0.nupkg.sha512"
+      "sha512": "sha512-dwGhEdDB0yyo/lGtjwIDVZmsuD52di7lIZWu/sBtvvA05dMgYZq5S6ILdsBXjOyaHeXd+EV4YMlj2VS/rm619w==",
+      "path": "discord.net.interactions/3.7.2",
+      "hashPath": "discord.net.interactions.3.7.2.nupkg.sha512"
     },
-    "Discord.Net.Rest/3.1.0": {
+    "Discord.Net.Rest/3.7.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-97kdAYjlNuuOnhRQW/OoGK2oBObvpzZlCSPJjIcI4DneEq6k2WIFhG00fvxK7DCVTlB5BgBMAT1BeRUk4/rUxQ==",
-      "path": "discord.net.rest/3.1.0",
-      "hashPath": "discord.net.rest.3.1.0.nupkg.sha512"
+      "sha512": "sha512-dyp8YaMBNJ837EH1KNz2PNGZqc2y71WFd1+pdldF+pLQJ3Gf/+V7685paAR7bQw7yFNyqEBR/QRBCNp+QIQ7Wg==",
+      "path": "discord.net.rest/3.7.2",
+      "hashPath": "discord.net.rest.3.7.2.nupkg.sha512"
     },
-    "Discord.Net.Webhook/3.1.0": {
+    "Discord.Net.Webhook/3.7.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-cZFxFf9H3GUBITlx1b7IskglgjJxSYpOIZOtyVW2WnPp7LpnxlOi1piRG22fH9fdhCC/RyDx3gZtYfN6WzacCw==",
-      "path": "discord.net.webhook/3.1.0",
-      "hashPath": "discord.net.webhook.3.1.0.nupkg.sha512"
+      "sha512": "sha512-da3i/mTq2y7mfj3xlHH14S4PivHbflJCVr8OUikJtQrxBOxvPkqP7ZYk3Y9S28q0K8qik+TUjCcjL5gELKrh/A==",
+      "path": "discord.net.webhook/3.7.2",
+      "hashPath": "discord.net.webhook.3.7.2.nupkg.sha512"
     },
-    "Discord.Net.WebSocket/3.1.0": {
+    "Discord.Net.WebSocket/3.7.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-6OsLNXHNKC/laDKoBD+T0Km0vzqHaCcBOaI/NA8Qsed935MtEOTy7juorF22gF6TYOeoclUgSINrHCY4zWvxpA==",
-      "path": "discord.net.websocket/3.1.0",
-      "hashPath": "discord.net.websocket.3.1.0.nupkg.sha512"
+      "sha512": "sha512-pYCd6ET44ADaNiyEw82TaJnR7TKYHfrKCytWFWMPL5faJhoh260avZn3Hwunlf331lEQ0f4K1CujPkQbNuq7kQ==",
+      "path": "discord.net.websocket/3.7.2",
+      "hashPath": "discord.net.websocket.3.7.2.nupkg.sha512"
     },
-    "DnsClient/1.4.0": {
+    "DnsClient/1.6.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-CO1NG1zQdV0nEAXmr/KppLZ0S1qkaPwV0kPX5YPgmYBtrBVh1XMYHM54IXy3RBJu1k4thFtpzwo4HNHqxiuFYw==",
-      "path": "dnsclient/1.4.0",
-      "hashPath": "dnsclient.1.4.0.nupkg.sha512"
+      "sha512": "sha512-4H/f2uYJOZ+YObZjpY9ABrKZI+JNw3uizp6oMzTXwDw6F+2qIPhpRl/1t68O/6e98+vqNiYGu+lswmwdYUy3gg==",
+      "path": "dnsclient/1.6.1",
+      "hashPath": "dnsclient.1.6.1.nupkg.sha512"
+    },
+    "ExCSS/4.1.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6eMFdIazPCVfr9Gios0nCUYq3/02SewnDGvS+aCi/RWaAtoETz2fNT+H//+k0vjoDJBHXkWdVG8EkxUydxtyxA==",
+      "path": "excss/4.1.4",
+      "hashPath": "excss.4.1.4.nupkg.sha512"
     },
     "Fizzler/1.2.1": {
       "type": "package",
@@ -614,6 +646,13 @@
       "path": "microsoft.netcore.targets/1.1.0",
       "hashPath": "microsoft.netcore.targets.1.1.0.nupkg.sha512"
     },
+    "Microsoft.Win32.Registry/5.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-dDoKi0PnDz31yAyETfRntsLArTlVAVzUzCIvvEDsDsucrl33Dl8pIJG06ePTJTI3tGpeyHS9Cq7Foc/s4EeKcg==",
+      "path": "microsoft.win32.registry/5.0.0",
+      "hashPath": "microsoft.win32.registry.5.0.0.nupkg.sha512"
+    },
     "Microsoft.Win32.SystemEvents/5.0.0": {
       "type": "package",
       "serviceable": true,
@@ -621,33 +660,33 @@
       "path": "microsoft.win32.systemevents/5.0.0",
       "hashPath": "microsoft.win32.systemevents.5.0.0.nupkg.sha512"
     },
-    "MongoDB.Bson/2.14.1": {
+    "MongoDB.Bson/2.17.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-+5LZSrOiQgubSyIfwdofiAiX1KM5m0mpZ55/o9yzJyZr9TviMbVbaxWjaHaQP4pv46fKA2LWSuuQD4SEj2tg0Q==",
-      "path": "mongodb.bson/2.14.1",
-      "hashPath": "mongodb.bson.2.14.1.nupkg.sha512"
+      "sha512": "sha512-IBr5w6ygeUCTobiS4J2UlYeIsnjSJvOOf31g60EkRa3NIeyrYs7Y51HeOvJ8r6NPcKv1hLj8xwoop6hDTetAdA==",
+      "path": "mongodb.bson/2.17.1",
+      "hashPath": "mongodb.bson.2.17.1.nupkg.sha512"
     },
-    "MongoDB.Driver/2.14.1": {
+    "MongoDB.Driver/2.17.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-vTFHpeQJF94316NPsR53hYPHogOi0l2O/gVYNmCcqpIKeL3xpNMLboPizlgHaJITxhIxZAWAxkx3Eem6prhO8w==",
-      "path": "mongodb.driver/2.14.1",
-      "hashPath": "mongodb.driver.2.14.1.nupkg.sha512"
+      "sha512": "sha512-A5Yvm3RUdkSYnvKWVb/bZfvhzG+L+t0n80JuUXf0p2QG1TbtqHE9hX/FBK+BoF7sw9rzUTw8VHYeqX5rT0rxdA==",
+      "path": "mongodb.driver/2.17.1",
+      "hashPath": "mongodb.driver.2.17.1.nupkg.sha512"
     },
-    "MongoDB.Driver.Core/2.14.1": {
+    "MongoDB.Driver.Core/2.17.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-m8K0jxvyAezHO/Fyj+ooblMzkIE02qBXTqRWycIGC31tV5Y43mTuwTE6J07zyEo+sI1O25Ak8hwJAmFfKJ5low==",
-      "path": "mongodb.driver.core/2.14.1",
-      "hashPath": "mongodb.driver.core.2.14.1.nupkg.sha512"
+      "sha512": "sha512-lfuuQvCXcco6mG096PL8xRO+dBdHsDTR3DiYfK/ICHgFlL5RfKlBuE0xClEGKtaZ4Spe28/fF/GUcrrA/yfoAQ==",
+      "path": "mongodb.driver.core/2.17.1",
+      "hashPath": "mongodb.driver.core.2.17.1.nupkg.sha512"
     },
-    "MongoDB.Libmongocrypt/1.3.0": {
+    "MongoDB.Libmongocrypt/1.5.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-BAvqY/otOsmAGTsmzIYXRFysvpu8X7rYkDzEBX4iBlrF57SB+fD5px9sCPR6sETgfZ6k98qUNS6go5wtY9WOBA==",
-      "path": "mongodb.libmongocrypt/1.3.0",
-      "hashPath": "mongodb.libmongocrypt.1.3.0.nupkg.sha512"
+      "sha512": "sha512-0DV4l2PjXirSJHD/b+LpOK3IfUDvkbpvvZBM2w1aYL6E/4vbhfyr/FP5laDNx2zRylqN1hIZO+EL7NgO/5GpVg==",
+      "path": "mongodb.libmongocrypt/1.5.5",
+      "hashPath": "mongodb.libmongocrypt.1.5.5.nupkg.sha512"
     },
     "Newtonsoft.Json/13.0.1": {
       "type": "package",
@@ -670,12 +709,12 @@
       "path": "sharpcompress/0.30.1",
       "hashPath": "sharpcompress.0.30.1.nupkg.sha512"
     },
-    "Svg/3.3.0": {
+    "Svg/3.4.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-Er7LS3f4YgYCUnNQzTPBfvlvk5fR3NemoRBlBwcVANUw47Wm9aAuOuV9MPLKy7nqNQc6y22LsFsyV1djOGyV1Q==",
-      "path": "svg/3.3.0",
-      "hashPath": "svg.3.3.0.nupkg.sha512"
+      "sha512": "sha512-x6dEwYTTYjoB0s+Tgyx/SR3q7OG1iNjDYHbSS4OXGOmfIA9mmpCvIzCZ187WtppJNVr4hOmQNp9q7nhA9kmTWQ==",
+      "path": "svg/3.4.3",
+      "hashPath": "svg.3.4.3.nupkg.sha512"
     },
     "System.Buffers/4.5.1": {
       "type": "package",
@@ -795,6 +834,20 @@
       "sha512": "sha512-/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg==",
       "path": "system.runtime.compilerservices.unsafe/6.0.0",
       "hashPath": "system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512"
+    },
+    "System.Security.AccessControl/5.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-dagJ1mHZO3Ani8GH0PHpPEe/oYO+rVdbQjvjJkBRNQkX4t0r1iaeGn8+/ybkSLEan3/slM0t59SVdHzuHf2jmw==",
+      "path": "system.security.accesscontrol/5.0.0",
+      "hashPath": "system.security.accesscontrol.5.0.0.nupkg.sha512"
+    },
+    "System.Security.Principal.Windows/5.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-t0MGLukB5WAVU9bO3MGzvlGnyJPgUlcwerXn1kzBRjwLKixT96XV0Uza41W49gVd8zEMFu9vQEFlv0IOrytICA==",
+      "path": "system.security.principal.windows/5.0.0",
+      "hashPath": "system.security.principal.windows.5.0.0.nupkg.sha512"
     },
     "System.Text.Encoding/4.3.0": {
       "type": "package",

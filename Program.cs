@@ -1,9 +1,12 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Net;
 using Discord.WebSocket;
 using HLTVDiscordBridge.Modules;
+using HLTVDiscordBridge.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,67 +22,103 @@ namespace HLTVDiscordBridge
     {
         static void Main(string[] args) => new Program().RunBotAsync().GetAwaiter().GetResult();
         private DiscordSocketClient _client;
-        private CommandService _commands;
         private IServiceProvider _services;
         private ConfigClass Botconfig;
 
         public async Task RunBotAsync()
         {
-            DiscordSocketConfig _config = new() { };
-            _client = new DiscordSocketClient();
-            _commands = new CommandService();
+            DiscordSocketConfig _config = new() { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites };
+            _client = new DiscordSocketClient(_config);
+            SlashCommands _commands = new SlashCommands(_client);
 
             _services = new ServiceCollection()
                 .AddSingleton(_client)
-                .AddSingleton(_commands)
                 .BuildServiceProvider();
 
             Botconfig = Config.LoadConfig();
-            StatsUpdater.InitStats();
+            //StatsUpdater.InitStats();
 
             string BotToken = Botconfig.BotToken;
 
             _client.Log += Log;
-            //_client.ReactionAdded += ReactionAdd;
             _client.JoinedGuild += GuildJoined;
             _client.LeftGuild += GuildLeft;
             _client.ButtonExecuted += ButtonExecuted;
-
-            await RegisterCommandsAsync();
+            _client.Ready += Ready;
+            _client.SlashCommandExecuted += _commands.SlashCommandHandler;
+            _client.SelectMenuExecuted += SelectMenuExecuted;
 
             await _client.LoginAsync(TokenType.Bot, BotToken);
             await _client.StartAsync();
-
             await _client.SetGameAsync("!help");
-
-            //await _scoreboard.ConnectWebSocket();
-            //PlayerCard.PlayerTest();
-            //catch if serverconfigs exist
-            await Task.Delay(3000);
-            foreach (SocketGuild guild in _client.Guilds)
-            {
-                await Config.GuildJoined(guild, null, true);
-            }
-#if RELEASE
+#if DEBUG
             await BGTask();
-#endif
-
+#endif      
+            
             await Task.Delay(-1);
         }
 
-        private async Task ButtonExecuted(SocketMessageComponent arg)
+        private Task SelectMenuExecuted(SocketMessageComponent arg)
         {
-            switch (arg.Data.CustomId)
+            var Handler = Task.Run(async () =>
             {
-                case "playerstats":
-                    string matchLink = "";
-                    foreach (Embed e in arg.Message.Embeds)
-                    {
-                        matchLink = ((EmbedAuthor)e.Author).Url;
-                    }
-                    await arg.RespondAsync(embed: await HltvResults.GetPlStatsEmbed(matchLink)); 
-                    break;
-            }
+                switch (arg.Data.CustomId)
+                {
+                    case "upcomingEventsMenu":
+                        await HltvEvents.SendEvent(arg);
+                        break;
+                    case "ongoingEventsMenu":
+                        await HltvEvents.SendEvent(arg);
+                        break;
+                }
+            });
+            return Handler;
+        }
+
+        private Task Ready()
+        {
+            return Task.Run(async () =>
+            {
+                await Config.ServerconfigStartUp(_client);
+
+                await SlashCommands.InitSlashCommands(_client);
+            });          
+        }
+
+        private Task ButtonExecuted(SocketMessageComponent arg)
+        {
+            var Handler = Task.Run(async () =>
+            {
+                string matchLink = "";
+                Match match;
+                MatchMapStats mapStats;
+                MatchStats matchStats;
+                switch (arg.Data.CustomId)
+                {
+                    case "overallstats_bo1":
+                        await arg.DeferAsync();
+                        foreach (Embed e in arg.Message.Embeds)
+                        {
+                            matchLink = ((EmbedAuthor)e.Author).Url;
+                        }
+                        match = await HltvMatch.GetMatch(matchLink);
+                        mapStats = await HltvMatchMapStats.GetMatchMapStats(match.maps[0]);
+                        await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(mapStats));
+                        break;
+                    case "overallstats_def":
+                        await arg.DeferAsync();
+                        
+                        foreach (Embed e in arg.Message.Embeds)
+                        {
+                            matchLink = ((EmbedAuthor)e.Author).Url;
+                        }
+                        match = await HltvMatch.GetMatch(matchLink);
+                        matchStats = await HltvMatchStats.GetMatchStats(match);
+                        await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(matchStats));
+                        break;
+                }
+            });
+            return Handler;
         }
 
         private Task GuildLeft(SocketGuild arg)
@@ -104,7 +143,7 @@ namespace HLTVDiscordBridge
             while (true)
             {
                 //top.gg API & bots.gg API
-                try
+                /*try
                 {
                     if (DateTime.Now.Hour > lastUpdate && _client.CurrentUser.Id == 807182830752628766)
                     {
@@ -125,14 +164,11 @@ namespace HLTVDiscordBridge
                 catch(Exception ex)
                 {
                     Console.Write(ex.ToString());
-                }
+                }*/
                 
                 Stopwatch watch = new(); watch.Start();
-                await HltvUpcomingAndLiveMatches.AktUpcomingAndLiveMatches();
-                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tLiveAndUpcomingMatches aktualisiert ({watch.ElapsedMilliseconds}ms)");
-                await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                await HltvResults.AktResults(_client);
-                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)"); 
+                await HltvResults.SendNewResults(_client);
+                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)");
                 await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvEvents.AktEvents(await Config.GetChannels(_client));
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tEvents aktualisiert ({watch.ElapsedMilliseconds}ms)");
@@ -144,85 +180,14 @@ namespace HLTVDiscordBridge
             }
         }
 
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        private async Task ReactionAdd(Cacheable<IUserMessage, ulong> cacheable, ISocketMessageChannel channel, SocketReaction reaction)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
-        {
-            var Handler = Task.Run(async () =>
-            {
-                string[] numberEmoteStrings = { "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣" };
-                if (Array.IndexOf(numberEmoteStrings, reaction.Emote.ToString()) > -1)
-                {
-                    IUserMessage msg;
-                    try { msg = await cacheable.GetOrDownloadAsync(); }
-                    catch (Discord.Net.HttpException) { return; }
-                    if (!msg.Author.IsBot || reaction.User.Value.IsBot) { return; }
-
-                    if (Array.IndexOf(numberEmoteStrings, reaction.Emote.ToString()) > -1)
-                    {
-                        foreach (string emoteString in numberEmoteStrings)
-                        {
-                            if (emoteString == reaction.Emote.ToString()) { /*HltvLive.StartScoreboard(msg, new Emoji(reaction.Emote.ToString()), (channel as SocketGuildChannel).Guild); return;*/ }
-                        }
-                    }
-                }
-            });                      
-        }
-
         public static void WriteLog(string arg)
         {
             Console.WriteLine(arg);
-            if(!File.Exists($"./cache/log/{DateTime.Now.ToLongDateString()}.log")) { var fs = File.Create($"./cache/log/{DateTime.Now.ToLongDateString()}.log"); fs.Close(); }
-            File.WriteAllText($"./cache/log/{DateTime.Now.ToLongDateString()}.log", File.ReadAllText($"./cache/log/{DateTime.Now.ToLongDateString()}.log") + "\n" + arg);
         }
         private Task Log(LogMessage arg)
         {
             WriteLog(arg.ToString().Split("     ")[0] + "\t" + arg.ToString().Split("     ")[1]);
             return Task.CompletedTask;
-        }
-
-        public async Task RegisterCommandsAsync()
-        {
-            _client.MessageReceived += HandleCommandAsync;
-
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-        }
-
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        private async Task HandleCommandAsync(SocketMessage arg)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
-        {
-            var Handler = Task.Run(async ()=>
-            {
-                SocketUserMessage Message = arg as SocketUserMessage;
-
-                if (Message is null || Message.Author.IsBot)
-                    return;
-
-                int argPos = 0;
-                string prefix;
-                if (Message.Channel as SocketGuildChannel == null) { prefix = "!"; }
-                else { prefix = Config.GetServerConfig((Message.Channel as SocketGuildChannel).Guild).Prefix; }
-
-                if (Message.HasStringPrefix(prefix, ref argPos) || Message.HasStringPrefix($"{prefix} ", ref argPos) || Message.HasMentionPrefix(_client.CurrentUser, ref argPos))
-                {
-                    SocketCommandContext context = new(_client, Message);
-                    IResult Result = await _commands.ExecuteAsync(context, argPos, _services);
-
-                    //Log Commands
-                    FileStream fs = File.OpenWrite($"./cache/log/{DateTime.Now.ToShortDateString()}.txt"); fs.Close();
-                    string ori = File.ReadAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt");
-                    File.WriteAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt", ori + DateTime.Now.ToShortTimeString() + " " + Message.Channel.ToString() + " " + Message.ToString() + "\n");
-
-                    if (!Result.IsSuccess)
-                        WriteLog(Result.ErrorReason);
-                    else
-                    {
-                        StatsUpdater.StatsTracker.Commands += 1;
-                        StatsUpdater.UpdateStats();
-                    }
-                }                
-            });
         }
     }
 }
