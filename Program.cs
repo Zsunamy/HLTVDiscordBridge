@@ -53,7 +53,7 @@ namespace HLTVDiscordBridge
             await _client.StartAsync();
             await _client.SetGameAsync("!help");
 
-            await BGTask();
+            
             
             await Task.Delay(-1);
         }
@@ -80,8 +80,9 @@ namespace HLTVDiscordBridge
             return Task.Run(async () =>
             {
                 await Config.ServerconfigStartUp(_client);
-
+                
                 await _commands.InitSlashCommands();
+                await BGTask();
             });          
         }
 
