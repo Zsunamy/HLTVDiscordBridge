@@ -30,6 +30,7 @@ namespace HLTVDiscordBridge
             DiscordSocketConfig _config = new() { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites };
             _client = new DiscordSocketClient(_config);
             SlashCommands _commands = new SlashCommands(_client);
+            await _commands.InitSlashCommands();
 
             _services = new ServiceCollection()
                 .AddSingleton(_client)
@@ -51,9 +52,8 @@ namespace HLTVDiscordBridge
             await _client.LoginAsync(TokenType.Bot, BotToken);
             await _client.StartAsync();
             await _client.SetGameAsync("!help");
-#if DEBUG
+
             await BGTask();
-#endif      
             
             await Task.Delay(-1);
         }
@@ -80,8 +80,6 @@ namespace HLTVDiscordBridge
             return Task.Run(async () =>
             {
                 await Config.ServerconfigStartUp(_client);
-
-                await SlashCommands.InitSlashCommands(_client);
             });          
         }
 

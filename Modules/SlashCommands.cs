@@ -16,16 +16,14 @@ namespace HLTVDiscordBridge.Modules
             _client = client;
         }
 
-        public static async Task InitSlashCommands(DiscordSocketClient client)
+        public async Task InitSlashCommands()
         {
-            _client = client;
-
             ulong guildId = 792139588743331841;
 
             var guildSupportCommand = new SlashCommandBuilder()
                 .WithName("support")
                 .WithDescription("Sends the support page.");
-            await client.CreateGlobalApplicationCommandAsync(guildSupportCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(guildSupportCommand.Build());
 
             var guildEventCommand = new SlashCommandBuilder()
             .WithName("event")
@@ -36,7 +34,7 @@ namespace HLTVDiscordBridge.Modules
                 .WithRequired(true)
                 .WithType(ApplicationCommandOptionType.String)
             );
-            await client.CreateGlobalApplicationCommandAsync(guildEventCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(guildEventCommand.Build());
 
             var guildTeamCommand = new SlashCommandBuilder()
                 .WithName("team")
@@ -47,7 +45,7 @@ namespace HLTVDiscordBridge.Modules
                     .WithRequired(true)
                     .WithType(ApplicationCommandOptionType.String)
                     );
-            await client.CreateGlobalApplicationCommandAsync(guildTeamCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(guildTeamCommand.Build());
 
             var guildPlayerCommand = new SlashCommandBuilder()
             .WithName("player")
@@ -58,7 +56,7 @@ namespace HLTVDiscordBridge.Modules
                 .WithRequired(true)
                 .WithType(ApplicationCommandOptionType.String)
             );
-            await client.CreateGlobalApplicationCommandAsync(guildPlayerCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(guildPlayerCommand.Build());
 
             var guildHelpCommand = new SlashCommandBuilder()
                 .WithName("help")
@@ -81,7 +79,7 @@ namespace HLTVDiscordBridge.Modules
                     .AddChoice("support", "support")
                     .WithType(ApplicationCommandOptionType.String)
                 );
-            await client.CreateGlobalApplicationCommandAsync(guildHelpCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(guildHelpCommand.Build());
 
             var guildInitCommand = new SlashCommandBuilder()
                 .WithName("init")
@@ -93,7 +91,7 @@ namespace HLTVDiscordBridge.Modules
                     .WithRequired(true)
                     .WithType(ApplicationCommandOptionType.Channel)
                 );
-            await client.CreateGlobalApplicationCommandAsync(guildInitCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(guildInitCommand.Build());
 
             var guildSetCommand = new SlashCommandBuilder()
                 .WithName("set")
@@ -157,19 +155,19 @@ namespace HLTVDiscordBridge.Modules
                         )
                     );
 
-            await client.CreateGlobalApplicationCommandAsync(guildSetCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(guildSetCommand.Build());
 
             var guildEventsCommand = new SlashCommandBuilder()
                 .WithName("events")
                 .WithDescription("Dropdown of all ongoing events");
 
-            await client.CreateGlobalApplicationCommandAsync(guildEventsCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(guildEventsCommand.Build());
 
             var guildUpcomingEventsCommand = new SlashCommandBuilder()
                 .WithName("upcomingevents")
                 .WithDescription("Dropdown of all upcoming events");
 
-            await client.CreateGlobalApplicationCommandAsync(guildUpcomingEventsCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(guildUpcomingEventsCommand.Build());
 
             var guildUpdateCommand = new SlashCommandBuilder()
                 .WithName("update")
@@ -186,7 +184,7 @@ namespace HLTVDiscordBridge.Modules
                     .WithRequired(true)
                     .WithType(ApplicationCommandOptionType.String)
                     );
-            await client.Rest.CreateGuildCommand(guildUpdateCommand.Build(), guildId);
+            await _client.Rest.CreateGuildCommand(guildUpdateCommand.Build(), guildId);
 
             var guildUpcomingMatchesCommand = new SlashCommandBuilder()
                 .WithName("upcomingmatches")
@@ -197,7 +195,7 @@ namespace HLTVDiscordBridge.Modules
                     .WithRequired(false)
                     .WithType(ApplicationCommandOptionType.String)
                     );
-            await client.CreateGlobalApplicationCommandAsync(guildUpcomingMatchesCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(guildUpcomingMatchesCommand.Build());
 
             var guildRankingCommand = new SlashCommandBuilder()
                 .WithName("ranking")
@@ -214,12 +212,12 @@ namespace HLTVDiscordBridge.Modules
                     .WithRequired(false)
                     .WithType(ApplicationCommandOptionType.String)
                     );
-            await client.CreateGlobalApplicationCommandAsync(guildRankingCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(guildRankingCommand.Build());
 
             var liveCommand = new SlashCommandBuilder()
                 .WithName("live")
                 .WithDescription("shows all live matches");
-            await client.CreateGlobalApplicationCommandAsync(liveCommand.Build());
+            await _client.CreateGlobalApplicationCommandAsync(liveCommand.Build());
         }
         public async Task SlashCommandHandler(SocketSlashCommand arg)
         {
