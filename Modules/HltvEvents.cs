@@ -193,7 +193,7 @@ namespace HLTVDiscordBridge.Modules
             }
 
             File.WriteAllText("./cache/events/newongoing.json", JArray.FromObject(startedEvents).ToString());
-            return newOngoingEvents;
+            return startedEvents;
         }
         public static async Task<List<EventPreview>> GetEndedEvents()
         {

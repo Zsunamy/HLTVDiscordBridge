@@ -139,7 +139,7 @@ namespace HLTVDiscordBridge
             {
                 builder.WithTitle("SYNTAX")
                     .WithColor(Color.Green)
-                    .WithDescription($"You can change the following options by using {_cfg.Prefix}set [option] [new state]:")
+                    .WithDescription($"You can change the following options by using /set [option] [new state]:")
                     .AddField("options:", "`stars`\n`featuredevents`\n`prefix`\n`newsoutput`\n`resultoutput`\n`eventoutput`", true)
                     .AddField("possible states:", "number between 0-5\ntrue/false\nany string\ntrue/false\ntrue/false\ntrue/false", true)
                     .WithCurrentTimestamp();
@@ -149,7 +149,7 @@ namespace HLTVDiscordBridge
             {
                 builder.WithTitle("syntax error")
                     .WithColor(Color.Red)
-                    .WithDescription($"You can't change {option} to nothing! Please use a valid state: {_cfg.Prefix}set [option] [new state]!")
+                    .WithDescription($"You can't change {option} to nothing! Please use a valid state: /set [option] [new state]!")
                     .WithCurrentTimestamp();
                 await ReplyAsync(embed: builder.Build());
                 return;
@@ -210,14 +210,6 @@ namespace HLTVDiscordBridge
                                 .WithCurrentTimestamp()
                                 .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         }
-                        break;
-                    case "prefix":
-                        update = Builders<ServerConfig>.Update.Set(x => x.Prefix, arg);
-                        builder.WithColor(Color.Green)
-                            .WithTitle("SUCCESS")
-                            .WithDescription($"You successfully changed the prefix to `{arg}`")
-                            .WithCurrentTimestamp()
-                            .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
                         break;
                     case "news":
                     case "newsoutput":
@@ -437,7 +429,6 @@ namespace HLTVDiscordBridge
             _config.GuildID = guild.Id;
             _config.MinimumStars = 0;
             _config.OnlyFeaturedEvents = false;
-            _config.Prefix = "!";
             _config.EventOutput = true;
             _config.NewsOutput = true;
             _config.ResultOutput = true;

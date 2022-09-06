@@ -22,7 +22,6 @@ namespace HLTVDiscordBridge
     {
         static void Main(string[] args) => new Program().RunBotAsync().GetAwaiter().GetResult();
         private DiscordSocketClient _client;
-        private CommandService _commands;
         private IServiceProvider _services;
         private ConfigClass Botconfig;
 
@@ -30,11 +29,10 @@ namespace HLTVDiscordBridge
         {
             DiscordSocketConfig _config = new() { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites };
             _client = new DiscordSocketClient(_config);
-            _commands = new CommandService();
+            SlashCommands _commands = new SlashCommands(_client);
 
             _services = new ServiceCollection()
                 .AddSingleton(_client)
-                .AddSingleton(_commands)
                 .BuildServiceProvider();
 
             Botconfig = Config.LoadConfig();
@@ -47,10 +45,8 @@ namespace HLTVDiscordBridge
             _client.LeftGuild += GuildLeft;
             _client.ButtonExecuted += ButtonExecuted;
             _client.Ready += Ready;
-            _client.SlashCommandExecuted += SlashCommands.SlashCommandHandler;
+            _client.SlashCommandExecuted += _commands.SlashCommandHandler;
             _client.SelectMenuExecuted += SelectMenuExecuted;
-
-            await RegisterCommandsAsync();
 
             await _client.LoginAsync(TokenType.Bot, BotToken);
             await _client.StartAsync();
@@ -85,7 +81,7 @@ namespace HLTVDiscordBridge
             {
                 await Config.ServerconfigStartUp(_client);
 
-                await SlashCommands.InitSlashCommands(_client);
+                //await SlashCommands.InitSlashCommands(_client);
             });          
         }
 
@@ -192,48 +188,6 @@ namespace HLTVDiscordBridge
         {
             WriteLog(arg.ToString().Split("     ")[0] + "\t" + arg.ToString().Split("     ")[1]);
             return Task.CompletedTask;
-        }
-
-        public async Task RegisterCommandsAsync()
-        {
-            _client.MessageReceived += HandleCommandAsync;
-
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-        }
-        private Task HandleCommandAsync(SocketMessage arg)
-        {
-            var Handler = Task.Run(async ()=>
-            {
-                SocketUserMessage Message = arg as SocketUserMessage;
-
-                if (Message is null || Message.Author.IsBot)
-                    return;
-
-                int argPos = 0;
-                string prefix;
-                if (Message.Channel as SocketGuildChannel == null) { prefix = "!"; }
-                else { prefix = Config.GetServerConfig((Message.Channel as SocketGuildChannel).Guild).Prefix; }
-
-                if (Message.HasStringPrefix(prefix, ref argPos) || Message.HasStringPrefix($"{prefix} ", ref argPos) || Message.HasMentionPrefix(_client.CurrentUser, ref argPos))
-                {
-                    SocketCommandContext context = new(_client, Message);
-                    IResult Result = await _commands.ExecuteAsync(context, argPos, _services);
-
-                    //Log Commands
-                    FileStream fs = File.OpenWrite($"./cache/log/{DateTime.Now.ToShortDateString()}.txt"); fs.Close();
-                    string ori = File.ReadAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt");
-                    File.WriteAllText($"./cache/log/{DateTime.Now.ToShortDateString()}.txt", ori + DateTime.Now.ToShortTimeString() + " " + Message.Channel.ToString() + " " + Message.ToString() + "\n");
-
-                    if (!Result.IsSuccess)
-                        WriteLog(Result.ErrorReason);
-                    else
-                    {
-                        StatsUpdater.StatsTracker.Commands += 1;
-                        StatsUpdater.UpdateStats();
-                    }
-                }                
-            });
-            return Handler;
         }
     }
 }
