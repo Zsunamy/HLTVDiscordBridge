@@ -81,7 +81,7 @@ namespace HLTVDiscordBridge
             {
                 await Config.ServerconfigStartUp(_client);
 
-                await _commands.InitSlashCommands();
+                //await _commands.InitSlashCommands();
             });          
         }
 
