@@ -73,6 +73,7 @@ namespace HLTVDiscordBridge.Modules
                     .AddChoice("upcomingevents", "upcomingevents")
                     .AddChoice("live", "live")
                     .AddChoice("team", "team")
+                    .AddChoice("support", "support")
                     .WithType(ApplicationCommandOptionType.String)
                 );
             await client.Rest.CreateGuildCommand(guildHelpCommand.Build(), guildId);
@@ -210,6 +211,11 @@ namespace HLTVDiscordBridge.Modules
                     .WithType(ApplicationCommandOptionType.String)
                     );
             await client.Rest.CreateGuildCommand(guildRankingCommand.Build(), guildId);
+
+            var liveCommand = new SlashCommandBuilder()
+                .WithName("live")
+                .WithDescription("shows all live matches");
+            await client.Rest.CreateGuildCommand(liveCommand.Build(), guildId);
         }
         public async static Task SlashCommandHandler(SocketSlashCommand arg)
         {
@@ -219,6 +225,9 @@ namespace HLTVDiscordBridge.Modules
             {
                 switch (arg.CommandName)
                 {
+                    case "live":
+                        await HltvLiveMatches.SendLiveMatchesEmbed(arg);
+                        break;
                     case "player":
                         await HltvPlayer.SendPlayerCard(arg);
                         break;

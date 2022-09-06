@@ -29,7 +29,7 @@ namespace HLTVDiscordBridge.Modules
                         {
                             case "init":
                                 builder.WithTitle($"advanced help for /init")
-                                    .AddField("syntax:", $"`/init [optional: #textchannelid]`", true)
+                                    .AddField("syntax:", $"`/init [required: #textchannelid]`", true)
                                     .AddField("example:", $"`/init {(arg.Channel as SocketTextChannel)?.Mention}`", true)
                                     .AddField("\u200b", "\u200b", true)
                                     .AddField("summary:", $"Sets the default channel for all automated messages.", true)
@@ -38,7 +38,7 @@ namespace HLTVDiscordBridge.Modules
                                 break;
                             case "player":
                                 builder.WithTitle($"advanced help for /player")
-                                    .AddField("syntax:", $"`/player [name]`", true)
+                                    .AddField("syntax:", $"`/player [required: name]`", true)
                                     .AddField("example:", $"`/player Karrigan`", true)
                                     .AddField("\u200b", "\u200b", true)
                                     .AddField("summary:", $"Sends general information about the specified player. This may take up to 30 seconds depending several factors.", true)
@@ -57,7 +57,7 @@ namespace HLTVDiscordBridge.Modules
                                 break;
                             case "ranking":
                                 builder.WithTitle($"advanced help for /ranking")
-                                    .AddField("syntax:", $"`/ranking [country or region]`", true)
+                                    .AddField("syntax:", $"`/ranking [optional: country or region]`", true)
                                     .AddField("examples:", $"`/ranking`\n`/ranking north america`", true)
                                     .AddField("\u200b", "\u200b", true)
                                     .AddField("summary:", $"Displays the current world ranking or the specified country/region.", true)
@@ -75,7 +75,7 @@ namespace HLTVDiscordBridge.Modules
                                 break;
                             case "event":
                                 builder.WithTitle($"advanced help for /event")
-                                    .AddField("syntax:", $"`/event [name]`", true)
+                                    .AddField("syntax:", $"`/event [required: name]`", true)
                                     .AddField("example:", $"`/event IEM New York 2020 Europe`", true)
                                     .AddField("\u200b", "\u200b", true)
                                     .AddField("summary:", $"Displays information about the specified event.", true)
@@ -85,7 +85,7 @@ namespace HLTVDiscordBridge.Modules
                             case "events":
                                 builder.WithTitle($"advanced help for /events")
                                     .AddField("syntax:", $"`/events`", true)
-                                    .AddField("example.", $"`/events`", true)
+                                    .AddField("example:", $"`/events`", true)
                                     .AddField("\u200b", "\u200b", true)
                                     .AddField("summary:", $"Displays all ongoing events.", true)
                                     .AddField("permissions:", "@everyone", true)
@@ -103,7 +103,7 @@ namespace HLTVDiscordBridge.Modules
                             case "live":
                                 builder.WithTitle($"advanced help for /live")
                                     .AddField("syntax:", $"`/live`", true)
-                                    .AddField("example.", $"`/live`", true)
+                                    .AddField("example:", $"`/live`", true)
                                     .AddField("\u200b", "\u200b", true)
                                     .AddField("summary:", $"Displays all live matches and their livestreams.", true)
                                     .AddField("permissions:", "@everyone", true)
@@ -112,12 +112,21 @@ namespace HLTVDiscordBridge.Modules
                             case "team":
                                 builder.WithTitle($"advanced help for /team")
                                     .AddField("syntax:", $"`/team [name]`", true)
-                                    .AddField("example.", $"`/team astralis`", true)
+                                    .AddField("example:", $"`/team astralis`", true)
                                     .AddField("\u200b", "\u200b", true)
                                     .AddField("summary:", $"Displays information about the specified team.", true)
                                     .AddField("permissions:", "@everyone", true)
                                     .AddField("\u200b", "\u200b", true);
                                 break;
+                            case "support":
+                                builder.WithTitle($"advanced help for /support")
+                                    .AddField("syntax:", $"`/support`", true)
+                                    .AddField("example:", $"`/support`", true)
+                                    .AddField("\u200b", "\u200b", true)
+                                    .AddField("summary:", $"Displays general information about the development team.", true)
+                                    .AddField("permissions:", "@everyone", true)
+                                    .AddField("\u200b", "\u200b", true);
+                            break;
                             case "general":
                             default:
                                 builder.WithTitle("HELP")

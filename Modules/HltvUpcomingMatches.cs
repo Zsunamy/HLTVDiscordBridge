@@ -71,7 +71,6 @@ namespace HLTVDiscordBridge.Modules
             }
             catch (HltvApiException) { throw; }
         }
-
         public static async Task<Embed> GetUpcomingMatchesEmbed(SocketSlashCommand command)
         {
             try
@@ -115,7 +114,6 @@ namespace HLTVDiscordBridge.Modules
             }
             catch(HltvApiException) { throw; }
         }
-
         public static async Task SendUpcomingMatches(SocketSlashCommand arg)
         {
             await arg.DeferAsync(); Embed embed;

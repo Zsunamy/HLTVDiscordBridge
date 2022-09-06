@@ -70,8 +70,8 @@ namespace HLTVDiscordBridge.Modules
 
             var req = await Tools.RequestApiJArray("getResults", properties, values);
 
-            Directory.CreateDirectory("./archive/results_new");
-            Directory.CreateDirectory("./cache/results_new");
+            Directory.CreateDirectory("./archive/results");
+            Directory.CreateDirectory("./cache/results");
 
             List<MatchResult> results = new();
             
@@ -87,7 +87,7 @@ namespace HLTVDiscordBridge.Modules
             List<MatchResult> newResults = await GetAllResults();
 
             List<MatchResult> oldResults = new();
-            JArray oldResultsJArray = JArray.Parse(File.ReadAllText("./cache/results_new/results.json"));
+            JArray oldResultsJArray = JArray.Parse(File.ReadAllText("./cache/results/results.json"));
             foreach (JToken jToken in oldResultsJArray)
             {
                 JObject jObj = JObject.Parse(jToken.ToString());
@@ -96,7 +96,7 @@ namespace HLTVDiscordBridge.Modules
             }
 
             if (newResults.First().id == oldResults.First().id) { return null; }
-            else { File.WriteAllText("./cache/results_new/results.json", JArray.FromObject(newResults).ToString()); }
+            else { File.WriteAllText("./cache/results/results.json", JArray.FromObject(newResults).ToString()); }
 
             List<MatchResult> results = new();
             foreach(MatchResult newResult in newResults)
@@ -111,7 +111,6 @@ namespace HLTVDiscordBridge.Modules
 
             return results;
         }
-
         private static Embed GetResultEmbed(MatchResult matchResult, Match match)
         {
             EmbedBuilder builder = new();
@@ -163,7 +162,6 @@ namespace HLTVDiscordBridge.Modules
 
             return builder.Build();
         }
-
         private static MessageComponent GetMessageComponent(Match match)
         {
             ComponentBuilder compBuilder = new();

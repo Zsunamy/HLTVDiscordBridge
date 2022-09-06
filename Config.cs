@@ -406,11 +406,9 @@ namespace HLTVDiscordBridge
         /// <param name="client">Bot Client</param>
         /// <param name="channel">Sets a custom Channel. null = default channel on guild</param>
         /// <param name="startup">Is this the startup?</param>
-        public static async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null, bool startup = false)
+        public static async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null)
         {
             IMongoCollection<ServerConfig> collection = GetCollection();
-
-            if (!(collection.Find(x => x.GuildID == guild.Id).CountDocuments() == 0 && startup)) { return; }
 
             EmbedBuilder builder = new();
             if (channel == null)
@@ -466,6 +464,17 @@ namespace HLTVDiscordBridge
             
         }
 
+        public static async Task ServerconfigStartUp(DiscordSocketClient client)
+        {
+            IMongoCollection<ServerConfig> collection = GetCollection();
+            foreach(SocketGuild guild in client.Guilds)
+            {
+                if (collection.Find(x => x.GuildID == guild.Id).CountDocuments() == 0)
+                {
+                    await guild.LeaveAsync();
+                }
+            }
+        }
         public static async Task<GuildEmote> GetEmote(DiscordSocketClient client)
         {
             foreach (SocketGuild guild in client.Guilds)
