@@ -33,7 +33,7 @@ namespace HLTVDiscordBridge.Modules
                                     .AddField("example:", $"`/init {(arg.Channel as SocketTextChannel)?.Mention}`", true)
                                     .AddField("\u200b", "\u200b", true)
                                     .AddField("summary:", $"Sets the default channel for all automated messages.", true)
-                                    .AddField("permissions:", "ManageChannels", true)
+                                    .AddField("permissions:", "ManageGuild", true)
                                     .AddField("\u200b", "\u200b", true);
                                 break;
                             case "player":
@@ -51,7 +51,7 @@ namespace HLTVDiscordBridge.Modules
                                     .AddField("possible states:", "```number from 0-5\ntrue/false\nany string\ntrue/false\ntrue/false\ntrue/false```", true)
                                     .AddField("examples:", $"\u200b\n`/set prefix $`\n\n`/set news false`\n\n`/set stars 3`", true)
                                     .AddField("summary:", $"Changes the options for you personal server.", true)
-                                    .AddField("permissions:", "admin", true)
+                                    .AddField("permissions:", "ManageGuild", true)
                                     .AddField("\u200b", "\u200b", true)
                                     .WithFooter($"for more details type: /set");
                                 break;
