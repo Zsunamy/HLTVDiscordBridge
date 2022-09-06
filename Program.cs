@@ -51,7 +51,7 @@ namespace HLTVDiscordBridge
 
             await _client.LoginAsync(TokenType.Bot, BotToken);
             await _client.StartAsync();
-            await _client.SetGameAsync("!help");
+            await _client.SetGameAsync("/help");
 
             
             
