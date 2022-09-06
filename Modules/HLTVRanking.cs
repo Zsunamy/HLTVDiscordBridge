@@ -88,6 +88,7 @@ namespace HLTVDiscordBridge.Modules
                 .WithFooter(Tools.GetRandomFooter());
             /*StatsUpdater.StatsTracker.MessagesSent += 1;
             StatsUpdater.UpdateStats();*/
+            await cmd.DeleteOriginalResponseAsync();
             await cmd.Channel.SendMessageAsync(embed: embedBuilder.Build());
         }        
 

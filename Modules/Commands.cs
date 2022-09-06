@@ -17,7 +17,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 case 0:
                     builder.WithTitle("HELP")
-                        .AddField("commands:", $"```/init\n/set\n/about\n/ranking\n/upcoming\n/live\n/player\n/team\n/event\n/events\n/upcomingevents```", true)
+                        .AddField("commands:", $"```/init\n/set\n/about\n/ranking\n/upcomingmatches\n/live\n/player\n/team\n/event\n/events\n/upcomingevents```", true)
                         .AddField("short summary:", $"```sets the default channel for HLTV-NEWS\nchanges the options for your server\nabout us\n" +
                         $"displays the team ranking\ndisplays upcoming matches\nshows all live matches\n" +
                         $"gives information about a player\ngives information about a team\ngives information about an event\nshows all ongoing events\n" +
@@ -25,12 +25,12 @@ namespace HLTVDiscordBridge.Modules
                         .WithFooter($"For more details type: \"/help [command]\"");
                     break;
                 case >0:
-                    switch(arg.Data.Options.First().Value.ToString().ToLower())
+                    switch(arg.Data.Options.First().Value.ToString()?.ToLower())
                         {
                             case "init":
                                 builder.WithTitle($"advanced help for /init")
                                     .AddField("syntax:", $"`/init [optional: #textchannelid]`", true)
-                                    .AddField("example:", $"`/init {(arg.Channel as SocketTextChannel).Mention}`", true)
+                                    .AddField("example:", $"`/init {(arg.Channel as SocketTextChannel)?.Mention}`", true)
                                     .AddField("\u200b", "\u200b", true)
                                     .AddField("summary:", $"Sets the default channel for all automated messages.", true)
                                     .AddField("permissions:", "ManageChannels", true)
@@ -64,10 +64,10 @@ namespace HLTVDiscordBridge.Modules
                                     .AddField("permissions:", "@everyone", true)
                                     .AddField("\u200b", "\u200b", true);
                                 break;
-                            case "upcoming":
-                                builder.WithTitle($"advanced help for / upcoming")
-                                    .AddField("syntax:", $"`/upcoming [optional: date, team, event]`", true)
-                                    .AddField("examples:", $"`/upcoming` or `/upcoming 2.2.2021` or\n /upcoming HAVU` or `/upcoming IEM New York 2020 Europe`", true)
+                            case "upcomingmatches":
+                                builder.WithTitle($"advanced help for /upcomingmatches")
+                                    .AddField("syntax:", $"`/upcomingmatches [optional: date, team, event]`", true)
+                                    .AddField("examples:", $"`/upcomingmatches` or `/upcomingmatches 2.2.2021` or\n /upcoming HAVU` or `/upcoming IEM New York 2020 Europe`", true)
                                     .AddField("\u200b", "\u200b", true)
                                     .AddField("summary:", $"Displays the upcoming matches for the specified date, team or event.", true)
                                     .AddField("permissions:", "@everyone", true)
@@ -121,7 +121,7 @@ namespace HLTVDiscordBridge.Modules
                             case "general":
                             default:
                                 builder.WithTitle("HELP")
-                                    .AddField("commands:", $"```/init\n/set\n/about\n/ranking\n/upcoming\n/live\n/player\n/team\n/event\n/events\n/upcomingevents```", true)
+                                    .AddField("commands:", $"```/init\n/set\n/about\n/ranking\n/upcomingmatches\n/live\n/player\n/team\n/event\n/events\n/upcomingevents```", true)
                                     .AddField("short summary:", $"```sets the default channel for HLTV-NEWS\nchanges the options for your server\nabout us\n" +
                                     $"displays the team ranking\ndisplays upcoming matches\nshows all live matches\n" +
                                     $"gives information about a player\ngives information about a team\ngives information about an event\nshows all ongoing events\n" +

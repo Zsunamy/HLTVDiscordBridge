@@ -80,14 +80,14 @@ namespace HLTVDiscordBridge.Modules
 
             var req = await Tools.RequestApiJArray("getEvents", new List<string>(), new List<string>());
 
-            List<EventPreview> UpcomingAndOngoingEvents = new();
+            List<EventPreview> upcomingAndOngoingEvents = new();
             foreach(JToken eventTok in req)
             {                
-                UpcomingAndOngoingEvents.Add(new EventPreview(eventTok as JObject));
+                upcomingAndOngoingEvents.Add(new EventPreview(eventTok as JObject));
             }
             
 
-            foreach(EventPreview eventPreview in UpcomingAndOngoingEvents)
+            foreach(EventPreview eventPreview in upcomingAndOngoingEvents)
             {
                 if(UnixTimeStampToDateTime(eventPreview.dateEnd) > DateTime.UtcNow && UnixTimeStampToDateTime(eventPreview.dateStart) < DateTime.UtcNow)
                 {
@@ -106,13 +106,13 @@ namespace HLTVDiscordBridge.Modules
 
             var req = await Tools.RequestApiJArray("getEvents", new List<string>(), new List<string>());
 
-            List<EventPreview> UpcomingAndOngoingEvents = new();
+            List<EventPreview> upcomingAndOngoingEvents = new();
             foreach (JToken eventTok in req)
             {
-                UpcomingAndOngoingEvents.Add(new EventPreview(eventTok as JObject));
+                upcomingAndOngoingEvents.Add(new EventPreview(eventTok as JObject));
             }
 
-            foreach (EventPreview eventPreview in UpcomingAndOngoingEvents)
+            foreach (EventPreview eventPreview in upcomingAndOngoingEvents)
             {
                 if (eventPreview.location != null)
                 {

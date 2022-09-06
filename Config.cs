@@ -90,7 +90,7 @@ namespace HLTVDiscordBridge
         }
 
         /// <summary>
-        /// Loads the generel bot config
+        /// Loads the general bot config
         /// </summary>
         /// <returns>Config</returns>
         public static ConfigClass LoadConfig()
@@ -447,7 +447,7 @@ namespace HLTVDiscordBridge
             collection.InsertOne(_config);
 
             if(channel == null) {
-                builder.WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. To set a default HLTV-News output channel, type !init " +
+                builder.WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. To set a default HLTV-News output channel, type /init " +
                     $"in a channel of your choice, but make sure that the bot has enough permission to access and send messages in that channel. " +
                     $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
                     $"https://github.com/Zsunamy/HLTVDiscordBridge/issues \n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>");
