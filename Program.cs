@@ -81,7 +81,7 @@ namespace HLTVDiscordBridge
             {
                 await Config.ServerconfigStartUp(_client);
 
-                //await _commands.InitSlashCommands();
+                await _commands.InitSlashCommands();
             });          
         }
 
@@ -143,7 +143,7 @@ namespace HLTVDiscordBridge
             while (true)
             {
                 //top.gg API & bots.gg API
-                /*try
+                try
                 {
                     if (DateTime.Now.Hour > lastUpdate && _client.CurrentUser.Id == 807182830752628766)
                     {
@@ -164,7 +164,7 @@ namespace HLTVDiscordBridge
                 catch(Exception ex)
                 {
                     Console.Write(ex.ToString());
-                }*/
+                }
                 
                 Stopwatch watch = new(); watch.Start();
                 await HltvResults.SendNewResults(_client);

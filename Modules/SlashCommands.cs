@@ -186,6 +186,11 @@ namespace HLTVDiscordBridge.Modules
                     );
             await _client.Rest.CreateGuildCommand(guildUpdateCommand.Build(), guildId);
 
+            var serverCountCommand = new SlashCommandBuilder()
+                .WithName("servercount")
+                .WithDescription("sends the servercount");
+            await _client.Rest.CreateGuildCommand(serverCountCommand.Build(), guildId);
+
             var guildUpcomingMatchesCommand = new SlashCommandBuilder()
                 .WithName("upcomingmatches")
                 .WithDescription("gets upcoming matches")
@@ -227,6 +232,9 @@ namespace HLTVDiscordBridge.Modules
             {
                 switch (arg.CommandName)
                 {
+                    case "servercount":
+                        await arg.RespondAsync(_client.Guilds.Count.ToString());
+                        break;
                     case "live":
                         await HltvLiveMatches.SendLiveMatchesEmbed(arg);
                         break;
