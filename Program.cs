@@ -80,9 +80,8 @@ namespace HLTVDiscordBridge
             return Task.Run(async () =>
             {
                 await Config.ServerconfigStartUp(_client);
-                
-                await _commands.InitSlashCommands();
-                await BGTask();
+                //await _commands.InitSlashCommands();
+                BGTask();
             });          
         }
 
