@@ -462,7 +462,8 @@ namespace HLTVDiscordBridge
             {
                 if (collection.Find(x => x.GuildID == guild.Id).CountDocuments() == 0)
                 {
-                    await guild.LeaveAsync();
+                    //await guild.LeaveAsync();
+                    Console.WriteLine($"Would have left: {guild.Name}");
                 }
             }
         }
