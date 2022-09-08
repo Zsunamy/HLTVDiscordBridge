@@ -22,6 +22,7 @@ namespace HLTVDiscordBridge
         public string BotsGGApiKey { get; set; }
         public string APILink { get; set; }
         public string DatabaseLink { get; set; }
+        public string Database { get; set; }
     }
 
     public class ServerConfig
@@ -55,12 +56,7 @@ namespace HLTVDiscordBridge
         public static IMongoCollection<ServerConfig> GetCollection()
         {
             MongoClient dbClient = new(LoadConfig().DatabaseLink);
-#if DEBUG
-            IMongoDatabase db = dbClient.GetDatabase("hltv-dev");
-#endif
-#if RELEASE
-            IMongoDatabase db = dbClient.GetDatabase("hltv");
-#endif
+            IMongoDatabase db = dbClient.GetDatabase(LoadConfig().Database);
             return db.GetCollection<ServerConfig>("serverconfig");
         }
         public static ServerConfig GetServerConfig(SocketTextChannel channel)

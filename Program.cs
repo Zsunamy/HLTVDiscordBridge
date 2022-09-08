@@ -14,6 +14,7 @@ using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge
@@ -23,7 +24,7 @@ namespace HLTVDiscordBridge
         static void Main(string[] args) => new Program().RunBotAsync().GetAwaiter().GetResult();
         private DiscordSocketClient _client;
         private IServiceProvider _services;
-        private ConfigClass Botconfig;
+        private ConfigClass _botconfig;
         SlashCommands _commands;
 
         public async Task RunBotAsync()
@@ -36,10 +37,10 @@ namespace HLTVDiscordBridge
                 .AddSingleton(_client)
                 .BuildServiceProvider();
 
-            Botconfig = Config.LoadConfig();
+            _botconfig = Config.LoadConfig();
             //StatsUpdater.InitStats();
 
-            string BotToken = Botconfig.BotToken;
+            string botToken = _botconfig.BotToken;
 
             _client.Log += Log;
             _client.JoinedGuild += GuildJoined;
@@ -49,18 +50,17 @@ namespace HLTVDiscordBridge
             _client.SlashCommandExecuted += _commands.SlashCommandHandler;
             _client.SelectMenuExecuted += SelectMenuExecuted;
 
-            await _client.LoginAsync(TokenType.Bot, BotToken);
+            await _client.LoginAsync(TokenType.Bot, botToken);
             await _client.StartAsync();
             await _client.SetGameAsync("/help");
 
-            
-            
+            await BgTask();
             await Task.Delay(-1);
         }
 
-        private Task SelectMenuExecuted(SocketMessageComponent arg)
+        private static Task SelectMenuExecuted(SocketMessageComponent arg)
         {
-            var Handler = Task.Run(async () =>
+            var handler = Task.Run(async () =>
             {
                 switch (arg.Data.CustomId)
                 {
@@ -72,7 +72,7 @@ namespace HLTVDiscordBridge
                         break;
                 }
             });
-            return Handler;
+            return handler;
         }
 
         private Task Ready()
@@ -81,13 +81,12 @@ namespace HLTVDiscordBridge
             {
                 await Config.ServerconfigStartUp(_client);
                 //await _commands.InitSlashCommands();
-                BGTask();
             });          
         }
 
         private Task ButtonExecuted(SocketMessageComponent arg)
         {
-            var Handler = Task.Run(async () =>
+            var handler = Task.Run(async () =>
             {
                 string matchLink = "";
                 Match match;
@@ -118,7 +117,7 @@ namespace HLTVDiscordBridge
                         break;
                 }
             });
-            return Handler;
+            return handler;
         }
 
         private Task GuildLeft(SocketGuild arg)
@@ -137,8 +136,9 @@ namespace HLTVDiscordBridge
             await Config.GuildJoined(guild);
         }
 
-        private async Task BGTask()
-        {            
+        private async Task BgTask()
+        {
+            Ready().Wait();
             int lastUpdate = 0;
             while (true)
             {
@@ -150,12 +150,12 @@ namespace HLTVDiscordBridge
                         lastUpdate = DateTime.Now.Hour;
                         HttpClient http = new();
                         //top.gg
-                        http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(Botconfig.TopGGApiKey);
+                        http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.TopGGApiKey);
                         HttpRequestMessage req = new(HttpMethod.Post, "https://top.gg/api/bots/807182830752628766/stats");
                         req.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
                         await http.SendAsync(req);
                         //bots.gg
-                        http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(Botconfig.BotsGGApiKey);
+                        http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.BotsGGApiKey);
                         req = new(HttpMethod.Post, "https://discord.bots.gg/api/v1/bots/807182830752628766/stats");
                         req.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
                         await http.SendAsync(req);
@@ -169,14 +169,14 @@ namespace HLTVDiscordBridge
                 Stopwatch watch = new(); watch.Start();
                 await HltvResults.SendNewResults(_client);
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)");
-                await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
+                await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvEvents.AktEvents(await Config.GetChannels(_client));
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tEvents aktualisiert ({watch.ElapsedMilliseconds}ms)");
-                await Task.Delay(Botconfig.CheckResultsTimeInterval / 4); watch.Restart();
+                await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvNews.AktHLTVNews(await Config.GetChannels(_client));
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tNews aktualisiert ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
                 CacheCleaner.Cleaner(_client);
-                await Task.Delay(Botconfig.CheckResultsTimeInterval / 4);
+                await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
             }
         }
 
@@ -184,7 +184,7 @@ namespace HLTVDiscordBridge
         {
             Console.WriteLine(arg);
         }
-        private Task Log(LogMessage arg)
+        private static Task Log(LogMessage arg)
         {
             WriteLog(arg.ToString().Split("     ")[0] + "\t" + arg.ToString().Split("     ")[1]);
             return Task.CompletedTask;

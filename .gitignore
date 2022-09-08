@@ -6,3 +6,4 @@ config.xml
 GlobalSuppressions.cs
 Properties/
 *.user
+.idea
