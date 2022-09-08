@@ -7,3 +7,4 @@ GlobalSuppressions.cs
 Properties/
 *.user
 .idea
+obj
