@@ -57,8 +57,6 @@ namespace HLTVDiscordBridge.Modules
                 catch(HltvApiException) { throw; }
 
                 Directory.CreateDirectory($"./cache/teamcards/{fullTeam.name.ToLower().Replace(' ', '-')}");
-                File.WriteAllText($"./cache/teamcards/{fullTeam.name.ToLower().Replace(' ', '-')}/fullteam.json", fullTeam.ToString());
-                File.WriteAllText($"./cache/teamcards/{fullTeam.name.ToLower().Replace(' ', '-')}/fullteamstats.json", fullTeamStats.ToString());
 
                 //Thumbnail
                 HttpClient http = new();
@@ -72,6 +70,10 @@ namespace HLTVDiscordBridge.Modules
                         $"{fullTeam.name.ToLower().Replace(' ', '-')}/{fullTeam.name.ToLower().Replace(' ', '-')}_logo.png";
                 }
                 fullTeam.localThumbnailPath = thumbPath;
+                
+                File.WriteAllText($"./cache/teamcards/{fullTeam.name.ToLower().Replace(' ', '-')}/fullteam.json", fullTeam.ToString());
+                File.WriteAllText($"./cache/teamcards/{fullTeam.name.ToLower().Replace(' ', '-')}/fullteamstats.json", fullTeamStats.ToString());
+
                 return (fullTeam, fullTeamStats);
 
             }
@@ -164,9 +166,7 @@ namespace HLTVDiscordBridge.Modules
             builder.AddField("\u200b", "\u200b", true);
 
             //recentResults
-            await Task.Delay(3000);
             List<Shared.MatchResult> recentResults = await HltvResults.GetMatchResults(fullTeam.id);
-            File.WriteAllText("./cache/test.json", JArray.FromObject(recentResults).ToString());
             string recentResultsString = "";
             if (recentResults.Count == 0)
             {

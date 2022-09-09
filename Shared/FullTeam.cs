@@ -45,6 +45,7 @@ namespace HLTVDiscordBridge.Shared
             }
             this.news = news;
             link = id != 0 && name != null ? $"https://www.hltv.org/team/{id}/{name.Replace(' ', '-')}" : null;
+            localThumbnailPath = jObject.TryGetValue("localThumbnailPath", out JToken localThumbnailPathTok) ? localThumbnailPathTok.ToString() : null;
         }
 
         public override string ToString()

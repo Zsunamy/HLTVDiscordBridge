@@ -30,10 +30,12 @@ namespace HLTVDiscordBridge.Shared
 
         private uint getUIntFromJToken(JObject jObject, string tokenName)
         {
+            if(jObject == null) return 0;
             return jObject.TryGetValue(tokenName, out JToken jToken) ? uint.Parse(jToken.ToString()) : 0;
         }
         private float getFloatFromJToken(JObject jObject, string tokenName)
         {
+            if(jObject == null) return 0.0f;
             return jObject.TryGetValue(tokenName, out JToken jToken) ? float.Parse(jToken.ToString()) : float.MinValue;
         }
     }

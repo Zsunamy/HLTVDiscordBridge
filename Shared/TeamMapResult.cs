@@ -17,7 +17,7 @@ namespace HLTVDiscordBridge.Shared
                 eventObj = new Event(eventTok as JObject);
             } else if(jObject.TryGetValue("eventObj", out JToken eventObjTok))
             {
-                eventObj = new Event(eventTok as JObject);
+                eventObj = new Event(eventObjTok as JObject);
             }
             else
             {
