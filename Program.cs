@@ -142,7 +142,6 @@ namespace HLTVDiscordBridge
             int lastUpdate = 0;
             while (true)
             {
-                Console.WriteLine("test");
                 //top.gg API & bots.gg API
                 try
                 {
