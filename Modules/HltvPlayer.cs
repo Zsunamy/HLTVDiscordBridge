@@ -185,7 +185,7 @@ namespace HLTVDiscordBridge.Modules
         public static async Task SendPlayerCard(SocketSlashCommand arg)
         {
 
-            if (!Directory.Exists($"./cache/playercards/{arg.Data.Options.First().Value.ToString().ToLower()}"))
+            if (!Directory.Exists($"./cache/playercards/{arg.Data.Options.First().Value.ToString()?.ToLower()}"))
             {
                 await arg.DeferAsync();
 

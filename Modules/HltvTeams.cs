@@ -77,8 +77,8 @@ namespace HLTVDiscordBridge.Modules
             }
             else
             {
-                FullTeam fullTeam = new FullTeam(JObject.Parse(File.ReadAllText($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/fullteam.json")));
-                FullTeamStats fullTeamStats = new FullTeamStats(JObject.Parse(File.ReadAllText($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/fullteamstats.json")));
+                FullTeam fullTeam = new (JObject.Parse(File.ReadAllText($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/fullteam.json")));
+                FullTeamStats fullTeamStats = new (JObject.Parse(File.ReadAllText($"./cache/teamcards/{name.ToLower().Replace(' ', '-')}/fullteamstats.json")));
                 return (fullTeam, fullTeamStats);
             }
         }
@@ -103,10 +103,10 @@ namespace HLTVDiscordBridge.Modules
                 return (builder.Build(), "");
             }
 
-            builder.WithTitle(fullTeam.name);
+            builder.WithTitle(fullTeam?.name);
 
             //TeamLink
-            builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", fullTeam.link);
+            builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", fullTeam?.link);
 
             //Thumbnail            
             builder.WithThumbnailUrl($"attachment://{fullTeam.name.ToLower().Replace(' ', '-')}_logo.png");

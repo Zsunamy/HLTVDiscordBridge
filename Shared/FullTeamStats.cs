@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,17 +11,13 @@ namespace HLTVDiscordBridge.Shared
 {
     public class FullTeamStats
     {
-        public override string ToString()
-        {
-            return JObject.FromObject(this).ToString();
-        }
         public FullTeamStats(JObject jObject)
         {
             id = jObject.TryGetValue("id", out JToken idTok) ? uint.Parse(idTok.ToString()) : 0;
             name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;
             overview = jObject.TryGetValue("overview", out JToken overviewTok) ? new TeamOverviewStatistics(overviewTok as JObject) : null;
             List<TeamMapResult> matches = new();
-            if(jObject.TryGetValue("matches", out JToken matchesTok))
+            if (jObject.TryGetValue("matches", out JToken matchesTok))
             {
                 foreach(JToken matchTok in matchesTok)
                 {
@@ -65,6 +62,11 @@ namespace HLTVDiscordBridge.Shared
             }
             this.events = events;
             mapStats = jObject.TryGetValue("mapStats", out JToken mapsStatsTok) ? new TeamMapsStats(mapsStatsTok as JObject) : null;
+        }
+        
+        public override string ToString()
+        {
+            return JObject.FromObject(this).ToString();
         }
 
         public uint id { get; set; }
