@@ -49,12 +49,11 @@ namespace HLTVDiscordBridge
             _client.Ready += Ready;
             _client.SlashCommandExecuted += _commands.SlashCommandHandler;
             _client.SelectMenuExecuted += SelectMenuExecuted;
+            
 
             await _client.LoginAsync(TokenType.Bot, botToken);
             await _client.StartAsync();
             await _client.SetGameAsync("/help");
-
-            await BgTask();
             await Task.Delay(-1);
         }
 
@@ -81,6 +80,8 @@ namespace HLTVDiscordBridge
             {
                 await Config.ServerconfigStartUp(_client);
                 //await _commands.InitSlashCommands();
+                Task.Run(() => BgTask());
+
             });          
         }
 
@@ -138,10 +139,10 @@ namespace HLTVDiscordBridge
 
         private async Task BgTask()
         {
-            Ready().Wait();
             int lastUpdate = 0;
             while (true)
             {
+                Console.WriteLine("test");
                 //top.gg API & bots.gg API
                 try
                 {
@@ -168,13 +169,13 @@ namespace HLTVDiscordBridge
                 
                 Stopwatch watch = new(); watch.Start();
                 await HltvResults.SendNewResults(_client);
-                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tResults aktualisiert ({watch.ElapsedMilliseconds}ms)");
+                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvEvents.AktEvents(await Config.GetChannels(_client));
-                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tEvents aktualisiert ({watch.ElapsedMilliseconds}ms)");
+                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvNews.AktHLTVNews(await Config.GetChannels(_client));
-                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\tNews aktualisiert ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
+                WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
                 CacheCleaner.Cleaner(_client);
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
             }
