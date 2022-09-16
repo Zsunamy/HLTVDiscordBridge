@@ -173,7 +173,7 @@ namespace HLTVDiscordBridge
                 WriteLog("waiting after results");
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 WriteLog("done waiting after results");
-                await HltvEvents.AktEvents(await Config.GetChannels(_client););
+                await HltvEvents.AktEvents(await Config.GetChannels(_client));
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
                 WriteLog("waiting after events");
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
