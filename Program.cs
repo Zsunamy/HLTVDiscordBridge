@@ -175,12 +175,12 @@ namespace HLTVDiscordBridge
                 WriteLog("done waiting after results");
                 await HltvEvents.AktEvents(await Config.GetChannels(_client));
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
-                WriteLog("waiting after events");
+                WriteLog("waiting after events");   0
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 WriteLog("done waiting after events");
                 var newsChannels = await Config.GetChannels(_client);
                 WriteLog("got all channels for news");
-                await HltvNews.AktHLTVNews(newsChannels);
+                // await HltvNews.AktHLTVNews(newsChannels);
                 WriteLog("waiting after news");
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
                 WriteLog("done waiting after news");
