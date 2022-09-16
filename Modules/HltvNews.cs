@@ -22,7 +22,7 @@ namespace HLTVDiscordBridge.Modules
             HttpClient http = new();
             HttpRequestMessage req = new();
             req.RequestUri = new Uri("https://www.hltv.org/rss/news");
-            req.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0");
+            req.Headers.Add("User-Agent", "curl/7.54.0");
             HttpResponseMessage res = await http.SendAsync(req);
             string result = await res.Content.ReadAsStringAsync();
 
