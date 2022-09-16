@@ -54,7 +54,6 @@ namespace HLTVDiscordBridge
             await _client.LoginAsync(TokenType.Bot, botToken);
             await _client.StartAsync();
             await _client.SetGameAsync("/help");
-            BgTask();
             await Task.Delay(-1);
         }
 
@@ -81,7 +80,7 @@ namespace HLTVDiscordBridge
             {
                 await Config.ServerconfigStartUp(_client);
                 //await _commands.InitSlashCommands();
-                // Task.Run(() => BgTask());
+                Task.Run(() => BgTask());
 
             });          
         }
@@ -174,7 +173,9 @@ namespace HLTVDiscordBridge
                 WriteLog("waiting after results");
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 WriteLog("done waiting after results");
-                await HltvEvents.AktEvents(await Config.GetChannels(_client));
+                var channels = await Config.GetChannels(_client);
+                WriteLog("got all channels after events");
+                await HltvEvents.AktEvents(channels);
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
                 WriteLog("waiting after events");
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
