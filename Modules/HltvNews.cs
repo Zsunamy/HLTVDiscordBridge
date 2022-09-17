@@ -67,7 +67,7 @@ namespace HLTVDiscordBridge.Modules
 
         private static async Task<List<News>> GetLatestNews()
         {
-            var newNews =  await Tools.RequestApiJArray("getNews", new List<string>(), new List<string>());
+            var newNews =  await Tools.RequestApiJArray("getRssNews", new List<string>(), new List<string>());
             List<News> newsList = new();
             foreach (var news in newNews)
             {

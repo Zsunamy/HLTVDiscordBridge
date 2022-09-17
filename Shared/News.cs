@@ -20,6 +20,7 @@ namespace HLTVDiscordBridge.Shared
         public News(JObject jObject)
         {
             title = jObject.TryGetValue("title", out JToken titleTok) ? titleTok.ToString() : null;
+            description = jObject.TryGetValue("description", out JToken descriptionTok) ? descriptionTok.ToString() : null;
             if(jObject.TryGetValue("link", out JToken linkTok))
             {
                 if(linkTok.ToString().Contains("http"))
