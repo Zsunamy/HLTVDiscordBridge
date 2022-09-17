@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml;
 using HLTVDiscordBridge.Shared;
+using Newtonsoft.Json.Linq;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -17,9 +18,33 @@ namespace HLTVDiscordBridge.Modules
     {
         
         //official RSS Feed       
-        public static async Task<News> GetNews()
+        public static async Task<List<News>> GetNewNews()
         {
-            HttpClient http = new();
+            if (!File.Exists("./cache/news/news.json")) { var fs = File.Create("./cache/news/news.json");  fs.Close(); }
+            var oldNewsJArray = JArray.Parse(File.ReadAllText("./cache/news/news.json"));
+            List<News> latestNews = await GetLatestNews();
+            List<News> newsToSend = new();
+            List<News> oldNews = new();
+            foreach (var item in oldNewsJArray)
+            {
+                oldNews.Add(new News(JObject.FromObject(item)));
+            }
+            foreach (var newItem in latestNews)
+            {
+                var found = false;
+                foreach (var oldItem in oldNews)
+                {
+                    if (newItem.link == oldItem.link)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {newsToSend.Add(newItem);}
+            }
+            return newsToSend;
+
+            /*HttpClient http = new();
             HttpRequestMessage req = new();
             req.RequestUri = new Uri("https://www.hltv.org/rss/news");
             req.Headers.Add("User-Agent", "curl/7.54.0");
@@ -37,10 +62,23 @@ namespace HLTVDiscordBridge.Modules
             XmlNodeList latestNews = nodes[0].ChildNodes;
             News news = new(latestNews);           
             
-            return news;
+            return news;*/
         }
 
-        public static Embed GetNewsEmbed(News news)
+        private static async Task<List<News>> GetLatestNews()
+        {
+            var newNews =  await Tools.RequestApiJArray("getNews", new List<string>(), new List<string>());
+            List<News> newsList = new();
+            foreach (var news in newNews)
+            {
+                newsList.Add(new News(JObject.FromObject(news)));
+            }
+
+            File.WriteAllText("./cache/news/news.json", JArray.FromObject(newNews).ToString());
+            return newsList;
+        }
+
+        private static Embed GetNewsEmbed(News news)
         {
             EmbedBuilder builder = new();
 
@@ -58,22 +96,14 @@ namespace HLTVDiscordBridge.Modules
             return builder.Build();
         }
 
-        public static async Task AktHLTVNews(List<SocketTextChannel> channels)
+        public static async Task SendNewNews(List<SocketTextChannel> channels)
         {
-            News bam = await GetNews(); 
-            if(bam == null) { return; }
-
-            string[] ids = File.ReadAllLines("./cache/news/ids.txt");
-            bool sent = false;
-
-            foreach (string id in ids) { if(id == bam.id.ToString()) { sent = true; } }
-
-            if (!sent)
+            List<News> newsToSend = await GetNewNews();
+            foreach (var news in newsToSend)
             {
                 StatsUpdater.StatsTracker.NewsSent += 1;
                 StatsUpdater.UpdateStats();
-                Embed embed = GetNewsEmbed(bam);
-                File.WriteAllText("./cache/news/ids.txt", bam.id.ToString() + "\n" + File.ReadAllText("./cache/news/ids.txt"));
+                Embed embed = GetNewsEmbed(news);
                 foreach (SocketTextChannel channel in channels)
                 {
                     ServerConfig config = Config.GetServerConfig(channel);

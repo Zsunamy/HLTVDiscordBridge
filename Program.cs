@@ -142,7 +142,6 @@ namespace HLTVDiscordBridge
             int lastUpdate = 0;
             while (true)
             {
-                WriteLog("Restarting timeInterval");
                 //top.gg API & bots.gg API
                 try
                 {
@@ -170,18 +169,12 @@ namespace HLTVDiscordBridge
                 Stopwatch watch = new(); watch.Start();
                 await HltvResults.SendNewResults(_client);
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
-                WriteLog("waiting after results");
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                WriteLog("done waiting after results");
                 await HltvEvents.AktEvents(await Config.GetChannels(_client));
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
-                WriteLog("waiting after events");
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                WriteLog("insert news here");
-                // await HltvNews.AktHLTVNews(await Config.GetChannels(_client));
-                WriteLog("waiting after news");
+                await HltvNews.SendNewNews(await Config.GetChannels(_client));
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
-                WriteLog("done waiting after news");
                 CacheCleaner.Cleaner(_client);
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
             }
