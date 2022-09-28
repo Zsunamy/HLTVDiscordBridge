@@ -244,9 +244,9 @@ namespace HLTVDiscordBridge.Modules
                     case "event":
                         await HltvEvents.SendEvent(arg);
                         break;
-                    case "team":
+                    /*case "team":
                         await HltvTeams.SendTeamCard(arg);
-                        break;
+                        break;*/
                     case "support":
                         await SupportCommand.DispSupport(arg);
                         break;

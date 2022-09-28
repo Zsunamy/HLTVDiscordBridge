@@ -53,7 +53,7 @@ namespace HLTVDiscordBridge
 
             await _client.LoginAsync(TokenType.Bot, botToken);
             await _client.StartAsync();
-            await _client.SetGameAsync("/help");
+            await _client.SetGameAsync("/teams temporarily disabled");
             await Task.Delay(-1);
         }
 
@@ -170,7 +170,7 @@ namespace HLTVDiscordBridge
                 await HltvResults.SendNewResults(_client);
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                // await HltvEvents.AktEvents(await Config.GetChannels(_client));
+                await HltvEvents.AktEvents(await Config.GetChannels(_client));
                 WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
                 await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                 await HltvNews.SendNewNews(await Config.GetChannels(_client));
