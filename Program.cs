@@ -53,7 +53,7 @@ namespace HLTVDiscordBridge
 
             await _client.LoginAsync(TokenType.Bot, botToken);
             await _client.StartAsync();
-            await _client.SetGameAsync("/teams temporarily disabled");
+            await _client.SetGameAsync("/help");
             await Task.Delay(-1);
         }
 
