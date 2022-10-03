@@ -226,7 +226,7 @@ namespace HLTVDiscordBridge.Modules
             }
 
             File.WriteAllText("./cache/events/newendedevents.json", JArray.FromObject(endedEvents).ToString());
-            return newPastEvents;
+            return endedEvents;
         }
         static async Task<FullEvent> GetFullEvent(OngoingEventPreview eventPreview)
         {
