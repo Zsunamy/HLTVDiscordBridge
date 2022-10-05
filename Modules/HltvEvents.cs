@@ -260,12 +260,11 @@ namespace HLTVDiscordBridge.Modules
         }
         public static Embed GetEventEndedEmbed(FullEvent eventObj)
         {
-            File.WriteAllText("./cache/test.json", JObject.FromObject(eventObj).ToString());
             EmbedBuilder builder = new();
             if (eventObj == null) { return null; }
             builder.WithTitle($"{eventObj.name} just ended!");
-            builder.AddField("startdate:", UnixTimeStampToDateTime(eventObj.dateStart).ToShortDateString(), true);
-            builder.AddField("enddate:", UnixTimeStampToDateTime(eventObj.dateEnd).ToShortDateString(), true);
+            builder.AddField("startDate:", UnixTimeStampToDateTime(eventObj.dateStart).ToShortDateString(), true);
+            builder.AddField("endDate:", UnixTimeStampToDateTime(eventObj.dateEnd).ToShortDateString(), true);
             builder.AddField("\u200b", "\u200b", true);
             builder.AddField("prize pool:", eventObj.prizePool, true);
             builder.AddField("location:", eventObj.location.name, true);
@@ -302,12 +301,11 @@ namespace HLTVDiscordBridge.Modules
         }
         public static Embed GetEventStartedEmbed(FullEvent eventObj)
         {
-            File.WriteAllText("./cache/test.json", JObject.FromObject(eventObj).ToString());
             EmbedBuilder builder = new();
             if (eventObj == null) { return null; }
             builder.WithTitle($"{eventObj.name} just started!");
-            builder.AddField("startdate:", UnixTimeStampToDateTime(eventObj.dateStart).ToShortDateString(), true);
-            builder.AddField("enddate:", UnixTimeStampToDateTime(eventObj.dateEnd).ToShortDateString(), true);
+            builder.AddField("startDate:", UnixTimeStampToDateTime(eventObj.dateStart).ToShortDateString(), true);
+            builder.AddField("endDate:", UnixTimeStampToDateTime(eventObj.dateEnd).ToShortDateString(), true);
             builder.AddField("\u200b", "\u200b", true);
             builder.AddField("prize pool:", eventObj.prizePool, true);
             builder.AddField("location:", eventObj.location.name, true);
