@@ -134,10 +134,10 @@ namespace HLTVDiscordBridge.Modules
             properties.Add("startDate");
             properties.Add("endDate");
 
-            DateTime date = DateTime.Now.AddDays(-32);
-            string startMonth = date.AddMonths(1).Month.ToString();
-            string startDay = date.Day.ToString();
-            string endMonth = DateTime.Now.AddMonths(1).Month.ToString();
+            DateTime date = DateTime.Now;
+            string startMonth = date.AddDays(-32).Month.ToString();
+            string startDay = date.AddDays(-32).Day.ToString();
+            string endMonth = DateTime.Now.Month.ToString();
             string endDay = DateTime.Now.Day.ToString();
             if (startMonth.Length == 1)
                 startMonth = $"0{startMonth}";
@@ -147,7 +147,7 @@ namespace HLTVDiscordBridge.Modules
                 endMonth = $"0{endMonth}";
             if (endDay.Length == 1)
                 endDay = $"0{endDay}";
-            values.Add($"{date.Year}-{startMonth}-{startDay}");
+            values.Add($"{date.AddDays(-32).Year}-{startMonth}-{startDay}");
             values.Add($"{DateTime.Now.Year}-{endMonth}-{endDay}");
 
             var req = await Tools.RequestApiJArray("getPastEvents", properties, values);
