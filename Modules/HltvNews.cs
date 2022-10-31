@@ -111,12 +111,18 @@ namespace HLTVDiscordBridge.Modules
                     ServerConfig config = Config.GetServerConfig(channel);
                     if(config.NewsOutput)
                     {
-                        try { 
+                        try
+                        {
                             await channel.SendMessageAsync(embed: embed);
                             StatsUpdater.StatsTracker.MessagesSent += 1;
                             StatsUpdater.UpdateStats();
                         }
-                        catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); continue; }
+                        catch (Discord.Net.HttpException)
+                        {
+                            Program.WriteLog($"not enough permission in channel {channel}");
+                            continue;
+                        }
+                        catch (Exception e) {Program.WriteLog(e.ToString());}
                     }
                 }                
             }

@@ -36,6 +36,7 @@ namespace HLTVDiscordBridge.Modules
                                     StatsUpdater.UpdateStats();
                                 }
                                 catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); continue; }
+                                catch (Exception e) {Program.WriteLog(e.ToString());}
                             }
                         }
                     }
