@@ -94,7 +94,7 @@ namespace HLTVDiscordBridge.Modules
                 MatchResult oldResult = new(jObj);
                 oldResults.Add(oldResult);
             }
-
+/*
             if (newResults.First().id == oldResults.First().id) { return null; }
             else { File.WriteAllText("./cache/results/results.json", JArray.FromObject(newResults).ToString()); }
 
@@ -107,8 +107,32 @@ namespace HLTVDiscordBridge.Modules
                     if(newResult.id == oldResult.id) { isOld = true; break; }
                 }
                 if(!isOld) { results.Add(newResult); }
-            }
+            }*/
+            List<MatchResult> results = new();
+            var found = false;
+            foreach (var newResult in newResults)
+            {
+                foreach (var oldResult in oldResults)
+                {
+                    if (newResult.id == oldResult.id)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
 
+                if (!found)
+                {
+                    results.Add(newResult);
+                    found = false;
+                }
+
+            }
+            if (results.Any())
+            {
+                return null;
+            }
+            File.WriteAllText("./cache/results/results.json", JArray.FromObject(newResults).ToString());
             return results;
         }
         private static Embed GetResultEmbed(MatchResult matchResult, Match match)
