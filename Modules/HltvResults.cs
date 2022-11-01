@@ -107,9 +107,9 @@ namespace HLTVDiscordBridge.Modules
                 if(!isOld) { results.Add(newResult); }
             }*/
             List<MatchResult> results = new();
-            var found = false;
             foreach (var newResult in newResults)
             {
+                var found = false;
                 foreach (var oldResult in oldResults)
                 {
                     if (newResult.id == oldResult.id)
@@ -123,8 +123,6 @@ namespace HLTVDiscordBridge.Modules
                 {
                     results.Add(newResult);
                 }
-                found = false;
-
             }
             if (!results.Any())
             {
