@@ -124,11 +124,11 @@ namespace HLTVDiscordBridge.Modules
                 if (!found)
                 {
                     results.Add(newResult);
-                    found = false;
                 }
+                found = false;
 
             }
-            if (results.Any())
+            if (!results.Any())
             {
                 return null;
             }
