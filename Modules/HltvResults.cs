@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Rest;
 using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
 using Newtonsoft.Json.Linq;
@@ -20,7 +18,7 @@ namespace HLTVDiscordBridge.Modules
             eventIds.Add(eventId);
             return await GetMatchResultsOfEvent(eventIds);
         }
-        public static async Task<List<MatchResult>> GetMatchResultsOfEvent(List<uint> eventIds)
+        private static async Task<List<MatchResult>> GetMatchResultsOfEvent(List<uint> eventIds)
         {
             List<string> eventIdsString = new();
             foreach(uint eventId in eventIds)
@@ -55,7 +53,7 @@ namespace HLTVDiscordBridge.Modules
             }
             return results;
         }
-        public static async Task<List<MatchResult>> GetAllResults()
+        private static async Task<List<MatchResult>> GetAllResults()
         {
             List<string> properties = new();
             List<string> values = new();
@@ -82,7 +80,7 @@ namespace HLTVDiscordBridge.Modules
             
             return results;
         }
-        public static async Task<List<MatchResult>> GetNewMatchResults()
+        private static async Task<List<MatchResult>> GetNewMatchResults()
         {
             List<MatchResult> newResults = await GetAllResults();
 
@@ -226,7 +224,7 @@ namespace HLTVDiscordBridge.Modules
                     {
                         try
                         {
-                            RestUserMessage msg = await channel.SendMessageAsync(embed: GetResultEmbed(matchResult, newMatch), components: GetMessageComponent(newMatch));
+                            await channel.SendMessageAsync(embed: GetResultEmbed(matchResult, newMatch), components: GetMessageComponent(newMatch));
                            
                             StatsUpdater.StatsTracker.MessagesSent += 1;
                             StatsUpdater.UpdateStats();
@@ -268,10 +266,10 @@ namespace HLTVDiscordBridge.Modules
                 _ => arg[0].ToString().ToUpper() + arg.Substring(1),
             };
         }
-        public static string SpliceText(string text, int lineLength)
+        private static string SpliceText(string text, int lineLength)
         {
             var charCount = 0;
-            var lines = text.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)
+            var lines = text.Split(new [] { " " }, StringSplitOptions.RemoveEmptyEntries)
                             .GroupBy(w => (charCount += w.Length + 1) / lineLength)
                             .Select(g => string.Join(" ", g));
 
