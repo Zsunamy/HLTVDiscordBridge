@@ -4,10 +4,9 @@ using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
-using System.Xml;
 using HLTVDiscordBridge.Shared;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace HLTVDiscordBridge.Modules
@@ -18,11 +17,29 @@ namespace HLTVDiscordBridge.Modules
     {
         
         //official RSS Feed       
-        public static async Task<List<News>> GetNewNews()
+        private static async Task<List<News>> GetNewNews()
         {
-            if (!File.Exists("./cache/news/news.json")) { var fs = File.Create("./cache/news/news.json");  fs.Close(); }
-            var oldNewsJArray = JArray.Parse(File.ReadAllText("./cache/news/news.json"));
             List<News> latestNews = await GetLatestNews();
+            JArray oldNewsJArray = new();
+            if (!File.Exists("./cache/news/news.json")) { var fs = File.Create("./cache/news/news.json");  fs.Close(); }
+
+            try
+            {
+                oldNewsJArray = JArray.Parse(File.ReadAllText("./cache/news/news.json"));
+            }
+            catch (JsonReaderException ex)
+            {
+                File.WriteAllText("./cache/news/news.json", JArray.FromObject(latestNews).ToString());
+                return new List<News>();
+            }
+            catch (FileNotFoundException ex)
+            {
+                FileStream fs = File.Create("./cache/news/news.json");
+                fs.Close();
+                File.WriteAllText("./cache/news/news.json", JArray.FromObject(latestNews).ToString());
+                return new List<News>();
+            }
+            
             List<News> newsToSend = new();
             List<News> oldNews = new();
             foreach (var item in oldNewsJArray)
@@ -32,7 +49,7 @@ namespace HLTVDiscordBridge.Modules
             foreach (var newItem in latestNews)
             {
                 var found = false;
-                foreach (var oldItem in oldNews)
+                foreach (News oldItem in oldNews)
                 {
                     if (newItem.link == oldItem.link)
                     {
@@ -43,40 +60,17 @@ namespace HLTVDiscordBridge.Modules
                 if (!found) {newsToSend.Add(newItem);}
             }
             return newsToSend;
-
-            /*HttpClient http = new();
-            HttpRequestMessage req = new();
-            req.RequestUri = new Uri("https://www.hltv.org/rss/news");
-            req.Headers.Add("User-Agent", "curl/7.54.0");
-            HttpResponseMessage res = await http.SendAsync(req);
-            string result = await res.Content.ReadAsStringAsync();
-
-            if (!File.Exists("./cache/news/news.xml")) { var fs = File.Create("./cache/news/news.xml");  fs.Close(); }
-            if (File.ReadAllText("./cache/news/news.xml") == result) { return null; }
-
-            File.WriteAllText("./cache/news/news.xml", result);
-
-            XmlDocument doc = new();
-            doc.Load("./cache/news/news.xml");
-            XmlNodeList nodes = doc.GetElementsByTagName("item");
-            XmlNodeList latestNews = nodes[0].ChildNodes;
-            News news = new(latestNews);           
-            
-            return news;*/
         }
 
         private static async Task<List<News>> GetLatestNews()
         {
-            //Console.Write("requesting news");
-            var newNews =  await Tools.RequestApiJArray("getRssNews", new List<string>(), new List<string>());
-            //Console.Write(newNews);
+            JArray newNews =  await Tools.RequestApiJArray("getRssNews", new List<string>(), new List<string>());
             List<News> newsList = new();
-            foreach (var news in newNews)
+            foreach (JToken news in newNews)
             {
                 newsList.Add(new News(JObject.FromObject(news)));
             }
-
-            File.WriteAllText("./cache/news/news.json", JArray.FromObject(newNews).ToString());
+            
             return newsList;
         }
 
@@ -120,7 +114,6 @@ namespace HLTVDiscordBridge.Modules
                         catch (Discord.Net.HttpException)
                         {
                             Program.WriteLog($"not enough permission in channel {channel}");
-                            continue;
                         }
                         catch (Exception e) {Program.WriteLog(e.ToString());}
                     }

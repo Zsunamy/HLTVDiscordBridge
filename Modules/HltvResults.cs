@@ -27,7 +27,7 @@ namespace HLTVDiscordBridge.Modules
             }
             List<List<string>> values = new(); values.Add(eventIdsString);
             List<string> properties = new(); properties.Add("eventIds");
-            var req = await Tools.RequestApiJArray("getResults", properties, values);
+            JArray req = await Tools.RequestApiJArray("getResults", properties, values);
 
             List<MatchResult> matchResults = new();
             foreach(JToken matchResult in req)
@@ -58,17 +58,12 @@ namespace HLTVDiscordBridge.Modules
             List<string> properties = new();
             List<string> values = new();
             properties.Add("startDate"); properties.Add("endDate");
-            string startMonth = DateTime.UtcNow.AddDays(-1).Month.ToString().Length == 1 ? $"0{DateTime.UtcNow.AddDays(-1).Month}" : DateTime.UtcNow.AddDays(-1).Month.ToString();
-            string startDay = DateTime.UtcNow.AddDays(-1).Day.ToString().Length == 1 ? $"0{DateTime.UtcNow.AddDays(-1).Day}" : DateTime.UtcNow.AddDays(-1).Day.ToString();
-            string endMonth = DateTime.UtcNow.Month.ToString().Length == 1 ? $"0{DateTime.UtcNow.Month}" : DateTime.UtcNow.Month.ToString();
-            string endDay = DateTime.UtcNow.Day.ToString().Length == 1 ? $"0{DateTime.UtcNow.Day}" : DateTime.UtcNow.Day.ToString();
-            string startDate = $"{DateTime.UtcNow.Year}-{startMonth}-{startDay}";
-            string endDate = $"{DateTime.UtcNow.Year}-{endMonth}-{endDay}";
+            string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddDays(-2));
+            string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
             values.Add(startDate); values.Add(endDate);
 
             var req = await Tools.RequestApiJArray("getResults", properties, values);
-
-            Directory.CreateDirectory("./archive/results");
+            
             Directory.CreateDirectory("./cache/results");
 
             List<MatchResult> results = new();
@@ -85,27 +80,13 @@ namespace HLTVDiscordBridge.Modules
             List<MatchResult> newResults = await GetAllResults();
 
             List<MatchResult> oldResults = new();
-            JArray oldResultsJArray = JArray.Parse(File.ReadAllText("./cache/results/results.json"));
+            var oldResultsJArray = JArray.Parse(File.ReadAllText("./cache/results/results.json"));
             foreach (JToken jToken in oldResultsJArray)
             {
                 JObject jObj = JObject.Parse(jToken.ToString());
                 MatchResult oldResult = new(jObj);
                 oldResults.Add(oldResult);
             }
-/*
-            if (newResults.First().id == oldResults.First().id) { return null; }
-            else { File.WriteAllText("./cache/results/results.json", JArray.FromObject(newResults).ToString()); }
-
-            List<MatchResult> results = new();
-            foreach(MatchResult newResult in newResults)
-            {
-                bool isOld = false;
-                foreach (MatchResult oldResult in oldResults)
-                {
-                    if(newResult.id == oldResult.id) { isOld = true; break; }
-                }
-                if(!isOld) { results.Add(newResult); }
-            }*/
             List<MatchResult> results = new();
             foreach (var newResult in newResults)
             {

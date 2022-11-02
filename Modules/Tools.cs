@@ -18,8 +18,8 @@ namespace HLTVDiscordBridge.Modules
         {
             EmbedFooterBuilder builder = new();
             string[] footerStrings = File.ReadAllText("./cache/footer.txt").Split("\n");
-            Random _rnd = new();
-            string footerString = footerStrings[_rnd.Next(0, footerStrings.Length)];
+            Random random = new();
+            string footerString = footerStrings[random.Next(0, footerStrings.Length)];
             builder.Text = footerString;
             return builder;
         }
@@ -158,6 +158,23 @@ namespace HLTVDiscordBridge.Modules
                 }
                 catch (JsonReaderException) { throw new Exception("Deployment Error"); }
             }
+        }
+
+        public static string GetHltvTimeFormat(DateTime date)
+        {
+            string day = date.Day.ToString();
+            string month = date.Month.ToString();
+            if (day.Length == 1)
+            {
+                day = $"0{day}";
+            }
+            
+            if (month.Length == 1)
+            {
+                month = $"0{month}";
+            }
+
+            return $"{date.Year.ToString()}-{month}-{day}";
         }
     }
 }
