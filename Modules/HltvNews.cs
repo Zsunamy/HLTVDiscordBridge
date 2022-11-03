@@ -20,8 +20,8 @@ namespace HLTVDiscordBridge.Modules
         private static async Task<List<News>> GetNewNews()
         {
             List<News> latestNews = await GetLatestNews();
-            JArray oldNewsJArray = new();
-            if (!File.Exists("./cache/news/news.json")) { var fs = File.Create("./cache/news/news.json");  fs.Close(); }
+            JArray oldNewsJArray;
+            // if (!File.Exists("./cache/news/news.json")) { var fs = File.Create("./cache/news/news.json");  fs.Close(); }
 
             try
             {
@@ -40,13 +40,15 @@ namespace HLTVDiscordBridge.Modules
                 return new List<News>();
             }
             
+            File.WriteAllText("./cache/news/news.json", JArray.FromObject(latestNews).ToString());
+            
             List<News> newsToSend = new();
             List<News> oldNews = new();
             foreach (var item in oldNewsJArray)
             {
                 oldNews.Add(new News(JObject.FromObject(item)));
             }
-            foreach (var newItem in latestNews)
+            foreach (News newItem in latestNews)
             {
                 var found = false;
                 foreach (News oldItem in oldNews)
@@ -57,7 +59,11 @@ namespace HLTVDiscordBridge.Modules
                         break;
                     }
                 }
-                if (!found) {newsToSend.Add(newItem);}
+
+                if (!found)
+                {
+                    newsToSend.Add(newItem);
+                }
             }
             return newsToSend;
         }
