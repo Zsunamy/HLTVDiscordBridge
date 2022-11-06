@@ -115,7 +115,16 @@ namespace HLTVDiscordBridge.Modules
         private static Embed GetResultEmbed(MatchResult matchResult, Match match)
         {
             EmbedBuilder builder = new();
-            builder.WithTitle($"{match.team1.name} vs. {match.team2.name}")
+            string title;
+            if (match.winnerTeam.name == match.team1.name)
+            {
+                title = $"👑 {match.team1.name} vs. {match.team2.name}";
+            }
+            else
+            {
+                title = $"{match.team1.name} vs. {match.team2.name} 👑";
+            }
+            builder.WithTitle(title)
                 .WithColor(Color.Red)
                 .AddField("event:", $"[{match.eventObj.name}]({match.eventObj.link})\n{match.significance}")
                 .AddField("winner:", $"[{match.winnerTeam.name}]({match.winnerTeam.link})", true)
