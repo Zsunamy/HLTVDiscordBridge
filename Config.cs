@@ -459,7 +459,9 @@ namespace HLTVDiscordBridge
                 if (collection.Find(x => x.GuildID == guild.Id).CountDocuments() == 0)
                 {
                     //await guild.LeaveAsync();
-                    Console.WriteLine($"Would have left: {guild.Name}");
+                    //Console.WriteLine($"Would have left: {guild.Name}");
+                    Console.WriteLine($"found guild {guild.Name} with no config. Creating default.");
+                    await Program.GetInstance().GuildJoined(guild);
                 }
             }
         }

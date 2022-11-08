@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,12 +22,27 @@ namespace HLTVDiscordBridge
 {
     class Program
     {
-        static void Main(string[] args) => new Program().RunBotAsync().GetAwaiter().GetResult();
+        static void Main(string[] args)
+        {
+            GetInstance().RunBotAsync().GetAwaiter().GetResult();
+        }
+
+        private static Program _instance = null;
         private DiscordSocketClient _client;
         private IServiceProvider _services;
         private ConfigClass _botconfig;
         SlashCommands _commands;
 
+        public static Program GetInstance()
+        {
+            if (Program._instance == null)
+            {
+                Program._instance = new Program();
+            }
+
+            return Program._instance;
+        }
+        
         public async Task RunBotAsync()
         {
             DiscordSocketConfig _config = new() { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites };
@@ -125,7 +141,7 @@ namespace HLTVDiscordBridge
             return Task.CompletedTask;
         }
 
-        private async Task GuildJoined(SocketGuild guild)
+        public async Task GuildJoined(SocketGuild guild)
         {
             StatsUpdater.StatsTracker.Servercount = _client.Guilds.Count;
             StatsUpdater.UpdateStats();
