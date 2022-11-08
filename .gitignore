@@ -9,3 +9,5 @@ Properties/
 .idea
 obj/
 Folder.DotSettings
+bin/
+.vscode/
