@@ -136,20 +136,10 @@ namespace HLTVDiscordBridge.Modules
             properties.Add("endDate");
 
             DateTime date = DateTime.Now;
-            string startMonth = date.AddDays(-32).Month.ToString();
-            string startDay = date.AddDays(-32).Day.ToString();
-            string endMonth = DateTime.Now.Month.ToString();
-            string endDay = DateTime.Now.Day.ToString();
-            if (startMonth.Length == 1)
-                startMonth = $"0{startMonth}";
-            if (startDay.Length == 1)
-                startDay = $"0{startDay}";
-            if (endMonth.Length == 1)
-                endMonth = $"0{endMonth}";
-            if (endDay.Length == 1)
-                endDay = $"0{endDay}";
-            values.Add($"{date.AddDays(-32).Year}-{startMonth}-{startDay}");
-            values.Add($"{DateTime.Now.Year}-{endMonth}-{endDay}");
+            string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddMonths(-1));
+            string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
+            values.Add(startDate);
+            values.Add(startDate);
 
             var req = await Tools.RequestApiJArray("getPastEvents", properties, values);
 
@@ -218,6 +208,7 @@ namespace HLTVDiscordBridge.Modules
                     if (newPastEvent.id == oldPastEvent.id)
                     {
                         started = false;
+                        break;
                     }
                 }
                 if (started)
@@ -254,7 +245,7 @@ namespace HLTVDiscordBridge.Modules
             values.Add(eventName);
             try
             {
-                var req = await Tools.RequestApiJObject("getEventByName", properties, values);
+                JObject req = await Tools.RequestApiJObject("getEventByName", properties, values);
                 return new FullEvent(req);
             }
             catch (HltvApiException) { throw; }

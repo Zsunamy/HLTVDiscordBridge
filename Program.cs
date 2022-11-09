@@ -1,21 +1,13 @@
 ﻿using Discord;
-using Discord.Commands;
-using Discord.Net;
 using Discord.WebSocket;
 using HLTVDiscordBridge.Modules;
 using HLTVDiscordBridge.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
-using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Net.Http;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge
@@ -27,7 +19,7 @@ namespace HLTVDiscordBridge
             GetInstance().RunBotAsync().GetAwaiter().GetResult();
         }
 
-        private static Program _instance = null;
+        private static Program _instance;
         private DiscordSocketClient _client;
         private IServiceProvider _services;
         private ConfigClass _botconfig;
@@ -35,9 +27,9 @@ namespace HLTVDiscordBridge
 
         public static Program GetInstance()
         {
-            if (Program._instance == null)
+            if (_instance == null)
             {
-                Program._instance = new Program();
+                _instance = new Program();
             }
 
             return Program._instance;
