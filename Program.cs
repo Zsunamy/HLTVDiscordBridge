@@ -9,6 +9,8 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Discord.Webhook;
+using MongoDB.Driver.Core.Events;
 
 namespace HLTVDiscordBridge
 {
@@ -85,7 +87,7 @@ namespace HLTVDiscordBridge
         private async Task Ready()
         {
             await Config.ServerconfigStartUp(_client);
-            await BgTask();     
+            await BgTask();
         }
 
         private Task ButtonExecuted(SocketMessageComponent arg)
@@ -194,5 +196,18 @@ namespace HLTVDiscordBridge
             WriteLog(arg.ToString().Split("     ")[0] + "\t" + arg.ToString().Split("     ")[1]);
             return Task.CompletedTask;
         }
+    }
+
+    public class Webhooktest
+    {
+        private ulong ApplicationId = 808286523265908776;
+        public static void SendMessage()
+        {
+            string webhookUrl =
+                "https://discord.com/api/webhooks/1040046991050289202/ruqNtKAqoq30-MiGigxjGDN2swA7kuXb8SRr6IVXREGvPfNxZTqWwA_6XkC-STGDrl0B";
+            DiscordWebhookClient client = new(webhookUrl);
+            client.SendMessageAsync("test");
+        }
+        
     }
 }

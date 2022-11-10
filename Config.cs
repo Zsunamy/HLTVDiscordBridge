@@ -11,6 +11,10 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
+using Discord.Rest;
+using Discord.Webhook;
 
 namespace HLTVDiscordBridge
 {
@@ -34,6 +38,7 @@ namespace HLTVDiscordBridge
         public ushort MinimumStars { get; set; }
         public bool OnlyFeaturedEvents { get; set; }
         public string Prefix { get; set; }
+        public ulong WebhookId { get; set; }
         public bool NewsOutput { get; set; }
         public bool ResultOutput { get; set; }
         public bool EventOutput { get; set; }
@@ -313,7 +318,7 @@ namespace HLTVDiscordBridge
 
             SocketSlashCommandDataOption option = arg.Data.Options.First();
             string value = option.Options.First().Value.ToString();
-            switch (option.Name.ToString().ToLower())
+            switch (option.Name.ToLower())
             {
                 case "stars":
                     update = Builders<ServerConfig>.Update.Set(x => x.MinimumStars, ushort.Parse(value));

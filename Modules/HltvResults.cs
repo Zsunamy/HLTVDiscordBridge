@@ -4,8 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Rest;
+using Discord.Webhook;
 using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
+using MongoDB.Driver;
 using Newtonsoft.Json.Linq;
 
 namespace HLTVDiscordBridge.Modules
@@ -210,7 +213,25 @@ namespace HLTVDiscordBridge.Modules
                     ServerConfig config = Config.GetServerConfig(channel);
                     if (config.MinimumStars <= matchResult.stars && config.ResultOutput)
                     {
-                        try
+                        Task<RestWebhook> webhook = channel.GetWebhookAsync(config.WebhookId);
+                        
+                        if (webhook.Result == null)
+                        {
+                            webhook = channel.CreateWebhookAsync("HLTV", Stream.Null);
+                            if (webhook.Result.ApplicationId != null)
+                            {
+                                Builders<ServerConfig>.Update.Set(x => x.WebhookId,
+                                    ((ulong)webhook.Result.ApplicationId));
+                            }
+                               
+                        }
+
+                        DiscordWebhookClient webhookClient = new(webhook.Result.Id, webhook.Result.Token);
+                        // IEnumerable<Embed> embeds = new[] { GetResultEmbed(matchResult, newMatch) };
+                        webhookClient.SendMessageAsync(embeds: new[] { GetResultEmbed(matchResult, newMatch) },
+                            components: GetMessageComponent(newMatch));
+                        //
+                        /*try
                         {
                             await channel.SendMessageAsync(embed: GetResultEmbed(matchResult, newMatch), components: GetMessageComponent(newMatch));
                            
@@ -218,7 +239,7 @@ namespace HLTVDiscordBridge.Modules
                             StatsUpdater.UpdateStats();
                         }
                         catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); }
-                        catch (Exception e) {Program.WriteLog(e.ToString());}
+                        catch (Exception e) {Program.WriteLog(e.ToString());}*/
                     }
                 }
             }
