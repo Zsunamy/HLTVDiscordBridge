@@ -213,14 +213,14 @@ namespace HLTVDiscordBridge.Modules
                     ServerConfig config = Config.GetServerConfig(channel);
                     if (config.MinimumStars <= matchResult.stars && config.ResultOutput)
                     {
-                        Task<RestWebhook> webhook = channel.GetWebhookAsync(config.WebhookId);
+                        Task<RestWebhook> webhook = channel.GetWebhookAsync(config.ResultWebhookId);
                         
                         if (webhook.Result == null)
                         {
                             webhook = channel.CreateWebhookAsync("HLTV", Stream.Null);
                             if (webhook.Result.ApplicationId != null)
                             {
-                                Builders<ServerConfig>.Update.Set(x => x.WebhookId,
+                                Builders<ServerConfig>.Update.Set(x => x.ResultWebhookId,
                                     ((ulong)webhook.Result.ApplicationId));
                             }
                                
