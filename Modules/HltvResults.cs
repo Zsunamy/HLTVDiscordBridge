@@ -217,18 +217,23 @@ namespace HLTVDiscordBridge.Modules
                         
                         if (webhook.Result == null)
                         {
-                            webhook = channel.CreateWebhookAsync("HLTV", Stream.Null);
-                            if (webhook.Result.ApplicationId != null)
+                            try
                             {
-                                Builders<ServerConfig>.Update.Set(x => x.ResultWebhookId,
-                                    ((ulong)webhook.Result.ApplicationId));
+                                webhook = channel.CreateWebhookAsync("HLTV", Stream.Null);
+                                UpdateDefinition<ServerConfig> update =
+                                    Builders<ServerConfig>.Update.Set(x => x.ResultWebhookId,
+                                        (ulong)webhook.Result.ApplicationId);
+                                await Config.GetCollection().UpdateOneAsync(x => x.GuildID == channel.Guild.Id, update);
                             }
-                               
+                            catch (System.AggregateException e)
+                            {
+                                Console.WriteLine("max webhooks occured");
+                            }
                         }
 
                         DiscordWebhookClient webhookClient = new(webhook.Result.Id, webhook.Result.Token);
                         // IEnumerable<Embed> embeds = new[] { GetResultEmbed(matchResult, newMatch) };
-                        webhookClient.SendMessageAsync(embeds: new[] { GetResultEmbed(matchResult, newMatch) },
+                        await webhookClient.SendMessageAsync(embeds: new[] { GetResultEmbed(matchResult, newMatch) },
                             components: GetMessageComponent(newMatch));
                         //
                         /*try

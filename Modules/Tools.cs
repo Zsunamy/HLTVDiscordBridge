@@ -176,5 +176,10 @@ namespace HLTVDiscordBridge.Modules
 
             return $"{date.Year.ToString()}-{month}-{day}";
         }
+
+        public static int GetIdFromUrl(string url)
+        {
+            return int.Parse(url.Split('/')[^2]);
+        }
     }
 }

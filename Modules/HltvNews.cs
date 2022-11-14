@@ -44,7 +44,7 @@ namespace HLTVDiscordBridge.Modules
             
             List<News> newsToSend = new();
             List<News> oldNews = new();
-            foreach (var item in oldNewsJArray)
+            foreach (JToken item in oldNewsJArray)
             {
                 oldNews.Add(new News(JObject.FromObject(item)));
             }
@@ -53,7 +53,7 @@ namespace HLTVDiscordBridge.Modules
                 var found = false;
                 foreach (News oldItem in oldNews)
                 {
-                    if (newItem.link == oldItem.link)
+                    if (Tools.GetIdFromUrl(newItem.link) == Tools.GetIdFromUrl(oldItem.link))
                     {
                         found = true;
                         break;
