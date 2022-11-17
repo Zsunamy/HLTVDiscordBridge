@@ -1,10 +1,10 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Discord.Webhook;
 using HLTVDiscordBridge.Shared;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -50,7 +50,7 @@ namespace HLTVDiscordBridge.Modules
             }
             foreach (News newItem in latestNews)
             {
-                var found = false;
+                bool found = false;
                 foreach (News oldItem in oldNews)
                 {
                     if (Tools.GetIdFromUrl(newItem.link) == Tools.GetIdFromUrl(oldItem.link))
@@ -101,17 +101,20 @@ namespace HLTVDiscordBridge.Modules
         public static async Task SendNewNews(List<SocketTextChannel> channels)
         {
             List<News> newsToSend = await GetNewNews();
-            foreach (var news in newsToSend)
+            foreach (News news in newsToSend)
             {
                 StatsUpdater.StatsTracker.NewsSent += 1;
                 StatsUpdater.UpdateStats();
-                Embed embed = GetNewsEmbed(news);
                 foreach (SocketTextChannel channel in channels)
                 {
                     ServerConfig config = Config.GetServerConfig(channel);
-                    if(config.NewsOutput)
+                    if (config.NewsWebhookId != 0)
                     {
-                        try
+                        DiscordWebhookClient webhookClient = new(config.ResultWebhookId, config.EventWebhookToken);
+                        await webhookClient.SendMessageAsync(embeds: new[] { GetNewsEmbed(news) });
+                        StatsUpdater.StatsTracker.MessagesSent += 1;
+                        StatsUpdater.UpdateStats();
+                        /*try
                         {
                             await channel.SendMessageAsync(embed: embed);
                             StatsUpdater.StatsTracker.MessagesSent += 1;
@@ -121,7 +124,7 @@ namespace HLTVDiscordBridge.Modules
                         {
                             Program.WriteLog($"not enough permission in channel {channel}");
                         }
-                        catch (Exception e) {Program.WriteLog(e.ToString());}
+                        catch (Exception e) {Program.WriteLog(e.ToString());}*/
                     }
                 }                
             }

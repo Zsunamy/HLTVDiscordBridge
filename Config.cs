@@ -38,6 +38,9 @@ namespace HLTVDiscordBridge
         public ulong NewsWebhookId { get; set; }
         public ulong ResultWebhookId { get; set; }
         public ulong EventWebhookId { get; set; }
+        public string NewsWebhookToken { get; set; }
+        public string ResultWebhookToken { get; set; }
+        public string EventWebhookToken { get; set; }
         public ushort MinimumStars { get; set; }
         public bool OnlyFeaturedEvents { get; set; }
         public bool NewsOutput { get; set; }
@@ -47,16 +50,22 @@ namespace HLTVDiscordBridge
 
     public class Config : ModuleBase<SocketCommandContext>
     {
-        public static void InitAllConfigs()
+        public static async void InitAllWebhooks(DiscordSocketClient client)
         {
-            IMongoCollection<ServerConfig> collection = GetCollection();
-            XmlSerializer _xml = new(typeof(ServerConfig));
-            foreach(string file in Directory.GetFiles("./cache/serverconfig"))
+            List<ServerConfig> configs = (await GetCollection().FindAsync(_ => true)).ToList();
+            foreach (ServerConfig config in configs)
             {
-                FileStream fs = File.OpenRead(file);
-                var cfg = _xml.Deserialize(fs) as ServerConfig;
-                fs.Close();
-                collection.InsertOne(cfg);
+                Stream icon = new FileStream("icon.png", FileMode.Open);
+                IWebhook webhook = await ((SocketTextChannel)client.GetChannel(config.NewsChannelID)).CreateWebhookAsync("HLTV", icon);
+                UpdateDefinition<ServerConfig> update =
+                    Builders<ServerConfig>.Update
+                        .Set(x => x.ResultWebhookId, webhook.Id)
+                        .Set(x => x.ResultWebhookToken, webhook.Token)
+                        .Set(x => x.EventWebhookId, webhook.Id)
+                        .Set(x => x.EventWebhookToken, webhook.Token)
+                        .Set(x => x.NewsWebhookId, webhook.Id)
+                        .Set(x => x.NewsWebhookToken, webhook.Token);
+                await GetCollection().UpdateOneAsync(x => x.NewsChannelID == config.NewsChannelID, update);
             }
         }
         public static IMongoCollection<ServerConfig> GetCollection()
@@ -128,7 +137,7 @@ namespace HLTVDiscordBridge
 
             ServerConfig _cfg = GetServerConfig(Context.Guild);
 
-            if (!(Context.User as SocketGuildUser).GuildPermissions.Administrator)
+            if (!(Context.User as SocketGuildUser).GuildPermissions.ManageGuild)
             {
                 builder.WithTitle("error")
                     .WithColor(Color.Red)
@@ -297,17 +306,16 @@ namespace HLTVDiscordBridge
             {
                 builder.WithTitle("error")
                     .WithColor(Color.Red)
-                    .WithDescription("Please use this command only on guilds!")
+                    .WithDescription("This command is exclusive to guilds and cannot be used in DMs!")
                     .WithCurrentTimestamp();
                 await arg.ModifyOriginalResponseAsync(msg => msg.Embed = builder.Build());
                 return;
             }            
 
             IMongoCollection<ServerConfig> collection = GetCollection();
-
             UpdateDefinition<ServerConfig> update = null;
 
-            if (!(arg.User as SocketGuildUser).GuildPermissions.Administrator)
+            if (!(arg.User as SocketGuildUser).GuildPermissions.ManageGuild)
             {
                 builder.WithTitle("error")
                     .WithColor(Color.Red)
@@ -317,8 +325,10 @@ namespace HLTVDiscordBridge
                 return;
             }
 
+            ServerConfig config = GetServerConfig((arg.User as SocketGuildUser)?.Guild);
             SocketSlashCommandDataOption option = arg.Data.Options.First();
             string value = option.Options.First().Value.ToString();
+            
             switch (option.Name.ToLower())
             {
                 case "stars":

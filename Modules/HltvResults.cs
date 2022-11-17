@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -213,30 +214,11 @@ namespace HLTVDiscordBridge.Modules
                     ServerConfig config = Config.GetServerConfig(channel);
                     if (config.MinimumStars <= matchResult.stars && config.ResultOutput)
                     {
-                        Task<RestWebhook> webhook = channel.GetWebhookAsync(config.ResultWebhookId);
-                        
-                        if (webhook.Result == null)
-                        {
-                            try
-                            {
-                                webhook = channel.CreateWebhookAsync("HLTV", Stream.Null);
-                                UpdateDefinition<ServerConfig> update =
-                                    Builders<ServerConfig>.Update.Set(x => x.ResultWebhookId,
-                                        (ulong)webhook.Result.ApplicationId);
-                                await Config.GetCollection().UpdateOneAsync(x => x.GuildID == channel.Guild.Id, update);
-                            }
-                            catch (System.AggregateException e)
-                            {
-                                Console.WriteLine("max webhooks occured");
-                            }
-                        }
-
-                        DiscordWebhookClient webhookClient = new(webhook.Result.Id, webhook.Result.Token);
-                        // IEnumerable<Embed> embeds = new[] { GetResultEmbed(matchResult, newMatch) };
+                        DiscordWebhookClient webhookClient = new(config.ResultWebhookId, config.EventWebhookToken);
                         await webhookClient.SendMessageAsync(embeds: new[] { GetResultEmbed(matchResult, newMatch) },
-                            components: GetMessageComponent(newMatch));
-                        //
-                        /*try
+                                components: GetMessageComponent(newMatch));
+                        /*
+                        try
                         {
                             await channel.SendMessageAsync(embed: GetResultEmbed(matchResult, newMatch), components: GetMessageComponent(newMatch));
                            
