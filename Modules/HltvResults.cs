@@ -204,31 +204,14 @@ namespace HLTVDiscordBridge.Modules
 
             foreach(MatchResult matchResult in newMatchResults)
             {
-                StatsUpdater.StatsTracker.MatchesSent += 1;
-                StatsUpdater.UpdateStats();
 
                 Match newMatch = newMatches.ElementAt(newMatchResults.IndexOf(matchResult));
+                // ReSharper disable once PossibleInvalidOperationException
+                List<(ulong, string)> webhooks = (
+                    from config in await Config.GetServerConfigs(x => x.ResultWebhookId != null && x.MinimumStars <= matchResult.stars)
+                    select ((ulong)config.ResultWebhookId, config.ResultWebhookToken)).ToList();
 
-                foreach (SocketTextChannel channel in await Config.GetChannels(client))
-                {
-                    ServerConfig config = Config.GetServerConfig(channel);
-                    if (config.MinimumStars <= matchResult.stars && config.ResultOutput)
-                    {
-                        DiscordWebhookClient webhookClient = new(config.ResultWebhookId, config.EventWebhookToken);
-                        await webhookClient.SendMessageAsync(embeds: new[] { GetResultEmbed(matchResult, newMatch) },
-                                components: GetMessageComponent(newMatch));
-                        /*
-                        try
-                        {
-                            await channel.SendMessageAsync(embed: GetResultEmbed(matchResult, newMatch), components: GetMessageComponent(newMatch));
-                           
-                            StatsUpdater.StatsTracker.MessagesSent += 1;
-                            StatsUpdater.UpdateStats();
-                        }
-                        catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); }
-                        catch (Exception e) {Program.WriteLog(e.ToString());}*/
-                    }
-                }
+                await Tools.SendMessagesWithWebhook(webhooks, GetResultEmbed(matchResult, newMatch),GetMessageComponent(newMatch));
             }
         }
         private static string GetFormatFromAcronym(string arg)

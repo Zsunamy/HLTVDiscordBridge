@@ -11,6 +11,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Http;
 using System.Text;
 using Discord.Rest;
@@ -35,9 +36,9 @@ namespace HLTVDiscordBridge
         public ObjectId Id { get; set; }
         public ulong GuildID { get; set; }
         public ulong NewsChannelID { get; set; }
-        public ulong NewsWebhookId { get; set; }
-        public ulong ResultWebhookId { get; set; }
-        public ulong EventWebhookId { get; set; }
+        public ulong? NewsWebhookId { get; set; }
+        public ulong? ResultWebhookId { get; set; }
+        public ulong? EventWebhookId { get; set; }
         public string NewsWebhookToken { get; set; }
         public string ResultWebhookToken { get; set; }
         public string EventWebhookToken { get; set; }
@@ -84,7 +85,7 @@ namespace HLTVDiscordBridge
             IMongoCollection<ServerConfig> collection = GetCollection();
             return collection.Find(x => x.GuildID == guild.Id).First();
         }
-        public static async Task<List<SocketTextChannel>> GetChannels(DiscordSocketClient client)
+        public static async Task<List<SocketTextChannel>> GetChannelsLegacy(DiscordSocketClient client)
         {
             List<SocketTextChannel> channels = new();
             IMongoCollection<ServerConfig> collection = GetCollection();
@@ -98,6 +99,11 @@ namespace HLTVDiscordBridge
                 }
             }
             return channels;
+        }
+        
+        public static async Task<List<ServerConfig>> GetServerConfigs(Expression<Func<ServerConfig, bool>> filter)
+        {
+            return (await GetCollection().FindAsync(filter)).ToList();
         }
 
         /// <summary>

@@ -9,6 +9,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Discord.Webhook;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -180,6 +181,24 @@ namespace HLTVDiscordBridge.Modules
         public static int GetIdFromUrl(string url)
         {
             return int.Parse(url.Split('/')[^2]);
+        }
+
+        public static Task SendMessagesWithWebhook(List<(ulong, string)> webhooks, Embed embed, MessageComponent component)
+        {
+            List<Task<ulong>> status = new();
+            foreach ((ulong id, string token) in webhooks)
+            {
+                status.Add(Task.Run(()=>
+                {
+                    //TODO check if webhook is valid and has not been deleted
+                    DiscordWebhookClient webhookClient = new(id, token);
+                    webhookClient.SendMessageAsync(embeds: new[] { embed }, components: component);
+                    return webhookClient.SendMessageAsync(embeds: new[] { embed }, components: component);;
+                }));
+            }
+            StatsUpdater.StatsTracker.MessagesSent += webhooks.Count;
+            StatsUpdater.UpdateStats();
+            return Task.WhenAll(status);
         }
     }
 }

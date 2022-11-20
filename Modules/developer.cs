@@ -34,7 +34,7 @@ namespace HLTVDiscordBridge.Modules
             await arg.DeferAsync();
             EmbedBuilder builder = new();
 
-            List<SocketTextChannel> channels = await Config.GetChannels(client);
+            List<SocketTextChannel> channels = await Config.GetChannelsLegacy(client);
 
             foreach (SocketTextChannel channel in channels)
             {

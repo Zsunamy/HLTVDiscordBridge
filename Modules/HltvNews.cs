@@ -108,9 +108,9 @@ namespace HLTVDiscordBridge.Modules
                 foreach (SocketTextChannel channel in channels)
                 {
                     ServerConfig config = Config.GetServerConfig(channel);
-                    if (config.NewsWebhookId != 0)
+                    if (config.NewsWebhookId != null)
                     {
-                        DiscordWebhookClient webhookClient = new(config.ResultWebhookId, config.EventWebhookToken);
+                        DiscordWebhookClient webhookClient = new((ulong)config.NewsWebhookId, config.NewsWebhookToken);
                         await webhookClient.SendMessageAsync(embeds: new[] { GetNewsEmbed(news) });
                         StatsUpdater.StatsTracker.MessagesSent += 1;
                         StatsUpdater.UpdateStats();
