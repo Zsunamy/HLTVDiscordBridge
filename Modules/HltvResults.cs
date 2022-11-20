@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Rest;
-using Discord.Webhook;
 using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
-using MongoDB.Driver;
 using Newtonsoft.Json.Linq;
 
 namespace HLTVDiscordBridge.Modules
@@ -191,7 +187,7 @@ namespace HLTVDiscordBridge.Modules
             
             return compBuilder.Build();
         }
-        public static async Task SendNewResults(DiscordSocketClient client)
+        public static async Task SendNewResults()
         {
             List<MatchResult> newMatchResults = await GetNewMatchResults();
             if (newMatchResults == null) { return; }

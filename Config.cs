@@ -12,8 +12,6 @@ using MongoDB.Driver;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Net.Http;
-using System.Text;
 using Discord.Rest;
 using Discord.Webhook;
 
@@ -68,6 +66,46 @@ namespace HLTVDiscordBridge
                         .Set(x => x.NewsWebhookToken, webhook.Token);
                 await GetCollection().UpdateOneAsync(x => x.NewsChannelID == config.NewsChannelID, update);
             }
+        }
+
+        public static async Task<bool> SetWebhook(bool enable, Expression<Func<ServerConfig, ulong?>> filterId, Expression<Func<ServerConfig, string>> filterToken , SocketTextChannel channel, ulong? guildId)
+        {
+            ServerConfig config = GetCollection().FindSync(x => x.GuildID == guildId).ToList().First();
+            ulong? oldWebhookId = filterId.Compile()(config);
+            string oldWebhookToken = filterToken.Compile()(config);
+            ulong? updatedWebhookId = oldWebhookId;
+            string updatedWebhookToken = oldWebhookToken;
+            if (enable)
+            {
+                (ulong id, string token)? newWebhook = await Tools.CheckChannelForWebhook(channel, config);
+                switch (oldWebhookId)
+                {
+                    case null when newWebhook == null:
+                        Stream icon = new FileStream("icon.png", FileMode.Open);
+                        IWebhook webhook = await channel.CreateWebhookAsync("HLTV", icon);
+                        updatedWebhookId = webhook.ApplicationId;
+                        updatedWebhookToken = webhook.Token;
+                        break;
+                    case null:
+                        updatedWebhookId = newWebhook.Value.id;
+                        updatedWebhookToken = newWebhook.Value.token;
+                        break;
+                }
+            }
+            else
+            {
+                if (oldWebhookId != null && !Tools.CheckIfWebhookIsUsed((ulong)oldWebhookId, config))
+                {
+                    DiscordWebhookClient client = new((ulong)oldWebhookId, oldWebhookToken);
+                    await client.DeleteWebhookAsync();
+                }
+                updatedWebhookId = null;
+                updatedWebhookToken = "";
+            }
+            UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(filterId, updatedWebhookId);
+            update.Set(filterToken, updatedWebhookToken);
+            await GetCollection().UpdateOneAsync(x => x.Id == config.Id, update);
+            return enable;
         }
         public static IMongoCollection<ServerConfig> GetCollection()
         {
@@ -166,7 +204,7 @@ namespace HLTVDiscordBridge
             {
                 builder.WithTitle("syntax error")
                     .WithColor(Color.Red)
-                    .WithDescription($"You can't change {option} to nothing! Please use a valid state: /set [option] [new state]!")
+                    .WithDescription($"Unable change {option} to nothing! Please use a valid state: /set [option] [new state]!")
                     .WithCurrentTimestamp();
                 await ReplyAsync(embed: builder.Build());
                 return;
@@ -179,7 +217,7 @@ namespace HLTVDiscordBridge
                     case "minstars":
                         if (ushort.TryParse(arg, out ushort newStars))
                         {
-                            if (newStars >= 0 && newStars <= 5)
+                            if (newStars is >= 0 and <= 5)
                             {
                                 update = Builders<ServerConfig>.Update.Set(x => x.MinimumStars, newStars);
                                 builder.WithColor(Color.Green)
@@ -346,7 +384,9 @@ namespace HLTVDiscordBridge
                         .WithFooter(Tools.GetRandomFooter());
                     break;
                 case "results":
-                    update = Builders<ServerConfig>.Update.Set(x => x.ResultOutput, bool.Parse(value));
+                    // update = Builders<ServerConfig>.Update.Set(x => x.ResultOutput, bool.Parse(value));
+                    await SetWebhook(bool.Parse(value), x => x.ResultWebhookId, x => x.ResultWebhookToken,
+                        (SocketTextChannel)(arg.Channel), arg.GuildId);
                     builder.WithColor(Color.Green)
                         .WithTitle("SUCCESS")
                         .WithDescription($"You successfully changed the automatic result output to `{value}`")
@@ -378,8 +418,7 @@ namespace HLTVDiscordBridge
                         .WithCurrentTimestamp()
                         .WithFooter(Tools.GetRandomFooter());
                     break;
-            }                        
-            
+            }
             await collection.UpdateOneAsync(x => x.GuildID == (arg.User as SocketGuildUser).Guild.Id, update);
             await arg.ModifyOriginalResponseAsync(msg => msg.Embed = builder.Build());
         }
@@ -480,10 +519,10 @@ namespace HLTVDiscordBridge
             
         }
 
-        public static async Task ServerconfigStartUp(DiscordSocketClient client)
+        public static async Task ServerConfigStartUp(DiscordSocketClient client)
         {
             IMongoCollection<ServerConfig> collection = GetCollection();
-            foreach(SocketGuild guild in client.Guilds)
+            foreach (SocketGuild guild in client.Guilds)
             {
                 if (collection.Find(x => x.GuildID == guild.Id).CountDocuments() == 0)
                 {
@@ -493,17 +532,6 @@ namespace HLTVDiscordBridge
                     await Program.GetInstance().GuildJoined(guild);
                 }
             }
-        }
-        public static async Task<GuildEmote> GetEmote(DiscordSocketClient client)
-        {
-            foreach (SocketGuild guild in client.Guilds)
-            {
-                if (guild.Id == 748637221300732076)
-                {
-                    return await guild.GetEmoteAsync(809082404324114522);
-                }
-            }
-            return null;
         }
     }
 }

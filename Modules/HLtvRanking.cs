@@ -4,15 +4,13 @@ using Discord.WebSocket;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
 {
     public class HltvRanking : ModuleBase<SocketCommandContext>
     {
-        readonly static string[] months = { "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december" };
+        private static readonly string[] Months = { "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december" };
         
         public static async Task SendRanking(SocketSlashCommand cmd)
         {
@@ -33,7 +31,7 @@ namespace HLTVDiscordBridge.Modules
                     properties.Add("month");
                     properties.Add("day");
                     values.Add(lastMonday.Year.ToString());
-                    values.Add(months[lastMonday.Month - 1]);
+                    values.Add(Months[lastMonday.Month - 1]);
                     var day = lastMonday.Day.ToString().Length == 1 ? $"0{lastMonday.Day}" : lastMonday.Day.ToString();
                     values.Add(day);
                 }
@@ -50,7 +48,7 @@ namespace HLTVDiscordBridge.Modules
                 }
             }
 
-            JArray jArr = new();
+            JArray jArr;
             try
             {
                 jArr = await Tools.RequestApiJArray("getTeamRanking", properties, values);

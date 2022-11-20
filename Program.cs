@@ -9,14 +9,12 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Discord.Webhook;
-using MongoDB.Driver.Core.Events;
 
 namespace HLTVDiscordBridge
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main()
         {
             GetInstance().RunBotAsync().GetAwaiter().GetResult();
         }
@@ -34,7 +32,7 @@ namespace HLTVDiscordBridge
                 _instance = new Program();
             }
 
-            return Program._instance;
+            return _instance;
         }
         
         public async Task RunBotAsync()
@@ -69,7 +67,7 @@ namespace HLTVDiscordBridge
 
         private static Task SelectMenuExecuted(SocketMessageComponent arg)
         {
-            var handler = Task.Run(async () =>
+            Task handler = Task.Run(async () =>
             {
                 switch (arg.Data.CustomId)
                 {
@@ -86,14 +84,14 @@ namespace HLTVDiscordBridge
 
         private async Task Ready()
         {
-            await Config.ServerconfigStartUp(_client);
+            await Config.ServerConfigStartUp(_client);
             // Config.InitAllWebhooks(_client);
             await BgTask();
         }
 
         private Task ButtonExecuted(SocketMessageComponent arg)
         {
-            var handler = Task.Run(async () =>
+            Task handler = Task.Run(async () =>
             {
                 string matchLink = "";
                 Match match;
@@ -170,7 +168,7 @@ namespace HLTVDiscordBridge
                     try
                     {
                         Stopwatch watch = new(); watch.Start();
-                        await HltvResults.SendNewResults(_client);
+                        await HltvResults.SendNewResults();
                         WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
                         await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                         await HltvEvents.AktEvents(await Config.GetChannelsLegacy(_client));

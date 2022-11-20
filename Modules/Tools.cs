@@ -1,15 +1,16 @@
 ﻿using Discord;
-using Discord.WebSocket;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Discord.Rest;
 using Discord.Webhook;
+using Discord.WebSocket;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -199,6 +200,26 @@ namespace HLTVDiscordBridge.Modules
             StatsUpdater.StatsTracker.MessagesSent += webhooks.Count;
             StatsUpdater.UpdateStats();
             return Task.WhenAll(status);
+        }
+
+        public static bool CheckIfWebhookIsUsed(ulong webhookId, ServerConfig config)
+        {
+            return new[] { config.ResultWebhookId, config.NewsWebhookId, config.EventWebhookId }
+                .GroupBy(x => x).Any(g => g.Count() > 1 && g.Key == webhookId);
+        }
+
+        public static async Task<(ulong, string)?> CheckChannelForWebhook(SocketTextChannel channel, ServerConfig config)
+        {
+            (ulong?, string)[] webhooks = new[] { (config.ResultWebhookId, config.ResultWebhookToken),
+                (config.NewsWebhookId, config.NewsWebhookToken), (config.EventWebhookId, config.EventWebhookToken) };
+            foreach (RestWebhook webhook in await channel.GetWebhooksAsync())
+            {
+                if (webhooks.Contains((webhook.Id, webhook.Token)))
+                {
+                    return (webhook.Id, webhook.Token);
+                }
+            }
+            return null;
         }
     }
 }
