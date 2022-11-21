@@ -96,6 +96,7 @@ namespace HLTVDiscordBridge
             {
                 if (oldWebhookId != null && !Tools.CheckIfWebhookIsUsed((ulong)oldWebhookId, config))
                 {
+                    Console.WriteLine(oldWebhookId);
                     DiscordWebhookClient client = new((ulong)oldWebhookId, oldWebhookToken);
                     await client.DeleteWebhookAsync();
                 }
@@ -161,186 +162,6 @@ namespace HLTVDiscordBridge
 
 #region Commands
         [Command("set")]
-        public async Task ChangeServerConfig_legacy(string option = "", [Remainder]string arg = "")
-        {
-            EmbedBuilder builder = new();
-
-            IMongoCollection<ServerConfig> collection = GetCollection();
-
-            UpdateDefinition<ServerConfig> update = null;
-
-            if (Context.Channel.GetType().Equals(typeof(SocketDMChannel)))
-            {
-                builder.WithTitle("error")
-                    .WithColor(Color.Red)
-                    .WithDescription("Please use this command only on guilds!")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-
-            ServerConfig _cfg = GetServerConfig(Context.Guild);
-
-            if (!(Context.User as SocketGuildUser).GuildPermissions.ManageGuild)
-            {
-                builder.WithTitle("error")
-                    .WithColor(Color.Red)
-                    .WithDescription("You do not have enough permission to change the output-channel!")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            }
-            if(option == "")
-            {
-                builder.WithTitle("SYNTAX")
-                    .WithColor(Color.Green)
-                    .WithDescription($"You can change the following options by using /set [option] [new state]:")
-                    .AddField("options:", "`stars`\n`featuredevents`\n`prefix`\n`newsoutput`\n`resultoutput`\n`eventoutput`", true)
-                    .AddField("possible states:", "number between 0-5\ntrue/false\nany string\ntrue/false\ntrue/false\ntrue/false", true)
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            } else if(arg == "")
-            {
-                builder.WithTitle("syntax error")
-                    .WithColor(Color.Red)
-                    .WithDescription($"Unable change {option} to nothing! Please use a valid state: /set [option] [new state]!")
-                    .WithCurrentTimestamp();
-                await ReplyAsync(embed: builder.Build());
-                return;
-            } 
-            else
-            {
-                switch (option.ToLower())
-                {
-                    case "stars":
-                    case "minstars":
-                        if (ushort.TryParse(arg, out ushort newStars))
-                        {
-                            if (newStars is >= 0 and <= 5)
-                            {
-                                update = Builders<ServerConfig>.Update.Set(x => x.MinimumStars, newStars);
-                                builder.WithColor(Color.Green)
-                                    .WithTitle("SUCCESS")
-                                    .WithDescription($"You successfully changed the minimum stars to output a HLTV match to `{newStars}`")
-                                    .WithCurrentTimestamp()
-                                    .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                            }
-                            else
-                            {
-                                builder.WithColor(Color.Red)
-                                .WithTitle("error")
-                                .WithDescription($"{arg} is not valid! Please state a number between 0-5")
-                                .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                            }
-                        }
-                        else
-                        {
-                            builder.WithColor(Color.Red)
-                                .WithTitle("error")
-                                .WithDescription($"{arg} is not valid! Please state a number between 0-5")
-                                .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                        }
-                        break;
-                    case "featuredevents":
-                        if (bool.TryParse(arg, out bool featuredevents))
-                        {
-                            update = Builders<ServerConfig>.Update.Set(x => x.OnlyFeaturedEvents, featuredevents);
-                            string featured;
-                            if (featuredevents) { featured = "only featured events"; }
-                            else { featured = "all events"; }
-                            builder.WithColor(Color.Green)
-                                .WithTitle("SUCCESS")
-                                .WithDescription($"You successfully changed the automatic event output to `{featured}`")
-                                .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                        }
-                        else
-                        {
-                            builder.WithColor(Color.Red)
-                                .WithTitle("error")
-                                .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
-                                .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                        }
-                        break;
-                    case "news":
-                    case "newsoutput":
-                        if (bool.TryParse(arg, out bool newsoutput))
-                        {
-                            update = Builders<ServerConfig>.Update.Set(x => x.NewsOutput, newsoutput);
-                            builder.WithColor(Color.Green)
-                                .WithTitle("SUCCESS")
-                                .WithDescription($"You successfully changed the automatic news output to `{newsoutput}`")
-                                .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                        }
-                        else
-                        {
-                            builder.WithColor(Color.Red)
-                                .WithTitle("error")
-                                .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
-                                .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                        }
-                        break;
-                    case "result":
-                    case "results":
-                    case "resultoutput":
-                        if (bool.TryParse(arg, out bool resultoutput))
-                        {
-                            update = Builders<ServerConfig>.Update.Set(x => x.ResultOutput, resultoutput);
-                            builder.WithColor(Color.Green)
-                                .WithTitle("SUCCESS")
-                                .WithDescription($"You successfully changed the automatic result output to `{resultoutput}`")
-                                .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                        }
-                        else
-                        {
-                            builder.WithColor(Color.Red)
-                                .WithTitle("error")
-                                .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
-                                .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                        }
-                        break;
-                    case "event":
-                    case "events":
-                    case "eventoutput":
-                        if (bool.TryParse(arg, out bool eventoutput))
-                        {
-                            update = Builders<ServerConfig>.Update.Set(x => x.EventOutput, eventoutput);
-                            builder.WithColor(Color.Green)
-                                .WithTitle("SUCCESS")
-                                .WithDescription($"You successfully changed the automatic event output to `{eventoutput}`")
-                                .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                        }
-                        else
-                        {
-                            builder.WithColor(Color.Red)
-                                .WithTitle("error")
-                                .WithDescription($"{arg} is not valid! Please state a boolean value (true/false)")
-                                .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                        }
-                        break;
-                    default:
-                        builder.WithColor(Color.Red)
-                                .WithTitle("error")
-                                .WithDescription($"{option.ToLower()} is not valid! Please state one of the following options:\n`stars`\n`featuredevents`\n`prefix`\n" +
-                                $"`news`\n`results`\n`events`")
-                                .WithCurrentTimestamp()
-                                .WithFooter(Tools.GetRandomFooter(/*Context.Guild, Context.Client*/));
-                        break;
-                }
-            }
-            await collection.UpdateOneAsync(x => x.GuildID == Context.Guild.Id, update);
-            await ReplyAsync(embed: builder.Build());
-        }
 
         public static async Task ChangeServerConfig(SocketSlashCommand arg)
         {
@@ -355,8 +176,7 @@ namespace HLTVDiscordBridge
                 await arg.ModifyOriginalResponseAsync(msg => msg.Embed = builder.Build());
                 return;
             }            
-
-            IMongoCollection<ServerConfig> collection = GetCollection();
+            
             UpdateDefinition<ServerConfig> update = null;
 
             if (!(arg.User as SocketGuildUser).GuildPermissions.ManageGuild)
@@ -368,8 +188,7 @@ namespace HLTVDiscordBridge
                 await arg.ModifyOriginalResponseAsync(msg => msg.Embed = builder.Build());
                 return;
             }
-
-            ServerConfig config = GetServerConfig((arg.User as SocketGuildUser)?.Guild);
+            
             SocketSlashCommandDataOption option = arg.Data.Options.First();
             string value = option.Options.First().Value.ToString();
             
@@ -386,7 +205,7 @@ namespace HLTVDiscordBridge
                 case "results":
                     // update = Builders<ServerConfig>.Update.Set(x => x.ResultOutput, bool.Parse(value));
                     await SetWebhook(bool.Parse(value), x => x.ResultWebhookId, x => x.ResultWebhookToken,
-                        (SocketTextChannel)(arg.Channel), arg.GuildId);
+                        (SocketTextChannel)arg.Channel, arg.GuildId);
                     builder.WithColor(Color.Green)
                         .WithTitle("SUCCESS")
                         .WithDescription($"You successfully changed the automatic result output to `{value}`")
@@ -419,7 +238,11 @@ namespace HLTVDiscordBridge
                         .WithFooter(Tools.GetRandomFooter());
                     break;
             }
-            await collection.UpdateOneAsync(x => x.GuildID == (arg.User as SocketGuildUser).Guild.Id, update);
+
+            if (update != null)
+            {
+                await GetCollection().UpdateOneAsync(x => x.GuildID == arg.GuildId, update);
+            }
             await arg.ModifyOriginalResponseAsync(msg => msg.Embed = builder.Build());
         }
 

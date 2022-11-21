@@ -191,8 +191,18 @@ namespace HLTVDiscordBridge.Modules
             {
                 status.Add(Task.Run(()=>
                 {
-                    //TODO check if webhook is valid and has not been deleted
-                    DiscordWebhookClient webhookClient = new(id, token);
+                    DiscordWebhookClient webhookClient;
+                    try
+                    {
+                        webhookClient = new DiscordWebhookClient(id, token);
+                    }
+                    catch (Exception e)
+                    {
+                        //TODO message admin/owner if webhook invalid
+                        Console.WriteLine(e);
+                        throw;
+                    }
+                    
                     webhookClient.SendMessageAsync(embeds: new[] { embed }, components: component);
                     return webhookClient.SendMessageAsync(embeds: new[] { embed }, components: component);;
                 }));
