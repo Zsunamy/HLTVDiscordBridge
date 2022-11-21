@@ -71,7 +71,8 @@ namespace HLTVDiscordBridge
 
         public static async Task<bool> SetWebhook(bool enable, Expression<Func<ServerConfig, ulong?>> filterId, Expression<Func<ServerConfig, string>> filterToken , SocketTextChannel channel, ulong? guildId)
         {
-            ServerConfig config = GetCollection().FindSync(x => x.GuildID == guildId).ToList().First();
+            FilterDefinition<ServerConfig> configFilter = Builders<ServerConfig>.Filter.Eq(x => x.GuildID, guildId);
+            ServerConfig config = GetCollection().FindSync(configFilter).ToList().First();
             Webhook currentWebhook = new(filterId.Compile()(config), filterToken.Compile()(config));
             Webhook newWebhook = currentWebhook;
             if (enable)
@@ -93,14 +94,33 @@ namespace HLTVDiscordBridge
             {
                 if (currentWebhook.Id != null && !Tools.CheckIfWebhookIsUsed(currentWebhook, config))
                 {
-                    Console.WriteLine(currentWebhook.Id);
-                    await new DiscordWebhookClient((ulong)currentWebhook.Id, currentWebhook.Token).DeleteWebhookAsync();
+                    Console.WriteLine($"{(ulong)currentWebhook.Id} {currentWebhook.Token}");
+                    try
+                    {
+                        //TODO This always throws an invalid token (no idea why)
+                        DiscordWebhookClient client = new((ulong)currentWebhook.Id, currentWebhook.Token);
+                        await client.DeleteWebhookAsync();
+                        Console.WriteLine("success!");
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
                 }
                 newWebhook = new Webhook(null, "");
             }
-            UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(filterId, newWebhook.Id);
-            update.Set(filterToken, newWebhook.Token);
-            await GetCollection().UpdateOneAsync(x => x.Id == config.Id, update);
+
+            try
+            {
+                UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(filterId, newWebhook.Id)
+                    .Set(filterToken, newWebhook.Token);
+                UpdateResult test = await GetCollection().UpdateOneAsync(configFilter, update);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
             return enable;
         }
         public static IMongoCollection<ServerConfig> GetCollection()
