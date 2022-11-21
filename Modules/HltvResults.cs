@@ -202,12 +202,8 @@ namespace HLTVDiscordBridge.Modules
             {
 
                 Match newMatch = newMatches.ElementAt(newMatchResults.IndexOf(matchResult));
-                // ReSharper disable once PossibleInvalidOperationException
-                List<(ulong, string)> webhooks = (
-                    from config in await Config.GetServerConfigs(x => x.ResultWebhookId != null && x.MinimumStars <= matchResult.stars)
-                    select ((ulong)config.ResultWebhookId, config.ResultWebhookToken)).ToList();
-
-                await Tools.SendMessagesWithWebhook(webhooks, GetResultEmbed(matchResult, newMatch),GetMessageComponent(newMatch));
+                await Tools.SendMessagesWithWebhook(x => x.ResultWebhookId != null,
+                    x => x.ResultWebhookId, x=> x.ResultWebhookToken , GetResultEmbed(matchResult, newMatch),GetMessageComponent(newMatch));
             }
         }
         private static string GetFormatFromAcronym(string arg)

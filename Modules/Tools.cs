@@ -3,14 +3,18 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.Rest;
 using Discord.Webhook;
 using Discord.WebSocket;
+using HLTVDiscordBridge.Shared;
+using MongoDB.Driver;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -184,17 +188,16 @@ namespace HLTVDiscordBridge.Modules
             return int.Parse(url.Split('/')[^2]);
         }
 
-        public static Task SendMessagesWithWebhook(List<(ulong, string)> webhooks, Embed embed, MessageComponent component)
+        public static Task SendMessagesWithWebhook(Expression<Func<ServerConfig, bool>> filter, Func<ServerConfig, ulong?> getId, Func<ServerConfig, string> getToken, Embed embed, MessageComponent component)
         {
-            List<Task<ulong>> status = new();
-            foreach ((ulong id, string token) in webhooks)
-            {
-                status.Add(Task.Run(()=>
+            List<Webhook> webhooks = Config.GetCollection().FindSync(filter).ToList().Select(config => new Webhook(getId(config), getToken(config))).ToList();
+            List<Task<ulong>> status = webhooks.Select(webhook => Task.Run(() =>
                 {
                     DiscordWebhookClient webhookClient;
                     try
                     {
-                        webhookClient = new DiscordWebhookClient(id, token);
+                        // ReSharper disable once PossibleInvalidOperationException
+                        webhookClient = new DiscordWebhookClient((ulong)webhook.Id, webhook.Token);
                     }
                     catch (Exception e)
                     {
@@ -202,32 +205,32 @@ namespace HLTVDiscordBridge.Modules
                         Console.WriteLine(e);
                         throw;
                     }
-                    
-                    webhookClient.SendMessageAsync(embeds: new[] { embed }, components: component);
-                    return webhookClient.SendMessageAsync(embeds: new[] { embed }, components: component);;
-                }));
-            }
+                    return webhookClient.SendMessageAsync(embeds: new[] { embed }, components: component);
+                }))
+                .ToList();
             StatsUpdater.StatsTracker.MessagesSent += webhooks.Count;
             StatsUpdater.UpdateStats();
             return Task.WhenAll(status);
         }
 
-        public static bool CheckIfWebhookIsUsed(ulong webhookId, ServerConfig config)
+        public static bool CheckIfWebhookIsUsed(Webhook webhook, ServerConfig config)
         {
             return new[] { config.ResultWebhookId, config.NewsWebhookId, config.EventWebhookId }
-                .GroupBy(x => x).Any(g => g.Count() > 1 && g.Key == webhookId);
+                .GroupBy(x => x).Any(g => g.Count() > 1 && g.Key == webhook.Id);
         }
 
-        public static async Task<(ulong, string)?> CheckChannelForWebhook(SocketTextChannel channel, ServerConfig config)
+        public static async Task<Webhook?> CheckChannelForWebhook(SocketTextChannel channel, ServerConfig config)
         {
-            (ulong?, string)[] webhooks = new[] { (config.ResultWebhookId, config.ResultWebhookToken),
-                (config.NewsWebhookId, config.NewsWebhookToken), (config.EventWebhookId, config.EventWebhookToken) };
+            Webhook[] webhooks = { new Webhook(config.ResultWebhookId, config.ResultWebhookToken),
+                new Webhook(config.NewsWebhookId, config.NewsWebhookToken), new Webhook(config.EventWebhookId, config.EventWebhookToken) };
             foreach (RestWebhook webhook in await channel.GetWebhooksAsync())
             {
-                if (webhooks.Contains((webhook.Id, webhook.Token)))
+                Webhook channelWebhook = new(webhook.Id, webhook.Token);
+                if (webhooks.Contains(channelWebhook))
                 {
-                    return (webhook.Id, webhook.Token);
+                    return channelWebhook;
                 }
+                Console.WriteLine($"{webhook.Id}, {channelWebhook.Id}");
             }
             return null;
         }

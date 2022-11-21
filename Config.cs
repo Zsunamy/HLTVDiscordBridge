@@ -14,6 +14,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Discord.Rest;
 using Discord.Webhook;
+using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge
 {
@@ -71,40 +72,34 @@ namespace HLTVDiscordBridge
         public static async Task<bool> SetWebhook(bool enable, Expression<Func<ServerConfig, ulong?>> filterId, Expression<Func<ServerConfig, string>> filterToken , SocketTextChannel channel, ulong? guildId)
         {
             ServerConfig config = GetCollection().FindSync(x => x.GuildID == guildId).ToList().First();
-            ulong? oldWebhookId = filterId.Compile()(config);
-            string oldWebhookToken = filterToken.Compile()(config);
-            ulong? updatedWebhookId = oldWebhookId;
-            string updatedWebhookToken = oldWebhookToken;
+            Webhook currentWebhook = new(filterId.Compile()(config), filterToken.Compile()(config));
+            Webhook newWebhook = currentWebhook;
             if (enable)
             {
-                (ulong id, string token)? newWebhook = await Tools.CheckChannelForWebhook(channel, config);
-                switch (oldWebhookId)
+                Webhook? multiWebhook = await Tools.CheckChannelForWebhook(channel, config);
+                switch (currentWebhook.Id)
                 {
-                    case null when newWebhook == null:
+                    case null when multiWebhook == null:
                         Stream icon = new FileStream("icon.png", FileMode.Open);
-                        IWebhook webhook = await channel.CreateWebhookAsync("HLTV", icon);
-                        updatedWebhookId = webhook.ApplicationId;
-                        updatedWebhookToken = webhook.Token;
+                        IWebhook bufferWebhook = await channel.CreateWebhookAsync("HLTV", icon);
+                        newWebhook = new Webhook(bufferWebhook.ApplicationId, bufferWebhook.Token);
                         break;
                     case null:
-                        updatedWebhookId = newWebhook.Value.id;
-                        updatedWebhookToken = newWebhook.Value.token;
+                        newWebhook = (Webhook)multiWebhook;
                         break;
                 }
             }
             else
             {
-                if (oldWebhookId != null && !Tools.CheckIfWebhookIsUsed((ulong)oldWebhookId, config))
+                if (currentWebhook.Id != null && !Tools.CheckIfWebhookIsUsed(currentWebhook, config))
                 {
-                    Console.WriteLine(oldWebhookId);
-                    DiscordWebhookClient client = new((ulong)oldWebhookId, oldWebhookToken);
-                    await client.DeleteWebhookAsync();
+                    Console.WriteLine(currentWebhook.Id);
+                    await new DiscordWebhookClient((ulong)currentWebhook.Id, currentWebhook.Token).DeleteWebhookAsync();
                 }
-                updatedWebhookId = null;
-                updatedWebhookToken = "";
+                newWebhook = new Webhook(null, "");
             }
-            UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(filterId, updatedWebhookId);
-            update.Set(filterToken, updatedWebhookToken);
+            UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(filterId, newWebhook.Id);
+            update.Set(filterToken, newWebhook.Token);
             await GetCollection().UpdateOneAsync(x => x.Id == config.Id, update);
             return enable;
         }
