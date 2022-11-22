@@ -31,9 +31,14 @@ namespace HLTVDiscordBridge
         public ObjectId Id { get; set; }
         public ulong GuildID { get; set; }
         public ulong NewsChannelID { get; set; }
+        public ulong? NewsWebhookId { get; set; }
+        public ulong? ResultWebhookId { get; set; }
+        public ulong? EventWebhookId { get; set; }
+        public string NewsWebhookToken { get; set; }
+        public string ResultWebhookToken { get; set; }
+        public string EventWebhookToken { get; set; }
         public ushort MinimumStars { get; set; }
         public bool OnlyFeaturedEvents { get; set; }
-        public string Prefix { get; set; }
         public bool NewsOutput { get; set; }
         public bool ResultOutput { get; set; }
         public bool EventOutput { get; set; }

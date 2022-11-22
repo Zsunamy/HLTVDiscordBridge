@@ -139,7 +139,7 @@ namespace HLTVDiscordBridge.Modules
             string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddMonths(-1));
             string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
             values.Add(startDate);
-            values.Add(startDate);
+            values.Add(endDate);
 
             var req = await Tools.RequestApiJArray("getPastEvents", properties, values);
 

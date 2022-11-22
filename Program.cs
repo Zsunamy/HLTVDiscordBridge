@@ -180,6 +180,7 @@ namespace HLTVDiscordBridge
                     } catch (Exception ex)
                     {
                         Console.WriteLine(ex.ToString());
+                        await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
                     }
                 }
             });
