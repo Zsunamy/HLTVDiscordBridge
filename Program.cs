@@ -175,7 +175,7 @@ namespace HLTVDiscordBridge
                         await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                         await HltvNews.SendNewNews(await Config.GetChannels(_client));
                         WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
-                        CacheCleaner.Cleaner(_client);
+                        // CacheCleaner.Cleaner(_client);
                         await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
                     } catch (Exception ex)
                     {
