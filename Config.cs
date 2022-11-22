@@ -31,6 +31,7 @@ namespace HLTVDiscordBridge
         public ObjectId Id { get; set; }
         public ulong GuildID { get; set; }
         public ulong NewsChannelID { get; set; }
+        public string Prefix { get; set; }
         public ushort MinimumStars { get; set; }
         public bool OnlyFeaturedEvents { get; set; }
         public bool NewsOutput { get; set; }
