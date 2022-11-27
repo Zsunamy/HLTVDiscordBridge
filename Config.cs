@@ -114,7 +114,7 @@ namespace HLTVDiscordBridge
             {
                 UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(filterId, newWebhook.Id)
                     .Set(filterToken, newWebhook.Token);
-                UpdateResult test = await GetCollection().UpdateOneAsync(configFilter, update);
+                await GetCollection().UpdateOneAsync(configFilter, update);
             }
             catch (Exception e)
             {

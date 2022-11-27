@@ -23,7 +23,13 @@ namespace HLTVDiscordBridge
         private DiscordSocketClient _client;
         private IServiceProvider _services;
         private ConfigClass _botconfig;
+        public readonly HttpClient DefaultHttpClient;
         SlashCommands _commands;
+
+        private Program()
+        {
+            DefaultHttpClient = new HttpClient();
+        }
 
         public static Program GetInstance()
         {
@@ -152,17 +158,16 @@ namespace HLTVDiscordBridge
                     if (DateTime.Now.Hour > lastUpdate && _client.CurrentUser.Id == 807182830752628766)
                     {
                             lastUpdate = DateTime.Now.Hour;
-                            HttpClient http = new();
                             //top.gg
-                            http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.TopGGApiKey);
+                            DefaultHttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.TopGGApiKey);
                             HttpRequestMessage req = new(HttpMethod.Post, "https://top.gg/api/bots/807182830752628766/stats");
                             req.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
-                            await http.SendAsync(req);
+                            await DefaultHttpClient.SendAsync(req);
                             //bots.gg
-                            http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.BotsGGApiKey);
+                            DefaultHttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.BotsGGApiKey);
                             req = new(HttpMethod.Post, "https://discord.bots.gg/api/v1/bots/807182830752628766/stats");
                             req.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
-                            await http.SendAsync(req);
+                            await DefaultHttpClient.SendAsync(req);
                     }
 
                     try
@@ -181,6 +186,7 @@ namespace HLTVDiscordBridge
                     } catch (Exception ex)
                     {
                         Console.WriteLine(ex.ToString());
+                        await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
                     }
                 }
             });
