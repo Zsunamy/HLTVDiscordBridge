@@ -179,7 +179,7 @@ namespace HLTVDiscordBridge
                         await HltvEvents.AktEvents(await Config.GetChannelsLegacy(_client));
                         WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
                         await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                        await HltvNews.SendNewNews(await Config.GetChannelsLegacy(_client));
+                        await HltvNews.SendNewNews();
                         WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
                         CacheCleaner.Cleaner(_client);
                         await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);

@@ -1,21 +1,18 @@
 ﻿using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
-using Discord.Webhook;
 using HLTVDiscordBridge.Shared;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace HLTVDiscordBridge.Modules
 {
-
-
     public class HltvNews : ModuleBase<SocketCommandContext>
     {
-        
         //official RSS Feed       
         private static async Task<List<News>> GetNewNews()
         {
@@ -25,61 +22,37 @@ namespace HLTVDiscordBridge.Modules
 
             try
             {
-                oldNewsJArray = JArray.Parse(File.ReadAllText("./cache/news/news.json"));
+                oldNewsJArray = JArray.Parse(await File.ReadAllTextAsync("./cache/news/news.json"));
             }
-            catch (JsonReaderException ex)
+            catch (JsonReaderException)
             {
-                File.WriteAllText("./cache/news/news.json", JArray.FromObject(latestNews).ToString());
+                await File.WriteAllTextAsync("./cache/news/news.json", JArray.FromObject(latestNews).ToString());
                 return new List<News>();
             }
-            catch (FileNotFoundException ex)
+            catch (FileNotFoundException)
             {
-                FileStream fs = File.Create("./cache/news/news.json");
-                fs.Close();
-                File.WriteAllText("./cache/news/news.json", JArray.FromObject(latestNews).ToString());
-                return new List<News>();
-            }
-            
-            File.WriteAllText("./cache/news/news.json", JArray.FromObject(latestNews).ToString());
-            
-            List<News> newsToSend = new();
-            List<News> oldNews = new();
-            foreach (JToken item in oldNewsJArray)
-            {
-                oldNews.Add(new News(JObject.FromObject(item)));
-            }
-            foreach (News newItem in latestNews)
-            {
-                bool found = false;
-                foreach (News oldItem in oldNews)
+                await using (FileStream fs = File.Create("./cache/news/news.json"))
                 {
-                    if (Tools.GetIdFromUrl(newItem.link) == Tools.GetIdFromUrl(oldItem.link))
-                    {
-                        found = true;
-                        break;
-                    }
+                    fs.Write(new UTF8Encoding(true).GetBytes(JArray.FromObject(latestNews).ToString()));
                 }
+                return new List<News>();
+            }
+            
+            await File.WriteAllTextAsync("./cache/news/news.json", JArray.FromObject(latestNews).ToString());
 
-                if (!found)
-                {
-                    newsToSend.Add(newItem);
-                }
-            }
-            return newsToSend;
+            List<News> oldNews = oldNewsJArray.Select(item => new News(JObject.FromObject(item))).ToList();
+            return (from newItem in latestNews
+                let found = oldNews.Any(oldItem => Tools.GetIdFromUrl(newItem.link) == Tools.GetIdFromUrl(oldItem.link))
+                where found select newItem)
+                .ToList();
         }
 
         private static async Task<List<News>> GetLatestNews()
         {
             JArray newNews =  await Tools.RequestApiJArray("getRssNews", new List<string>(), new List<string>());
-            List<News> newsList = new();
-            foreach (JToken news in newNews)
-            {
-                newsList.Add(new News(JObject.FromObject(news)));
-            }
-            
-            return newsList;
+            return newNews.Select(news => new News(JObject.FromObject(news))).ToList();
         }
-
+        
         private static Embed GetNewsEmbed(News news)
         {
             EmbedBuilder builder = new();
@@ -88,45 +61,19 @@ namespace HLTVDiscordBridge.Modules
             string description = news.description ?? "n.A";
             string link = news.link ?? "";
 
-            builder.WithTitle(title)
-                .WithColor(Color.Blue);       
-
+            builder.WithTitle(title).WithColor(Color.Blue);
             builder.AddField("description:", description);
             builder.WithAuthor("full story on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", link);
             builder.WithCurrentTimestamp();
-
             return builder.Build();
         }
 
-        public static async Task SendNewNews(List<SocketTextChannel> channels)
+        public static async Task SendNewNews()
         {
-            List<News> newsToSend = await GetNewNews();
-            foreach (News news in newsToSend)
+            foreach (News news in await GetNewNews())
             {
-                StatsUpdater.StatsTracker.NewsSent += 1;
-                StatsUpdater.UpdateStats();
-                foreach (SocketTextChannel channel in channels)
-                {
-                    ServerConfig config = Config.GetServerConfig(channel);
-                    if (config.NewsWebhookId != null)
-                    {
-                        DiscordWebhookClient webhookClient = new((ulong)config.NewsWebhookId, config.NewsWebhookToken);
-                        await webhookClient.SendMessageAsync(embeds: new[] { GetNewsEmbed(news) });
-                        StatsUpdater.StatsTracker.MessagesSent += 1;
-                        StatsUpdater.UpdateStats();
-                        /*try
-                        {
-                            await channel.SendMessageAsync(embed: embed);
-                            StatsUpdater.StatsTracker.MessagesSent += 1;
-                            StatsUpdater.UpdateStats();
-                        }
-                        catch (Discord.Net.HttpException)
-                        {
-                            Program.WriteLog($"not enough permission in channel {channel}");
-                        }
-                        catch (Exception e) {Program.WriteLog(e.ToString());}*/
-                    }
-                }                
+                await Tools.SendMessagesWithWebhook(x => x.NewsWebhookId != null,
+                    x => x.NewsWebhookId, x=> x.NewsWebhookToken , GetNewsEmbed(news), null);
             }
         }
     }

@@ -203,7 +203,7 @@ namespace HLTVDiscordBridge.Modules
 
                 Match newMatch = newMatches.ElementAt(newMatchResults.IndexOf(matchResult));
                 await Tools.SendMessagesWithWebhook(x => x.ResultWebhookId != null,
-                    x => x.ResultWebhookId, x=> x.ResultWebhookToken , GetResultEmbed(matchResult, newMatch),GetMessageComponent(newMatch));
+                    x => x.ResultWebhookId, x=> x.ResultWebhookToken , GetResultEmbed(matchResult, newMatch), GetMessageComponent(newMatch));
             }
         }
         private static string GetFormatFromAcronym(string arg)
