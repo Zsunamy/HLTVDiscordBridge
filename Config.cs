@@ -69,59 +69,39 @@ namespace HLTVDiscordBridge
             }
         }
 
-        public static async Task<bool> SetWebhook(bool enable, Expression<Func<ServerConfig, ulong?>> filterId, Expression<Func<ServerConfig, string>> filterToken , SocketTextChannel channel, ulong? guildId)
+        public static async Task<UpdateDefinition<ServerConfig>> SetWebhook(bool enable, Expression<Func<ServerConfig, ulong?>> filterId, Expression<Func<ServerConfig, string>> filterToken , SocketTextChannel channel, ulong? guildId)
         {
             FilterDefinition<ServerConfig> configFilter = Builders<ServerConfig>.Filter.Eq(x => x.GuildID, guildId);
             ServerConfig config = GetCollection().FindSync(configFilter).ToList().First();
-            Webhook currentWebhook = new(filterId.Compile()(config), filterToken.Compile()(config));
-            Webhook newWebhook = currentWebhook;
+            Webhook webhookInDatabase = new(filterId.Compile()(config), filterToken.Compile()(config));
+            Webhook newWebhook;
             if (enable)
             {
                 Webhook? multiWebhook = await Tools.CheckChannelForWebhook(channel, config);
-                switch (currentWebhook.Id)
+                if (!Tools.CheckIfWebhookIsUsed(webhookInDatabase, config))
                 {
-                    case null when multiWebhook == null:
-                        Stream icon = new FileStream("icon.png", FileMode.Open);
-                        IWebhook bufferWebhook = await channel.CreateWebhookAsync("HLTV", icon);
-                        newWebhook = new Webhook(bufferWebhook.ApplicationId, bufferWebhook.Token);
-                        break;
-                    case null:
-                        newWebhook = (Webhook)multiWebhook;
-                        break;
+                    await Tools.DeleteWebhook(webhookInDatabase);
+                }
+                if (multiWebhook == null)
+                {
+                    IWebhook bufferWebhook = await channel.CreateWebhookAsync("HLTV", new FileStream("icon.png", FileMode.Open));
+                    newWebhook = new Webhook(bufferWebhook.Id, bufferWebhook.Token);
+                }
+                else {
+                    newWebhook = (Webhook)multiWebhook;
                 }
             }
             else
             {
-                if (currentWebhook.Id != null && !Tools.CheckIfWebhookIsUsed(currentWebhook, config))
+                if (!Tools.CheckIfWebhookIsUsed(webhookInDatabase, config))
                 {
-                    Console.WriteLine($"{(ulong)currentWebhook.Id} {currentWebhook.Token}");
-                    try
-                    {
-                        //TODO This always throws an invalid token (no idea why)
-                        DiscordWebhookClient client = new((ulong)currentWebhook.Id, currentWebhook.Token);
-                        await client.DeleteWebhookAsync();
-                        Console.WriteLine("success!");
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
+                    await Tools.DeleteWebhook(webhookInDatabase);
                 }
                 newWebhook = new Webhook(null, "");
             }
-
-            try
-            {
-                UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(filterId, newWebhook.Id)
+            
+            return Builders<ServerConfig>.Update.Set(filterId, newWebhook.Id)
                     .Set(filterToken, newWebhook.Token);
-                await GetCollection().UpdateOneAsync(configFilter, update);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-            return enable;
         }
         public static IMongoCollection<ServerConfig> GetCollection()
         {
@@ -218,17 +198,17 @@ namespace HLTVDiscordBridge
                         .WithFooter(Tools.GetRandomFooter());
                     break;
                 case "results":
-                    // update = Builders<ServerConfig>.Update.Set(x => x.ResultOutput, bool.Parse(value));
-                    await SetWebhook(bool.Parse(value), x => x.ResultWebhookId, x => x.ResultWebhookToken,
+                    update = await SetWebhook(bool.Parse(value), x => x.ResultWebhookId, x => x.ResultWebhookToken,
                         (SocketTextChannel)arg.Channel, arg.GuildId);
                     builder.WithColor(Color.Green)
                         .WithTitle("SUCCESS")
                         .WithDescription($"You successfully changed the automatic result output to `{value}`")
                         .WithCurrentTimestamp()
-                        .WithFooter(Tools.GetRandomFooter());
+                        .WithFooter(Tools.GetRandomFooter()); 
                     break;
                 case "events":
-                    update = Builders<ServerConfig>.Update.Set(x => x.EventOutput, bool.Parse(value));
+                    update = await SetWebhook(bool.Parse(value), x => x.EventWebhookId, x => x.EventWebhookToken,
+                        (SocketTextChannel)arg.Channel, arg.GuildId);
                     builder.WithColor(Color.Green)
                         .WithTitle("SUCCESS")
                         .WithDescription($"You successfully changed the automatic event output to `{value}`")
@@ -236,7 +216,8 @@ namespace HLTVDiscordBridge
                         .WithFooter(Tools.GetRandomFooter());
                     break;
                 case "news":
-                    update = Builders<ServerConfig>.Update.Set(x => x.NewsOutput, bool.Parse(value));
+                    update = await SetWebhook(bool.Parse(value), x => x.NewsWebhookId, x => x.NewsWebhookToken,
+                        (SocketTextChannel)arg.Channel, arg.GuildId);
                     builder.WithColor(Color.Green)
                         .WithTitle("SUCCESS")
                         .WithDescription($"You successfully changed the automatic news output to `{value}`")
@@ -253,11 +234,7 @@ namespace HLTVDiscordBridge
                         .WithFooter(Tools.GetRandomFooter());
                     break;
             }
-
-            if (update != null)
-            {
-                await GetCollection().UpdateOneAsync(x => x.GuildID == arg.GuildId, update);
-            }
+            await GetCollection().UpdateOneAsync(x => x.GuildID == arg.GuildId, update);
             await arg.ModifyOriginalResponseAsync(msg => msg.Embed = builder.Build());
         }
 

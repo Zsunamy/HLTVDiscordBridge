@@ -10,6 +10,7 @@ using System.Linq.Expressions;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Discord.Net;
 using Discord.Rest;
 using Discord.Webhook;
 using Discord.WebSocket;
@@ -111,7 +112,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 try
                 {
-                    var error = JObject.Parse(await resp.Content.ReadAsStringAsync());
+                    JObject error = JObject.Parse(await resp.Content.ReadAsStringAsync());
                     throw new HltvApiException(error);
                 }
                 catch (JsonReaderException) { throw new Exception("Deployment Error"); }
@@ -119,11 +120,11 @@ namespace HLTVDiscordBridge.Modules
         }
         public static async Task<JArray> RequestApiJArray(string endpoint, List<string> properties, List<List<string>> values)
         {
-            HttpClient http = new();
+            HttpClient http = Program.GetInstance().DefaultHttpClient;
             Uri uri = new($"{Config.LoadConfig().APILink}/api/{endpoint}");
 
             StringBuilder sb = new();
-            StringWriter sw = new StringWriter(sb);
+            StringWriter sw = new (sb);
 
             using (JsonWriter writer = new JsonTextWriter(sw))
             {
@@ -188,10 +189,10 @@ namespace HLTVDiscordBridge.Modules
             return int.Parse(url.Split('/')[^2]);
         }
 
-        public static Task SendMessagesWithWebhook(Expression<Func<ServerConfig, bool>> filter, Func<ServerConfig, ulong?> getId, Func<ServerConfig, string> getToken, Embed embed, MessageComponent component)
+        public static Task SendMessagesWithWebhook(Expression<Func<ServerConfig, bool>> filter, Expression<Func<ServerConfig, ulong?>> getId, Expression<Func<ServerConfig, string>> getToken, Embed embed, MessageComponent component)
         {
-            List<Webhook> webhooks = Config.GetCollection().FindSync(filter).ToList().Select(config => new Webhook(getId(config), getToken(config))).ToList();
-            List<Task<ulong>> status = webhooks.Select(webhook => Task.Run(() =>
+            List<Webhook> webhooks = Config.GetCollection().FindSync(filter).ToList().Select(config => new Webhook(getId.Compile()(config), getToken.Compile()(config))).ToList();
+            List<Task> status = webhooks.Select(webhook => Task.Run(() =>
                 {
                     DiscordWebhookClient webhookClient;
                     try
@@ -201,8 +202,12 @@ namespace HLTVDiscordBridge.Modules
                     }
                     catch (Exception e)
                     {
-                        //TODO message admin/owner if webhook invalid
-                        Console.WriteLine(e);
+                        if (e is (InvalidOperationException or HttpException))
+                        {
+                            UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(getId, null)
+                                .Set(getToken, "");
+                            return Config.GetCollection().UpdateOneAsync(filter, update);
+                        }
                         throw;
                     }
                     return webhookClient.SendMessageAsync(embeds: new[] { embed }, components: component);
@@ -221,8 +226,8 @@ namespace HLTVDiscordBridge.Modules
 
         public static async Task<Webhook?> CheckChannelForWebhook(SocketTextChannel channel, ServerConfig config)
         {
-            Webhook[] webhooks = { new Webhook(config.ResultWebhookId, config.ResultWebhookToken),
-                new Webhook(config.NewsWebhookId, config.NewsWebhookToken), new Webhook(config.EventWebhookId, config.EventWebhookToken) };
+            Webhook[] webhooks = { new (config.ResultWebhookId, config.ResultWebhookToken),
+                new (config.NewsWebhookId, config.NewsWebhookToken), new (config.EventWebhookId, config.EventWebhookToken) };
             foreach (RestWebhook webhook in await channel.GetWebhooksAsync())
             {
                 Webhook channelWebhook = new(webhook.Id, webhook.Token);
@@ -233,6 +238,20 @@ namespace HLTVDiscordBridge.Modules
                 Console.WriteLine($"{webhook.Id}, {channelWebhook.Id}");
             }
             return null;
+        }
+
+        public static async Task DeleteWebhook(Webhook webhook)
+        {
+            try
+            {
+                if (webhook.Id != null)
+                {
+                    DiscordWebhookClient client = new((ulong)webhook.Id, webhook.Token);
+                    await client.DeleteWebhookAsync();
+                }
+            }
+            catch (HttpException) {}
+            catch (InvalidOperationException) {}
         }
     }
 }
