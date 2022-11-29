@@ -20,6 +20,7 @@ namespace HLTVDiscordBridge
         }
 
         private static Program _instance;
+        private bool _bgTaskIsRunnning = false;
         private DiscordSocketClient _client;
         private IServiceProvider _services;
         private ConfigClass _botconfig;
@@ -32,7 +33,7 @@ namespace HLTVDiscordBridge
                 _instance = new Program();
             }
 
-            return Program._instance;
+            return _instance;
         }
         
         public async Task RunBotAsync()
@@ -85,7 +86,11 @@ namespace HLTVDiscordBridge
         private async Task Ready()
         {
             await Config.ServerconfigStartUp(_client);
-            await BgTask();     
+            if (!_bgTaskIsRunnning)
+            {
+                _bgTaskIsRunnning = true;
+                await BgTask();
+            } 
         }
 
         private Task ButtonExecuted(SocketMessageComponent arg)
