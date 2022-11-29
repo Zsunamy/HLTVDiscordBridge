@@ -20,6 +20,7 @@ namespace HLTVDiscordBridge
         }
 
         private static Program _instance;
+        private bool _bgTaskIsRunnning = false;
         private DiscordSocketClient _client;
         private IServiceProvider _services;
         private ConfigClass _botconfig;
@@ -90,9 +91,18 @@ namespace HLTVDiscordBridge
 
         private async Task Ready()
         {
+<<<<<<< HEAD
             await Config.ServerConfigStartUp(_client);
             // Config.InitAllWebhooks(_client);
             await BgTask();
+=======
+            await Config.ServerconfigStartUp(_client);
+            if (!_bgTaskIsRunnning)
+            {
+                _bgTaskIsRunnning = true;
+                await BgTask();
+            } 
+>>>>>>> 1b09666 (fixed starting a new BGTask every time a reconnect occurs. (Which is why we managed to send 5mio requests in 10h))
         }
 
         private Task ButtonExecuted(SocketMessageComponent arg)
