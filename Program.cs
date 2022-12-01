@@ -20,7 +20,7 @@ namespace HLTVDiscordBridge
         }
 
         private static Program _instance;
-        private bool _bgTaskIsRunnning = false;
+        private Task _bgTask;
         private DiscordSocketClient _client;
         private IServiceProvider _services;
         private ConfigClass _botconfig;
@@ -34,12 +34,7 @@ namespace HLTVDiscordBridge
 
         public static Program GetInstance()
         {
-            if (_instance == null)
-            {
-                _instance = new Program();
-            }
-
-            return _instance;
+            return _instance ??= new Program();
         }
         
         public async Task RunBotAsync()
@@ -92,11 +87,7 @@ namespace HLTVDiscordBridge
         private async Task Ready()
         {
             await Config.ServerConfigStartUp(_client);
-            if (!_bgTaskIsRunnning)
-            {
-                _bgTaskIsRunnning = true;
-                await BgTask();
-            }
+            _bgTask ??= BgTask();
         }
 
         private Task ButtonExecuted(SocketMessageComponent arg)
@@ -154,7 +145,8 @@ namespace HLTVDiscordBridge
         private Task BgTask()
         {
             return Task.Run(async() =>
-            {                
+            {
+                await Ready();
                 int lastUpdate = 0;
                 while (true)
                 {
@@ -185,7 +177,7 @@ namespace HLTVDiscordBridge
                         await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
                         await HltvNews.SendNewNews();
                         WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
-                        // CacheCleaner.Cleaner(_client);
+                        CacheCleaner.Cleaner(_client);
                         await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
                     } catch (Exception ex)
                     {

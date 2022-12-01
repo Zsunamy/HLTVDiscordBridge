@@ -339,7 +339,7 @@ namespace HLTVDiscordBridge
             IMongoCollection<ServerConfig> collection = GetCollection();
             foreach (SocketGuild guild in client.Guilds)
             {
-                if (collection.Find(x => x.GuildID == guild.Id).CountDocuments() == 0)
+                if (await collection.Find(x => x.GuildID == guild.Id).CountDocumentsAsync() == 0)
                 {
                     //await guild.LeaveAsync();
                     //Console.WriteLine($"Would have left: {guild.Name}");
