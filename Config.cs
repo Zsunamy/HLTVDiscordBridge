@@ -21,7 +21,9 @@ namespace HLTVDiscordBridge
     public class ConfigClass
     {
         public string BotToken { get; set; }
+        public ulong ProductionBotId { get; set; }
         public int CheckResultsTimeInterval { get; set; }
+        public int DelayBetweenRequests { get; set; }
         public string TopGGApiKey { get; set; }
         public string BotsGGApiKey { get; set; }
         public string APILink { get; set; }

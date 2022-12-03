@@ -7,8 +7,10 @@ using MongoDB.Driver;
 using System;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace HLTVDiscordBridge
 {
@@ -87,6 +89,12 @@ namespace HLTVDiscordBridge
         private async Task Ready()
         {
             await Config.ServerConfigStartUp(_client);
+            if (_client.CurrentUser.Id == _botconfig.ProductionBotId)
+            {
+                Timer updateGgStatsTimer = new(1000 * 60 * 60);
+                updateGgStatsTimer.Elapsed += async (sender, e) => await UpdateGgServerstats();
+                updateGgStatsTimer.Enabled = true;
+            }
             _bgTask ??= BgTask();
         }
 
@@ -142,50 +150,59 @@ namespace HLTVDiscordBridge
             await Config.GuildJoined(guild);
         }
 
-        private Task BgTask()
-        {
-            return Task.Run(async() =>
-            {
-                await Ready();
-                int lastUpdate = 0;
-                while (true)
-                {
-                    //top.gg API & bots.gg API
-                    if (DateTime.Now.Hour > lastUpdate && _client.CurrentUser.Id == 807182830752628766)
-                    {
-                            lastUpdate = DateTime.Now.Hour;
-                            //top.gg
-                            DefaultHttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.TopGGApiKey);
-                            HttpRequestMessage req = new(HttpMethod.Post, "https://top.gg/api/bots/807182830752628766/stats");
-                            req.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
-                            await DefaultHttpClient.SendAsync(req);
-                            //bots.gg
-                            DefaultHttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.BotsGGApiKey);
-                            req = new(HttpMethod.Post, "https://discord.bots.gg/api/v1/bots/807182830752628766/stats");
-                            req.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
-                            await DefaultHttpClient.SendAsync(req);
-                    }
+        private async Task UpdateGgServerstats()
+        {   //top.gg
+            HttpClient client = new();
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.TopGGApiKey);
+            HttpRequestMessage reqTop = new(HttpMethod.Post, $"https://top.gg/api/bots/${_client.CurrentUser.Id}/stats");
+            reqTop.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+            await DefaultHttpClient.SendAsync(reqTop);
+            
+            //bots.gg
+            DefaultHttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.BotsGGApiKey);
+            HttpRequestMessage reqBots = new (HttpMethod.Post, $"https://discord.bots.gg/api/v1/bots/${_client.Guilds.Count}/stats");
+            reqBots.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+            await DefaultHttpClient.SendAsync(reqBots);
+        }
 
-                    try
-                    {
-                        Stopwatch watch = new(); watch.Start();
-                        await HltvResults.SendNewResults();
-                        WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
-                        await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                        await HltvEvents.AktEvents(await Config.GetChannelsLegacy(_client));
-                        WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
-                        await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                        await HltvNews.SendNewNews();
-                        WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
-                        CacheCleaner.Cleaner(_client);
-                        await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
-                    } catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.ToString());
-                        await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
-                    }
+        private async Task BgTask()
+        {
+            Timer[] timers = { new (), new (), new () };
+            Func<Task>[] functions = { HltvResults.SendNewResults, HltvEvents.AktEvents, HltvNews.SendNewNews };
+            foreach (Timer timer in timers)
+            {
+                Func<Task> function = functions[Array.IndexOf(timers, timer)];
+                await function();
+                timer.Interval = _botconfig.CheckResultsTimeInterval;
+                timer.Elapsed += async (sender, e) => await function();
+                timer.Enabled = true;
+                await Task.Delay(_botconfig.DelayBetweenRequests);
+            }
+            /*for (int i = 0; i < timers.Length; i++)
+            {
+                timers[i].Elapsed += async (sender, e) => await functions[i]();
+            }*/
+            /*while (true)
+            {
+                try
+                {
+                    Stopwatch watch = new(); watch.Start();
+                    await HltvResults.SendNewResults();
+                    WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
+                    await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
+                    await HltvEvents.AktEvents(await Config.GetChannelsLegacy(_client));
+                    WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
+                    await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
+                    await HltvNews.SendNewNews();
+                    WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
+                    CacheCleaner.Cleaner(_client);
+                    await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
+                } catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                    await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
                 }
-            });
+            }*/
         }
 
         public static void WriteLog(string arg)

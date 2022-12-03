@@ -1,6 +1,8 @@
-﻿using Discord;
+﻿using System;
+using Discord;
 using Discord.Commands;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -70,11 +72,13 @@ namespace HLTVDiscordBridge.Modules
 
         public static async Task SendNewNews()
         {
+            Stopwatch watch = new(); watch.Start();
             foreach (News news in await GetNewNews())
             {
                 await Tools.SendMessagesWithWebhook(x => x.NewsWebhookId != null,
                     x => x.NewsWebhookId, x=> x.NewsWebhookToken , GetNewsEmbed(news), null);
             }
+            Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)");
         }
     }
 }

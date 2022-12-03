@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -189,6 +190,7 @@ namespace HLTVDiscordBridge.Modules
         }
         public static async Task SendNewResults()
         {
+            Stopwatch watch = new(); watch.Start();
             List<MatchResult> newMatchResults = await GetNewMatchResults();
             if (newMatchResults == null) { return; }
 
@@ -205,6 +207,7 @@ namespace HLTVDiscordBridge.Modules
                 await Tools.SendMessagesWithWebhook(x => x.ResultWebhookId != null,
                     x => x.ResultWebhookId, x=> x.ResultWebhookToken , GetResultEmbed(matchResult, newMatch), GetMessageComponent(newMatch));
             }
+            Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
         }
         private static string GetFormatFromAcronym(string arg)
         {

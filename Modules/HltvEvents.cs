@@ -5,6 +5,7 @@ using HLTVDiscordBridge.Shared;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,8 +14,9 @@ namespace HLTVDiscordBridge.Modules
 {
     public class HltvEvents : ModuleBase<SocketCommandContext>
     {
-        public static async Task AktEvents(List<SocketTextChannel> channels)
+        public static async Task AktEvents()
         {
+            Stopwatch watch = new(); watch.Start();
             List<OngoingEventPreview> startedEvents = await GetStartedEvents();
             if (startedEvents.Count > 0)
             {
@@ -23,23 +25,11 @@ namespace HLTVDiscordBridge.Modules
                     FullEvent fullEvent = await GetFullEvent(startedEvent);
                     if (fullEvent != null)
                     {
-                        foreach (SocketTextChannel channel in channels)
-                        {
-                            ServerConfig config = Config.GetServerConfig(channel);
-                            if (config.EventOutput)
-                            {
-                                try
-                                {
-                                    await channel.SendMessageAsync(embed: GetEventStartedEmbed(fullEvent));
-                                    StatsUpdater.StatsTracker.MessagesSent += 1;
-                                    StatsUpdater.UpdateStats();
-                                }
-                                catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); continue; }
-                                catch (Exception e) {Program.WriteLog(e.ToString());}
-                            }
-                        }
+                        await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
+                                x => x.EventWebhookId, x=> x.EventWebhookToken , GetEventStartedEmbed(fullEvent), null);
                     }
                 }
+                Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
             }
 
             List<EventPreview> endedEvents = await GetEndedEvents();
@@ -50,15 +40,8 @@ namespace HLTVDiscordBridge.Modules
                     FullEvent fullEvent = await GetFullEvent(endedEvent);
                     if (fullEvent != null)
                     {
-                        foreach (SocketTextChannel channel in channels)
-                        {
-                            ServerConfig config = Config.GetServerConfig(channel);
-                            if (config.EventOutput)
-                            {
-                                try { await channel.SendMessageAsync(embed: GetEventEndedEmbed(fullEvent)); }
-                                catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); continue; }
-                            }
-                        }
+                        await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
+                            x => x.EventWebhookId, x=> x.EventWebhookToken , GetEventStartedEmbed(fullEvent), null);
                     }
                 }
             }
