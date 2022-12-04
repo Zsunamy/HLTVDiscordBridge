@@ -12,25 +12,10 @@ using MongoDB.Driver;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Linq;
 using System.Linq.Expressions;
-using Discord.Rest;
-using Discord.Webhook;
 using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge
 {
-    public class ConfigClass
-    {
-        public string BotToken { get; set; }
-        public ulong ProductionBotId { get; set; }
-        public int CheckResultsTimeInterval { get; set; }
-        public int DelayBetweenRequests { get; set; }
-        public string TopGGApiKey { get; set; }
-        public string BotsGGApiKey { get; set; }
-        public string APILink { get; set; }
-        public string DatabaseLink { get; set; }
-        public string Database { get; set; }
-    }
-
     public class ServerConfig
     {
         [BsonId]
@@ -58,20 +43,36 @@ namespace HLTVDiscordBridge
             foreach (ServerConfig config in configs)
             {
                 Stream icon = new FileStream("icon.png", FileMode.Open);
-                IWebhook webhook = await ((SocketTextChannel)client.GetChannel(config.NewsChannelID)).CreateWebhookAsync("HLTV", icon);
+                Webhook updateWebhook;
+                SocketTextChannel channel = (SocketTextChannel)client.GetChannel(config.NewsChannelID);
+                try
+                {
+                    IWebhook webhook = await channel.CreateWebhookAsync("HLTV", icon);
+                    updateWebhook = new Webhook(webhook.Id, webhook.Token);
+                }
+                catch (Exception e)
+                {
+                    updateWebhook = new Webhook(null, "");
+                    Console.WriteLine(e.ToString());
+                    await channel.SendMessageAsync(
+                        $"ERROR: Failed to create webhook with the following message {e.Message}\n" + 
+                        $"The Bot is probably missing permissions to manage webhooks.\n" +
+                        $"Please give the bot these permissions and then setup all channels manually using the /set command");
+                }
                 UpdateDefinition<ServerConfig> update =
                     Builders<ServerConfig>.Update
-                        .Set(x => x.ResultWebhookId, webhook.Id)
-                        .Set(x => x.ResultWebhookToken, webhook.Token)
-                        .Set(x => x.EventWebhookId, webhook.Id)
-                        .Set(x => x.EventWebhookToken, webhook.Token)
-                        .Set(x => x.NewsWebhookId, webhook.Id)
-                        .Set(x => x.NewsWebhookToken, webhook.Token);
+                        .Set(x => x.ResultWebhookId, updateWebhook.Id)
+                        .Set(x => x.ResultWebhookToken, updateWebhook.Token)
+                        .Set(x => x.EventWebhookId, updateWebhook.Id)
+                        .Set(x => x.EventWebhookToken, updateWebhook.Token)
+                        .Set(x => x.NewsWebhookId, updateWebhook.Id)
+                        .Set(x => x.NewsWebhookToken, updateWebhook.Token);
                 await GetCollection().UpdateOneAsync(x => x.NewsChannelID == config.NewsChannelID, update);
             }
         }
 
-        public static async Task<UpdateDefinition<ServerConfig>> SetWebhook(bool enable, Expression<Func<ServerConfig, ulong?>> filterId, Expression<Func<ServerConfig, string>> filterToken , SocketTextChannel channel, ulong? guildId)
+        private static async Task<UpdateDefinition<ServerConfig>> SetWebhook(bool enable, Expression<Func<ServerConfig, ulong?>> filterId,
+            Expression<Func<ServerConfig, string>> filterToken , SocketTextChannel channel, ulong? guildId)
         {
             FilterDefinition<ServerConfig> configFilter = Builders<ServerConfig>.Filter.Eq(x => x.GuildID, guildId);
             ServerConfig config = GetCollection().FindSync(configFilter).ToList().First();
@@ -107,8 +108,8 @@ namespace HLTVDiscordBridge
         }
         public static IMongoCollection<ServerConfig> GetCollection()
         {
-            MongoClient dbClient = new(LoadConfig().DatabaseLink);
-            IMongoDatabase db = dbClient.GetDatabase(LoadConfig().Database);
+            MongoClient dbClient = new(BotConfigHandler.GetBotConfig().DatabaseLink);
+            IMongoDatabase db = dbClient.GetDatabase(BotConfigHandler.GetBotConfig().Database);
             return db.GetCollection<ServerConfig>("serverconfig");
         }
         public static ServerConfig GetServerConfig(SocketTextChannel channel)
@@ -142,22 +143,7 @@ namespace HLTVDiscordBridge
             return (await GetCollection().FindAsync(filter)).ToList();
         }
 
-        /// <summary>
-        /// Loads the general bot config
-        /// </summary>
-        /// <returns>Config</returns>
-        public static ConfigClass LoadConfig()
-        {
-            XmlSerializer _xml;
-            ConfigClass conf = new();
-            _xml = new XmlSerializer(typeof(ConfigClass));
-            FileStream stream = new("./config.xml", FileMode.Open);
-            conf = (ConfigClass)_xml.Deserialize(stream);
-            stream.Close();
-            return conf;
-        }
-
-#region Commands
+        #region Commands
         [Command("set")]
 
         public static async Task ChangeServerConfig(SocketSlashCommand arg)
@@ -254,7 +240,7 @@ namespace HLTVDiscordBridge
             else
             {
                 IMongoCollection<ServerConfig> collection = GetCollection();
-                collection.UpdateOne(x => x.GuildID == (arg.Channel as SocketTextChannel).Guild.Id, Builders<ServerConfig>.Update.Set(x => x.NewsChannelID, channel.Id));
+                await collection.UpdateOneAsync(x => x.GuildID == (arg.Channel as SocketTextChannel).Guild.Id, Builders<ServerConfig>.Update.Set(x => x.NewsChannelID, channel.Id));
                 builder.WithTitle("Init")
                         .WithDescription($"Success! You are now using the channel {(channel as SocketTextChannel).Mention} as default output for HLTV-NEWS")
                         .WithCurrentTimestamp()
@@ -269,9 +255,7 @@ namespace HLTVDiscordBridge
         /// Creates channel and sets it as output for HLTVNews and HLTVMatches
         /// </summary>
         /// <param name="guild">Guild on which the Channel should be created</param>
-        /// <param name="client">Bot Client</param>
         /// <param name="channel">Sets a custom Channel. null = default channel on guild</param>
-        /// <param name="startup">Is this the startup?</param>
         public static async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null)
         {
             IMongoCollection<ServerConfig> collection = GetCollection();
@@ -298,18 +282,18 @@ namespace HLTVDiscordBridge
                     .WithColor(Color.DarkBlue);
             }
 
-            ServerConfig _config = new();
-            if(channel != null) { _config.NewsChannelID = channel.Id; }            
-            _config.GuildID = guild.Id;
-            _config.MinimumStars = 0;
-            _config.OnlyFeaturedEvents = false;
-            _config.EventOutput = true;
-            _config.NewsOutput = true;
-            _config.ResultOutput = true;
+            ServerConfig config = new();
+            if(channel != null) { config.NewsChannelID = channel.Id; }            
+            config.GuildID = guild.Id;
+            config.MinimumStars = 0;
+            config.OnlyFeaturedEvents = false;
+            config.EventOutput = true;
+            config.NewsOutput = true;
+            config.ResultOutput = true;
 
-            collection.InsertOne(_config);
+            await collection.InsertOneAsync(config);
 
-            if(channel == null) {
+            if (channel == null) {
                 builder.WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. To set a default HLTV-News output channel, type /init " +
                     $"in a channel of your choice, but make sure that the bot has enough permission to access and send messages in that channel. " +
                     $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
@@ -326,12 +310,9 @@ namespace HLTVDiscordBridge
             }
             else 
             {
-                try { 
-                    await channel.SendMessageAsync(embed: builder.Build());
-                    StatsUpdater.StatsTracker.MessagesSent += 1;
-                    StatsUpdater.UpdateStats();
-                }
-                catch (Exception) { return; }
+                await channel.SendMessageAsync(embed: builder.Build());
+                StatsUpdater.StatsTracker.MessagesSent += 1;
+                StatsUpdater.UpdateStats();
             }
             
         }

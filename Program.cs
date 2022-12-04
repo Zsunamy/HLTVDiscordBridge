@@ -5,9 +5,7 @@ using HLTVDiscordBridge.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using System;
-using System.Diagnostics;
 using System.Net.Http;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
@@ -16,22 +14,34 @@ namespace HLTVDiscordBridge
 {
     internal class Program
     {
-        private static void Main()
+        private static async Task Main()
         {
-            GetInstance().RunBotAsync().GetAwaiter().GetResult();
+            GetInstance().Start().GetAwaiter().GetResult();
+            //await GetInstance().Start();
         }
 
         private static Program _instance;
-        private Task _bgTask;
-        private DiscordSocketClient _client;
+        private readonly DiscordSocketClient _client;
         private IServiceProvider _services;
-        private ConfigClass _botconfig;
+        private readonly BotConfig _botConfig;
         public readonly HttpClient DefaultHttpClient;
-        SlashCommands _commands;
 
         private Program()
         {
             DefaultHttpClient = new HttpClient();
+            _client = new DiscordSocketClient( new DiscordSocketConfig
+                { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites });
+            SlashCommands commands = new(_client);
+            _services = new ServiceCollection().AddSingleton(_client).BuildServiceProvider();
+            _botConfig = BotConfigHandler.GetBotConfig();
+            
+            _client.Log += Log;
+            _client.JoinedGuild += GuildJoined;
+            _client.LeftGuild += GuildLeft;
+            _client.ButtonExecuted += ButtonExecuted;
+            _client.Ready += Ready;
+            _client.SlashCommandExecuted += commands.SlashCommandHandler;
+            _client.SelectMenuExecuted += SelectMenuExecuted;
         }
 
         public static Program GetInstance()
@@ -39,31 +49,9 @@ namespace HLTVDiscordBridge
             return _instance ??= new Program();
         }
         
-        public async Task RunBotAsync()
+        private async Task Start()
         {
-            DiscordSocketConfig _config = new() { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites };
-            _client = new DiscordSocketClient(_config);
-            _commands = new SlashCommands(_client);
-
-            _services = new ServiceCollection()
-                .AddSingleton(_client)
-                .BuildServiceProvider();
-
-            _botconfig = Config.LoadConfig();
-            //StatsUpdater.InitStats();
-
-            string botToken = _botconfig.BotToken;
-
-            _client.Log += Log;
-            _client.JoinedGuild += GuildJoined;
-            _client.LeftGuild += GuildLeft;
-            _client.ButtonExecuted += ButtonExecuted;
-            _client.Ready += Ready;
-            _client.SlashCommandExecuted += _commands.SlashCommandHandler;
-            _client.SelectMenuExecuted += SelectMenuExecuted;
-            
-
-            await _client.LoginAsync(TokenType.Bot, botToken);
+            await _client.LoginAsync(TokenType.Bot, _botConfig.BotToken);
             await _client.StartAsync();
             await _client.SetGameAsync("/help");
             await Task.Delay(-1);
@@ -89,23 +77,16 @@ namespace HLTVDiscordBridge
         private async Task Ready()
         {
             await Config.ServerConfigStartUp(_client);
-            if (_client.CurrentUser.Id == _botconfig.ProductionBotId)
-            {
-                Timer updateGgStatsTimer = new(1000 * 60 * 60);
-                updateGgStatsTimer.Elapsed += async (sender, e) => await UpdateGgServerstats();
-                updateGgStatsTimer.Enabled = true;
-            }
-            _bgTask ??= BgTask();
+            
+            await BgTask();
         }
 
-        private Task ButtonExecuted(SocketMessageComponent arg)
+        private static Task ButtonExecuted(SocketMessageComponent arg)
         {
             Task handler = Task.Run(async () =>
             {
                 string matchLink = "";
                 Match match;
-                MatchMapStats mapStats;
-                MatchStats matchStats;
                 switch (arg.Data.CustomId)
                 {
                     case "overallstats_bo1":
@@ -115,7 +96,7 @@ namespace HLTVDiscordBridge
                             matchLink = ((EmbedAuthor)e.Author).Url;
                         }
                         match = await HltvMatch.GetMatch(matchLink);
-                        mapStats = await HltvMatchMapStats.GetMatchMapStats(match.maps[0]);
+                        MatchMapStats mapStats = await HltvMatchMapStats.GetMatchMapStats(match.maps[0]);
                         await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(mapStats));
                         break;
                     case "overallstats_def":
@@ -126,7 +107,7 @@ namespace HLTVDiscordBridge
                             matchLink = ((EmbedAuthor)e.Author).Url;
                         }
                         match = await HltvMatch.GetMatch(matchLink);
-                        matchStats = await HltvMatchStats.GetMatchStats(match);
+                        MatchStats matchStats = await HltvMatchStats.GetMatchStats(match);
                         await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(matchStats));
                         break;
                 }
@@ -150,16 +131,16 @@ namespace HLTVDiscordBridge
             await Config.GuildJoined(guild);
         }
 
-        private async Task UpdateGgServerstats()
+        private async Task UpdateGgServerStats()
         {   //top.gg
             HttpClient client = new();
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.TopGGApiKey);
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.TopGgApiKey);
             HttpRequestMessage reqTop = new(HttpMethod.Post, $"https://top.gg/api/bots/${_client.CurrentUser.Id}/stats");
             reqTop.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
             await DefaultHttpClient.SendAsync(reqTop);
             
             //bots.gg
-            DefaultHttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.BotsGGApiKey);
+            DefaultHttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.BotsGgApiKey);
             HttpRequestMessage reqBots = new (HttpMethod.Post, $"https://discord.bots.gg/api/v1/bots/${_client.Guilds.Count}/stats");
             reqBots.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
             await DefaultHttpClient.SendAsync(reqBots);
@@ -167,42 +148,29 @@ namespace HLTVDiscordBridge
 
         private async Task BgTask()
         {
-            Timer[] timers = { new (), new (), new () };
-            Func<Task>[] functions = { HltvResults.SendNewResults, HltvEvents.AktEvents, HltvNews.SendNewNews };
-            foreach (Timer timer in timers)
+            if (_client.CurrentUser.Id == _botConfig.ProductionBotId)
             {
-                Func<Task> function = functions[Array.IndexOf(timers, timer)];
-                await function();
-                timer.Interval = _botconfig.CheckResultsTimeInterval;
-                timer.Elapsed += async (sender, e) => await function();
-                timer.Enabled = true;
-                await Task.Delay(_botconfig.DelayBetweenRequests);
+                Timer updateGgStatsTimer = new(1000 * 60 * 60);
+                updateGgStatsTimer.Elapsed += async (sender, e) => await UpdateGgServerStats();
+                updateGgStatsTimer.Enabled = true;
             }
-            /*for (int i = 0; i < timers.Length; i++)
-            {
-                timers[i].Elapsed += async (sender, e) => await functions[i]();
-            }*/
-            /*while (true)
+            (Timer, Func<Task>)[] timers = { (new Timer(), HltvResults.SendNewResults), (new Timer(), HltvEvents.AktEvents), (new Timer(), HltvNews.SendNewNews) };
+            foreach ((Timer timer, Func<Task> function) in timers)
             {
                 try
                 {
-                    Stopwatch watch = new(); watch.Start();
-                    await HltvResults.SendNewResults();
-                    WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
-                    await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                    await HltvEvents.AktEvents(await Config.GetChannelsLegacy(_client));
-                    WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
-                    await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                    await HltvNews.SendNewNews();
-                    WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
-                    CacheCleaner.Cleaner(_client);
-                    await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
-                } catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                    await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
+                    await function();
                 }
-            }*/
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+                timer.Interval = _botConfig.CheckResultsTimeInterval;
+                timer.Elapsed += async (sender, e) => await function();
+                timer.Enabled = true;
+                await Task.Delay(_botConfig.DelayBetweenRequests);
+            }
         }
 
         public static void WriteLog(string arg)

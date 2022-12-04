@@ -40,8 +40,8 @@ namespace HLTVDiscordBridge.Modules
         public int MatchesSent { get; set; } = 0;
         public int NewsSent { get; set; } = 0;
         public int MessagesSent { get; set; } = 0;
-        public List<PlayerReq> Players { get; set; } = new List<PlayerReq>();
-        public List<TeamReq> Teams { get; set; } = new List<TeamReq>();
+        public List<PlayerReq> Players { get; set; } = new ();
+        public List<TeamReq> Teams { get; set; } = new ();
     }
 
 
@@ -52,14 +52,8 @@ namespace HLTVDiscordBridge.Modules
         public static StatsTracker StatsTracker = new();
         private static IMongoCollection<StatsTracker> GetCollection()
         {
-            MongoClient dbClient = new(Config.LoadConfig().DatabaseLink);
-#if RELEASE
-            IMongoDatabase db = dbClient.GetDatabase("hltv");
-#endif
-#if DEBUG
-            IMongoDatabase db = dbClient.GetDatabase("hltv-dev");
-#endif
-            return db.GetCollection<StatsTracker>("stats");
+            MongoClient dbClient = new(BotConfigHandler.GetBotConfig().DatabaseLink);
+            return dbClient.GetDatabase(BotConfigHandler.GetBotConfig().Database).GetCollection<StatsTracker>("stats");
         }
         public static void InitStats()
         {

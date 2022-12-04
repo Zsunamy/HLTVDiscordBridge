@@ -5,54 +5,37 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
-using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
 using Newtonsoft.Json.Linq;
 
 namespace HLTVDiscordBridge.Modules
 {
-    public class HltvResults
+    public static class HltvResults
     {
         public static async Task<List<MatchResult>> GetMatchResultsOfEvent(uint eventId)
         {
-            List<uint> eventIds = new();
-            eventIds.Add(eventId);
+            List<uint> eventIds = new() { eventId };
             return await GetMatchResultsOfEvent(eventIds);
         }
-        private static async Task<List<MatchResult>> GetMatchResultsOfEvent(List<uint> eventIds)
+        private static async Task<List<MatchResult>> GetMatchResultsOfEvent(IEnumerable<uint> eventIds)
         {
-            List<string> eventIdsString = new();
-            foreach(uint eventId in eventIds)
-            {
-                eventIdsString.Add(eventId.ToString());
-            }
-            List<List<string>> values = new(); values.Add(eventIdsString);
-            List<string> properties = new(); properties.Add("eventIds");
+            List<string> eventIdsString = eventIds.Select(eventId => eventId.ToString()).ToList();
+            List<List<string>> values = new() { eventIdsString };
+            List<string> properties = new() { "eventIds" };
             JArray req = await Tools.RequestApiJArray("getResults", properties, values);
 
-            List<MatchResult> matchResults = new();
-            foreach(JToken matchResult in req)
-            {
-                matchResults.Add(new MatchResult(matchResult as JObject));
-            }
-
-            return matchResults;
+            return req.Select(matchResult => new MatchResult(matchResult as JObject)).ToList();
         }
         public static async Task<List<MatchResult>> GetMatchResults(uint teamId)
         {
-            List<string> teamIds = new(); teamIds.Add(teamId.ToString());
+            List<string> teamIds = new() { teamId.ToString() };
 
-            List<List<string>> values = new(); values.Add(teamIds);
-            List<string> properties = new(); properties.Add("teamIds");
+            List<List<string>> values = new() { teamIds };
+            List<string> properties = new() { "teamIds" };
 
-            var req = await Tools.RequestApiJArray("getResults", properties, values);
+            JArray req = await Tools.RequestApiJArray("getResults", properties, values);
 
-            List<MatchResult> results = new();
-            foreach(JToken result in req)
-            {
-                results.Add(new MatchResult(JObject.Parse(result.ToString())));
-            }
-            return results;
+            return req.Select(result => new MatchResult(JObject.Parse(result.ToString()))).ToList();
         }
         private static async Task<List<MatchResult>> GetAllResults()
         {
@@ -63,68 +46,30 @@ namespace HLTVDiscordBridge.Modules
             string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
             values.Add(startDate); values.Add(endDate);
 
-            var req = await Tools.RequestApiJArray("getResults", properties, values);
+            JArray req = await Tools.RequestApiJArray("getResults", properties, values);
             
             Directory.CreateDirectory("./cache/results");
 
-            List<MatchResult> results = new();
-            
-            foreach (JToken jTok in req)
-            {
-                results.Add(new MatchResult(jTok as JObject));
-            }
-            
-            return results;
+            return req.Select(jTok => new MatchResult(jTok as JObject)).ToList();
         }
         private static async Task<List<MatchResult>> GetNewMatchResults()
         {
             List<MatchResult> newResults = await GetAllResults();
 
-            List<MatchResult> oldResults = new();
-            var oldResultsJArray = JArray.Parse(File.ReadAllText("./cache/results/results.json"));
-            foreach (JToken jToken in oldResultsJArray)
-            {
-                JObject jObj = JObject.Parse(jToken.ToString());
-                MatchResult oldResult = new(jObj);
-                oldResults.Add(oldResult);
-            }
-            List<MatchResult> results = new();
-            foreach (var newResult in newResults)
-            {
-                var found = false;
-                foreach (var oldResult in oldResults)
-                {
-                    if (newResult.id == oldResult.id)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    results.Add(newResult);
-                }
-            }
-            if (!results.Any())
-            {
-                return null;
-            }
-            File.WriteAllText("./cache/results/results.json", JArray.FromObject(newResults).ToString());
+            JArray oldResultsJArray = JArray.Parse(await File.ReadAllTextAsync("./cache/results/results.json"));
+            List<MatchResult> oldResults = oldResultsJArray.Select(jToken => JObject.Parse(jToken.ToString()))
+                .Select(jObj => new MatchResult(jObj)).ToList();
+            List<MatchResult> results = (from newResult in newResults
+                let found = oldResults.Any(oldResult => newResult.id == oldResult.id) where !found select newResult).ToList();
+            
+            await File.WriteAllTextAsync("./cache/results/results.json", JArray.FromObject(newResults).ToString());
             return results;
         }
         private static Embed GetResultEmbed(MatchResult matchResult, Match match)
         {
             EmbedBuilder builder = new();
-            string title;
-            if (match.winnerTeam.name == match.team1.name)
-            {
-                title = $"👑 {match.team1.name} vs. {match.team2.name}";
-            }
-            else
-            {
-                title = $"{match.team1.name} vs. {match.team2.name} 👑";
-            }
+            string title = match.winnerTeam.name == match.team1.name ? $"👑 {match.team1.name} vs. {match.team2.name}" :
+                $"{match.team1.name} vs. {match.team2.name} 👑";
             builder.WithTitle(title)
                 .WithColor(Color.Red)
                 .AddField("event:", $"[{match.eventObj.name}]({match.eventObj.link})\n{match.significance}")
@@ -145,11 +90,8 @@ namespace HLTVDiscordBridge.Modules
             {
                 if(map.mapResult != null)
                 {
-                    string mapHalfResultString = "";
-                    foreach(MapHalfResult mapHalfResult in map.mapResult.mapHalfResults)
-                    {
-                        mapHalfResultString += mapHalfResultString == "" ? $"{mapHalfResult.team1Rounds}:{mapHalfResult.team2Rounds}" : $" | {mapHalfResult.team1Rounds}:{mapHalfResult.team2Rounds}";                        
-                    }
+                    string mapHalfResultString = 
+                        map.mapResult.mapHalfResults.Aggregate("", (current, mapHalfResult) => current + (current == "" ? $"{mapHalfResult.team1Rounds}:{mapHalfResult.team2Rounds}" : $" | {mapHalfResult.team1Rounds}:{mapHalfResult.team2Rounds}"));
                     mapsString += $"{GetMapNameByAcronym(map.name)} ({map.mapResult.team1TotalRounds}:{map.mapResult.team2TotalRounds}) ({mapHalfResultString})\n";
                 }
                 else
@@ -163,11 +105,8 @@ namespace HLTVDiscordBridge.Modules
             {
                 Highlight[] highlights = new Highlight[2];
                 match.highlights.CopyTo(0, highlights, 0, 2);
-                string highlightsString = "";
-                foreach(Highlight highlight in highlights)
-                {
-                    highlightsString += $"[{SpliceText(highlight.title, 35)}]({highlight.link})\n\n";
-                }
+                string highlightsString = highlights.Aggregate
+                    ("", (current, highlight) => current + $"[{SpliceText(highlight.title, 35)}]({highlight.link})\n\n");
                 builder.AddField("highlights:", highlightsString);
             }
 
@@ -190,9 +129,13 @@ namespace HLTVDiscordBridge.Modules
         }
         public static async Task SendNewResults()
         {
-            Stopwatch watch = new(); watch.Start();
+            Stopwatch watch = new();
+            watch.Start();
             List<MatchResult> newMatchResults = await GetNewMatchResults();
-            if (newMatchResults == null) { return; }
+            if (newMatchResults == null)
+            {
+                return;
+            }
 
             List<Match> newMatches = new();
             foreach (MatchResult matchResult in newMatchResults)
@@ -200,12 +143,13 @@ namespace HLTVDiscordBridge.Modules
                 newMatches.Add(await HltvMatch.GetMatch(matchResult));
             }
 
-            foreach(MatchResult matchResult in newMatchResults)
+            foreach (MatchResult matchResult in newMatchResults)
             {
 
                 Match newMatch = newMatches.ElementAt(newMatchResults.IndexOf(matchResult));
-                await Tools.SendMessagesWithWebhook(x => x.ResultWebhookId != null,
-                    x => x.ResultWebhookId, x=> x.ResultWebhookToken , GetResultEmbed(matchResult, newMatch), GetMessageComponent(newMatch));
+                await Tools.SendMessagesWithWebhook(x => x.ResultWebhookId != null && x.MinimumStars >= matchResult.stars,
+                    x => x.ResultWebhookId, x => x.ResultWebhookToken, GetResultEmbed(matchResult, newMatch),
+                    GetMessageComponent(newMatch));
             }
             Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
         }
@@ -237,17 +181,17 @@ namespace HLTVDiscordBridge.Modules
                 "de_vertigo" => "Vertigo",
                 "de_season" => "Season",
                 "de_ancient" => "Ancient",
-                _ => arg[0].ToString().ToUpper() + arg.Substring(1),
+                _ => arg[0].ToString().ToUpper() + arg[1..],
             };
         }
         private static string SpliceText(string text, int lineLength)
         {
-            var charCount = 0;
-            var lines = text.Split(new [] { " " }, StringSplitOptions.RemoveEmptyEntries)
+            int charCount = 0;
+            IEnumerable<string> lines = text.Split(new [] { " " }, StringSplitOptions.RemoveEmptyEntries)
                             .GroupBy(w => (charCount += w.Length + 1) / lineLength)
                             .Select(g => string.Join(" ", g));
 
-            return String.Join("\n", lines.ToArray());
+            return string.Join("\n", lines.ToArray());
         }
     }
 }

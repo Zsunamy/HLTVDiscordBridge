@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -34,7 +33,7 @@ namespace HLTVDiscordBridge.Modules
         {
             HttpClient http = new();
 
-            Uri uri = new($"{Config.LoadConfig().APILink}/api/{endpoint}");
+            Uri uri = new($"{BotConfigHandler.GetBotConfig().ApiLink}/api/{endpoint}");
 
             StringBuilder sb = new();
             StringWriter sw = new(sb);
@@ -43,15 +42,15 @@ namespace HLTVDiscordBridge.Modules
             {
                 writer.Formatting = Formatting.Indented;
 
-                writer.WriteStartObject();
-                writer.WritePropertyName("delayBetweenPageRequests");
-                writer.WriteValue(300);
+                await writer.WriteStartObjectAsync();
+                await writer.WritePropertyNameAsync("delayBetweenPageRequests");
+                await writer.WriteValueAsync(300);
                 for(int i = 0; i < properties.Count; i++)
                 {
-                    writer.WritePropertyName(properties[i]);
-                    writer.WriteValue(values[i]);
+                    await writer.WritePropertyNameAsync(properties[i]);
+                    await writer.WriteValueAsync(values[i]);
                 }
-                writer.WriteEndObject();
+                await writer.WriteEndObjectAsync();
             }
             
             HttpResponseMessage resp = await http.PostAsync(uri, new StringContent(sb.ToString(), Encoding.UTF8, "application/json"));
@@ -67,7 +66,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 try
                 {
-                    var error = JObject.Parse(await resp.Content.ReadAsStringAsync());
+                    JObject error = JObject.Parse(await resp.Content.ReadAsStringAsync());
                     throw new HltvApiException(error);
                 }
                 catch(JsonReaderException) { throw new Exception("Deployment Error"); }                
@@ -75,53 +74,7 @@ namespace HLTVDiscordBridge.Modules
         }
         public static async Task<JArray> RequestApiJArray(string endpoint, List<string> properties, List<string> values)
         {
-            HttpClient http = new();
-            Uri uri = new($"{Config.LoadConfig().APILink}/api/{endpoint}");
-
-            StringBuilder sb = new();
-            StringWriter sw = new StringWriter(sb);
-
-            using (JsonWriter writer = new JsonTextWriter(sw))
-            {
-                writer.Formatting = Formatting.Indented;
-
-                writer.WriteStartObject();
-                writer.WritePropertyName("delayBetweenPageRequests");
-                writer.WriteValue(300);
-                if (properties != null)
-                {
-                    for (int i = 0; i < properties.Count; i++)
-                    {
-                        writer.WritePropertyName(properties[i]);
-                        writer.WriteValue(values[i]);
-                    }
-                }
-                writer.WriteEndObject();
-            }
-
-            HttpResponseMessage resp = await http.PostAsync(uri, new StringContent(sb.ToString(), Encoding.UTF8, "application/json"));
-            string res = await resp.Content.ReadAsStringAsync();
-            if (resp.IsSuccessStatusCode)
-            {
-                Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
-                StatsUpdater.StatsTracker.ApiRequest = +1;
-                StatsUpdater.UpdateStats();
-                return JArray.Parse(res);
-            }
-            else
-            {
-                try
-                {
-                    JObject error = JObject.Parse(await resp.Content.ReadAsStringAsync());
-                    throw new HltvApiException(error);
-                }
-                catch (JsonReaderException) { throw new Exception("Deployment Error"); }
-            }
-        }
-        public static async Task<JArray> RequestApiJArray(string endpoint, List<string> properties, List<List<string>> values)
-        {
-            HttpClient http = Program.GetInstance().DefaultHttpClient;
-            Uri uri = new($"{Config.LoadConfig().APILink}/api/{endpoint}");
+            Uri uri = new($"{BotConfigHandler.GetBotConfig().ApiLink}/api/{endpoint}");
 
             StringBuilder sb = new();
             StringWriter sw = new (sb);
@@ -130,24 +83,21 @@ namespace HLTVDiscordBridge.Modules
             {
                 writer.Formatting = Formatting.Indented;
 
-                writer.WriteStartObject();
-                writer.WritePropertyName("delayBetweenPageRequests");
-                writer.WriteValue(300);
+                await writer.WriteStartObjectAsync();
+                await writer.WritePropertyNameAsync("delayBetweenPageRequests");
+                await writer.WriteValueAsync(300);
                 if (properties != null)
                 {
                     for (int i = 0; i < properties.Count; i++)
                     {
-                        writer.WritePropertyName(properties[i]);
-                        writer.WriteStartArray();
-                        foreach(string s in values[i])
-                            writer.WriteValue(s);
-                        writer.WriteEndArray();
+                        await writer.WritePropertyNameAsync(properties[i]);
+                        await writer.WriteValueAsync(values[i]);
                     }
                 }
-                writer.WriteEndObject();
+                await writer.WriteEndObjectAsync();
             }
 
-            HttpResponseMessage resp = await http.PostAsync(uri, new StringContent(sb.ToString(), Encoding.UTF8, "application/json"));
+            HttpResponseMessage resp = await Program.GetInstance().DefaultHttpClient.PostAsync(uri, new StringContent(sb.ToString(), Encoding.UTF8, "application/json"));
             string res = await resp.Content.ReadAsStringAsync();
             if (resp.IsSuccessStatusCode)
             {
@@ -156,15 +106,57 @@ namespace HLTVDiscordBridge.Modules
                 StatsUpdater.UpdateStats();
                 return JArray.Parse(res);
             }
-            else
+            
+            try
             {
-                try
-                {
-                    var error = JObject.Parse(await resp.Content.ReadAsStringAsync());
-                    throw new HltvApiException(error);
-                }
-                catch (JsonReaderException) { throw new Exception("Deployment Error"); }
+                JObject error = JObject.Parse(await resp.Content.ReadAsStringAsync());
+                throw new HltvApiException(error); 
             }
+            catch (JsonReaderException) { throw new Exception("Deployment Error"); }
+        }
+        public static async Task<JArray> RequestApiJArray(string endpoint, List<string> properties, List<List<string>> values)
+        {
+            Uri uri = new($"{BotConfigHandler.GetBotConfig().ApiLink}/api/{endpoint}");
+
+            StringBuilder sb = new();
+            StringWriter sw = new (sb);
+
+            using (JsonWriter writer = new JsonTextWriter(sw))
+            {
+                writer.Formatting = Formatting.Indented;
+
+                await writer.WriteStartObjectAsync();
+                await writer.WritePropertyNameAsync("delayBetweenPageRequests");
+                await writer.WriteValueAsync(300);
+                if (properties != null)
+                {
+                    for (int i = 0; i < properties.Count; i++)
+                    {
+                        await writer.WritePropertyNameAsync(properties[i]);
+                        await writer.WriteStartArrayAsync();
+                        foreach(string s in values[i])
+                            await writer.WriteValueAsync(s);
+                        await writer.WriteEndArrayAsync();
+                    }
+                }
+                await writer.WriteEndObjectAsync();
+            }
+
+            HttpResponseMessage resp = await Program.GetInstance().DefaultHttpClient.PostAsync(uri, new StringContent(sb.ToString(), Encoding.UTF8, "application/json"));
+            string res = await resp.Content.ReadAsStringAsync();
+            if (resp.IsSuccessStatusCode)
+            {
+                Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
+                StatsUpdater.StatsTracker.ApiRequest = +1;
+                StatsUpdater.UpdateStats();
+                return JArray.Parse(res);
+            }
+            try
+            {
+                JObject error = JObject.Parse(await resp.Content.ReadAsStringAsync());
+                throw new HltvApiException(error);
+            }
+            catch (JsonReaderException) { throw new Exception("Deployment Error"); }
         }
 
         public static string GetHltvTimeFormat(DateTime date)
@@ -189,9 +181,12 @@ namespace HLTVDiscordBridge.Modules
             return int.Parse(url.Split('/')[^2]);
         }
 
-        public static Task SendMessagesWithWebhook(Expression<Func<ServerConfig, bool>> filter, Expression<Func<ServerConfig, ulong?>> getId, Expression<Func<ServerConfig, string>> getToken, Embed embed, MessageComponent component)
+        public static Task SendMessagesWithWebhook(Expression<Func<ServerConfig, bool>> filter, Expression<Func<ServerConfig, ulong?>> getId,
+            Expression<Func<ServerConfig, string>> getToken, Embed embed, MessageComponent component)
         {
-            List<Webhook> webhooks = Config.GetCollection().FindSync(filter).ToList().Select(config => new Webhook(getId.Compile()(config), getToken.Compile()(config))).ToList();
+            List<Webhook> webhooks = Config.GetCollection().FindSync(filter).ToList().Select(config =>
+                new Webhook(getId.Compile()(config), getToken.Compile()(config))).ToList();
+            
             List<Task> status = webhooks.Select(webhook => Task.Run(() =>
                 {
                     DiscordWebhookClient webhookClient;
@@ -202,7 +197,7 @@ namespace HLTVDiscordBridge.Modules
                     }
                     catch (Exception e)
                     {
-                        if (e is (InvalidOperationException or HttpException))
+                        if (e is InvalidOperationException or HttpException)
                         {
                             UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(getId, null)
                                 .Set(getToken, "");

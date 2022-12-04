@@ -38,7 +38,7 @@ namespace HLTVDiscordBridge.Modules
     {
         private static IMongoCollection<PlayerDocument_new> GetCollection()
         {
-            MongoClient dbClient = new(Config.LoadConfig().DatabaseLink);
+            MongoClient dbClient = new(BotConfigHandler.GetBotConfig().DatabaseLink);
 #if DEBUG
             IMongoDatabase db = dbClient.GetDatabase("hltv-dev");
 #endif

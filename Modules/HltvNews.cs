@@ -43,10 +43,9 @@ namespace HLTVDiscordBridge.Modules
             await File.WriteAllTextAsync("./cache/news/news.json", JArray.FromObject(latestNews).ToString());
 
             List<News> oldNews = oldNewsJArray.Select(item => new News(JObject.FromObject(item))).ToList();
-            return (from newItem in latestNews
-                let found = oldNews.Any(oldItem => Tools.GetIdFromUrl(newItem.link) == Tools.GetIdFromUrl(oldItem.link))
-                where found select newItem)
-                .ToList();
+            return (from newItem in latestNews 
+                    where oldNews.All(oldItem => Tools.GetIdFromUrl(newItem.link) != Tools.GetIdFromUrl(oldItem.link))
+                    select newItem).ToList();
         }
 
         private static async Task<List<News>> GetLatestNews()
