@@ -75,7 +75,7 @@ namespace HLTVDiscordBridge.Modules
             foreach (News news in await GetNewNews())
             {
                 await Tools.SendMessagesWithWebhook(x => x.NewsWebhookId != null,
-                    x => x.NewsWebhookId, x=> x.NewsWebhookToken , GetNewsEmbed(news), null);
+                    x => x.NewsWebhookId, x=> x.NewsWebhookToken , GetNewsEmbed(news));
             }
             Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)");
         }

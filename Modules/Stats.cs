@@ -1,6 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Collections.Generic;
+using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -52,8 +53,8 @@ namespace HLTVDiscordBridge.Modules
         public static StatsTracker StatsTracker = new();
         private static IMongoCollection<StatsTracker> GetCollection()
         {
-            MongoClient dbClient = new(BotConfigHandler.GetBotConfig().DatabaseLink);
-            return dbClient.GetDatabase(BotConfigHandler.GetBotConfig().Database).GetCollection<StatsTracker>("stats");
+            MongoClient dbClient = new(BotConfig.GetBotConfig().DatabaseLink);
+            return dbClient.GetDatabase(BotConfig.GetBotConfig().Database).GetCollection<StatsTracker>("stats");
         }
         public static void InitStats()
         {

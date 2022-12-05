@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Bson.Serialization.Attributes;
@@ -69,6 +68,7 @@ namespace HLTVDiscordBridge
                         .Set(x => x.NewsWebhookToken, updateWebhook.Token);
                 await GetCollection().UpdateOneAsync(x => x.NewsChannelID == config.NewsChannelID, update);
             }
+            Console.WriteLine("Finished initializing all webhooks!");
         }
 
         private static async Task<UpdateDefinition<ServerConfig>> SetWebhook(bool enable, Expression<Func<ServerConfig, ulong?>> filterId,
@@ -108,8 +108,8 @@ namespace HLTVDiscordBridge
         }
         public static IMongoCollection<ServerConfig> GetCollection()
         {
-            MongoClient dbClient = new(BotConfigHandler.GetBotConfig().DatabaseLink);
-            IMongoDatabase db = dbClient.GetDatabase(BotConfigHandler.GetBotConfig().Database);
+            MongoClient dbClient = new(BotConfig.GetBotConfig().DatabaseLink);
+            IMongoDatabase db = dbClient.GetDatabase(BotConfig.GetBotConfig().Database);
             return db.GetCollection<ServerConfig>("serverconfig");
         }
         public static ServerConfig GetServerConfig(SocketTextChannel channel)
@@ -305,6 +305,7 @@ namespace HLTVDiscordBridge
                 catch (Exception)
                 {
                     //TODO send message to server owner.
+                    throw new NotImplementedException();
                     return;
                 }
             }
@@ -324,8 +325,6 @@ namespace HLTVDiscordBridge
             {
                 if (await collection.Find(x => x.GuildID == guild.Id).CountDocumentsAsync() == 0)
                 {
-                    //await guild.LeaveAsync();
-                    //Console.WriteLine($"Would have left: {guild.Name}");
                     Console.WriteLine($"found guild {guild.Name} with no config. Creating default.");
                     await Program.GetInstance().GuildJoined(guild);
                 }

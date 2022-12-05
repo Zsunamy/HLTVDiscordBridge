@@ -26,7 +26,7 @@ namespace HLTVDiscordBridge.Modules
                     if (fullEvent != null)
                     {
                         await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
-                                x => x.EventWebhookId, x=> x.EventWebhookToken , GetEventStartedEmbed(fullEvent), null);
+                                x => x.EventWebhookId, x=> x.EventWebhookToken , GetEventStartedEmbed(fullEvent));
                     }
                 }
                 Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");

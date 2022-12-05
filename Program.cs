@@ -16,8 +16,8 @@ namespace HLTVDiscordBridge
     {
         private static async Task Main()
         {
-            GetInstance().Start().GetAwaiter().GetResult();
-            //await GetInstance().Start();
+            await GetInstance().Start();
+            await Task.Delay(-1);
         }
 
         private static Program _instance;
@@ -33,7 +33,7 @@ namespace HLTVDiscordBridge
                 { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites });
             SlashCommands commands = new(_client);
             _services = new ServiceCollection().AddSingleton(_client).BuildServiceProvider();
-            _botConfig = BotConfigHandler.GetBotConfig();
+            _botConfig = BotConfig.GetBotConfig();
             
             _client.Log += Log;
             _client.JoinedGuild += GuildJoined;
@@ -54,7 +54,6 @@ namespace HLTVDiscordBridge
             await _client.LoginAsync(TokenType.Bot, _botConfig.BotToken);
             await _client.StartAsync();
             await _client.SetGameAsync("/help");
-            await Task.Delay(-1);
         }
 
         private static Task SelectMenuExecuted(SocketMessageComponent arg)

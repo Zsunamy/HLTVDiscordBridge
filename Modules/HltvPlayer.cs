@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
@@ -38,7 +37,7 @@ namespace HLTVDiscordBridge.Modules
     {
         private static IMongoCollection<PlayerDocument_new> GetCollection()
         {
-            MongoClient dbClient = new(BotConfigHandler.GetBotConfig().DatabaseLink);
+            MongoClient dbClient = new(BotConfig.GetBotConfig().DatabaseLink);
 #if DEBUG
             IMongoDatabase db = dbClient.GetDatabase("hltv-dev");
 #endif

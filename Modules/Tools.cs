@@ -33,7 +33,7 @@ namespace HLTVDiscordBridge.Modules
         {
             HttpClient http = new();
 
-            Uri uri = new($"{BotConfigHandler.GetBotConfig().ApiLink}/api/{endpoint}");
+            Uri uri = new($"{BotConfig.GetBotConfig().ApiLink}/api/{endpoint}");
 
             StringBuilder sb = new();
             StringWriter sw = new(sb);
@@ -74,7 +74,7 @@ namespace HLTVDiscordBridge.Modules
         }
         public static async Task<JArray> RequestApiJArray(string endpoint, List<string> properties, List<string> values)
         {
-            Uri uri = new($"{BotConfigHandler.GetBotConfig().ApiLink}/api/{endpoint}");
+            Uri uri = new($"{BotConfig.GetBotConfig().ApiLink}/api/{endpoint}");
 
             StringBuilder sb = new();
             StringWriter sw = new (sb);
@@ -116,7 +116,7 @@ namespace HLTVDiscordBridge.Modules
         }
         public static async Task<JArray> RequestApiJArray(string endpoint, List<string> properties, List<List<string>> values)
         {
-            Uri uri = new($"{BotConfigHandler.GetBotConfig().ApiLink}/api/{endpoint}");
+            Uri uri = new($"{BotConfig.GetBotConfig().ApiLink}/api/{endpoint}");
 
             StringBuilder sb = new();
             StringWriter sw = new (sb);
@@ -182,7 +182,7 @@ namespace HLTVDiscordBridge.Modules
         }
 
         public static Task SendMessagesWithWebhook(Expression<Func<ServerConfig, bool>> filter, Expression<Func<ServerConfig, ulong?>> getId,
-            Expression<Func<ServerConfig, string>> getToken, Embed embed, MessageComponent component)
+            Expression<Func<ServerConfig, string>> getToken, Embed embed, MessageComponent component = null)
         {
             List<Webhook> webhooks = Config.GetCollection().FindSync(filter).ToList().Select(config =>
                 new Webhook(getId.Compile()(config), getToken.Compile()(config))).ToList();
