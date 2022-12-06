@@ -62,15 +62,12 @@ namespace HLTVDiscordBridge.Modules
                 StatsUpdater.UpdateStats();
                 return JObject.Parse(res);
             }
-            else
-            {
-                try
-                {
-                    JObject error = JObject.Parse(await resp.Content.ReadAsStringAsync());
-                    throw new HltvApiException(error);
-                }
-                catch(JsonReaderException) { throw new Exception("Deployment Error"); }                
+            try
+            { 
+                JObject error = JObject.Parse(await resp.Content.ReadAsStringAsync());
+                throw new HltvApiException(error);
             }
+            catch(JsonReaderException) { throw new Exception("Deployment Error"); }
         }
         public static async Task<JArray> RequestApiJArray(string endpoint, List<string> properties, List<string> values)
         {
@@ -197,7 +194,7 @@ namespace HLTVDiscordBridge.Modules
                     }
                     catch (Exception e)
                     {
-                        if (e is InvalidOperationException or HttpException)
+                        if (e is InvalidOperationException)
                         {
                             UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(getId, null)
                                 .Set(getToken, "");
@@ -206,8 +203,7 @@ namespace HLTVDiscordBridge.Modules
                         throw;
                     }
                     return webhookClient.SendMessageAsync(embeds: new[] { embed }, components: component);
-                }))
-                .ToList();
+                })).ToList();
             StatsUpdater.StatsTracker.MessagesSent += webhooks.Count;
             StatsUpdater.UpdateStats();
             return Task.WhenAll(status);
@@ -226,27 +222,27 @@ namespace HLTVDiscordBridge.Modules
             foreach (RestWebhook webhook in await channel.GetWebhooksAsync())
             {
                 Webhook channelWebhook = new(webhook.Id, webhook.Token);
-                if (webhooks.Contains(channelWebhook))
+                if (webhooks.Aggregate(false, (b, currentWebhook) =>
+                        (currentWebhook.Id == channelWebhook.Id && currentWebhook.Token == channelWebhook.Token) || b))
                 {
                     return channelWebhook;
                 }
-                Console.WriteLine($"{webhook.Id}, {channelWebhook.Id}");
             }
             return null;
         }
 
         public static async Task DeleteWebhook(Webhook webhook)
         {
-            try
+            if (webhook.Id != null)
             {
-                if (webhook.Id != null)
+                try
                 {
                     DiscordWebhookClient client = new((ulong)webhook.Id, webhook.Token);
                     await client.DeleteWebhookAsync();
                 }
+                catch (HttpException) {}
+                catch (InvalidOperationException) {}
             }
-            catch (HttpException) {}
-            catch (InvalidOperationException) {}
         }
     }
 }

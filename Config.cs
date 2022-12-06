@@ -58,14 +58,26 @@ namespace HLTVDiscordBridge
                         $"The Bot is probably missing permissions to manage webhooks.\n" +
                         $"Please give the bot these permissions and then setup all channels manually using the /set command");
                 }
-                UpdateDefinition<ServerConfig> update =
-                    Builders<ServerConfig>.Update
-                        .Set(x => x.ResultWebhookId, updateWebhook.Id)
-                        .Set(x => x.ResultWebhookToken, updateWebhook.Token)
-                        .Set(x => x.EventWebhookId, updateWebhook.Id)
-                        .Set(x => x.EventWebhookToken, updateWebhook.Token)
-                        .Set(x => x.NewsWebhookId, updateWebhook.Id)
-                        .Set(x => x.NewsWebhookToken, updateWebhook.Token);
+                List<UpdateDefinition<ServerConfig>> updates = new();
+                
+                if (config.ResultOutput)
+                {
+                    updates.Add(Builders<ServerConfig>.Update.Set(x => x.ResultWebhookId, updateWebhook.Id)
+                        .Set(x => x.ResultWebhookToken, updateWebhook.Token));
+                }
+                if (config.EventOutput)
+                {
+                    updates.Add(Builders<ServerConfig>.Update.Set(x => x.EventWebhookId, updateWebhook.Id)
+                        .Set(x => x.EventWebhookToken, updateWebhook.Token));
+                }
+
+                if (config.NewsOutput)
+                {
+                    updates.Add(Builders<ServerConfig>.Update.Set(x => x.NewsWebhookId, updateWebhook.Id)
+                        .Set(x => x.NewsWebhookToken, updateWebhook.Token));
+                }
+
+                UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Combine(updates);
                 await GetCollection().UpdateOneAsync(x => x.NewsChannelID == config.NewsChannelID, update);
             }
             Console.WriteLine("Finished initializing all webhooks!");

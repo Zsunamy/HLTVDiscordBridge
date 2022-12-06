@@ -1,6 +1,6 @@
 namespace HLTVDiscordBridge.Shared;
 
-public struct Webhook
+public readonly struct Webhook
 {
     public Webhook(ulong? id, string token)
     {
@@ -8,6 +8,6 @@ public struct Webhook
         Token = token;
     }
 
-    public ulong? Id { get; init; }
-    public string Token { get; init; }
+    public ulong? Id { get; }
+    public string Token { get; }
 }
