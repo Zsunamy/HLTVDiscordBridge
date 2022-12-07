@@ -53,7 +53,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 jArr = await Tools.RequestApiJArray("getTeamRanking", properties, values);
             } 
-            catch(HltvApiException ex)
+            catch(HltvApiExceptionLegacy ex)
             {
                 await cmd.Channel.SendMessageAsync(embed: ErrorHandling.GetErrorEmbed(ex));
                 return;

@@ -3,26 +3,46 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace HLTVDiscordBridge.Modules
 {
-    public class HltvApiException : Exception
+    public class HltvApiExceptionLegacy : Exception
     {
         public string Id;
         public override string Message { get; }
-        public HltvApiException(JObject jObject)
+        public HltvApiExceptionLegacy(JObject jObject)
         {
             Message = jObject.GetValue("error").ToString();
             Id = jObject.GetValue("id").ToString();
         }
     }
 
+    public class HltvApiException : Exception
+    {
+        [JsonProperty("id")]
+        public string Id;
+        [JsonProperty("error")]
+        public string Error;
+    }
+
+    public class DeploymentException : Exception
+    {
+        private HttpResponseMessage _httpMessage;
+
+        public DeploymentException(HttpResponseMessage message)
+        {
+            _httpMessage = message;
+        }
+    }
+
     public static class ErrorHandling
     {
-        public static Embed GetErrorEmbed(HltvApiException ex)
+        public static Embed GetErrorEmbed(HltvApiExceptionLegacy ex)
         {
             EmbedBuilder builder = new();
             builder.WithColor(Color.Red)

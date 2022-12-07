@@ -28,7 +28,7 @@ namespace HLTVDiscordBridge.Modules
                 File.WriteAllText("./cache/matches/upcomingMatches.json", JArray.FromObject(matches).ToString());
                 return matches;
             }
-            catch (HltvApiException) { throw; }
+            catch (HltvApiExceptionLegacy) { throw; }
         }
         public static List<MatchUpcoming> GetUpcomingMatchesByDate(List<MatchUpcoming> matches, DateTime date)
         {
@@ -69,7 +69,7 @@ namespace HLTVDiscordBridge.Modules
                 File.WriteAllText("./cache/matches/liveMatches.json", JArray.Parse(matches.ToString()).ToString());
                 return matches;
             }
-            catch (HltvApiException) { throw; }
+            catch (HltvApiExceptionLegacy) { throw; }
         }
         public static async Task<Embed> GetUpcomingMatchesEmbed(SocketSlashCommand command)
         {
@@ -112,13 +112,13 @@ namespace HLTVDiscordBridge.Modules
                 if(matches.Count < 3) { builder.WithFooter(Tools.GetRandomFooter()); }
                 return builder.Build();
             }
-            catch(HltvApiException) { throw; }
+            catch(HltvApiExceptionLegacy) { throw; }
         }
         public static async Task SendUpcomingMatches(SocketSlashCommand arg)
         {
             await arg.DeferAsync(); Embed embed;
             try { embed = await GetUpcomingMatchesEmbed(arg); }
-            catch(HltvApiException e) { embed = ErrorHandling.GetErrorEmbed(e); }
+            catch(HltvApiExceptionLegacy e) { embed = ErrorHandling.GetErrorEmbed(e); }
             await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
         }
         private static DateTime UnixTimeStampToDateTime(ulong unixTimeStamp)

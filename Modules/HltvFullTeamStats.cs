@@ -21,7 +21,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 jObject = await Tools.RequestApiJObject("getTeamStats", properties, values);
             }
-            catch(HltvApiException) { throw; }
+            catch(HltvApiExceptionLegacy) { throw; }
             return new FullTeamStats(jObject);
         }
     }

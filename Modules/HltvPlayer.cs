@@ -52,7 +52,7 @@ namespace HLTVDiscordBridge.Modules
             List<string> properties = new(); properties.Add("name");            
             List<string> values = new(); values.Add(playername);
             try { return new FullPlayer(await Tools.RequestApiJObject("getPlayerByName", properties, values)); }
-            catch (HltvApiException) { throw; }
+            catch (HltvApiExceptionLegacy) { throw; }
         }
         private static async Task<(FullPlayer, FullPlayerStats)> GetPlayerStats_new(string playername)
         {            
@@ -81,7 +81,7 @@ namespace HLTVDiscordBridge.Modules
                 {
                     //nicht in Datenbank
                     try { player = new FullPlayer(await Tools.RequestApiJObject("getPlayerByName", properties, values)); }
-                    catch (HltvApiException) { throw; }
+                    catch (HltvApiExceptionLegacy) { throw; }
 
                     collection.InsertOne(new PlayerDocument_new(player));
                 }
@@ -99,13 +99,13 @@ namespace HLTVDiscordBridge.Modules
                     }
 
                     try { player = new FullPlayer(await Tools.RequestApiJObject("getPlayerByName", properties, values)); }
-                    catch (HltvApiException) { throw; }
+                    catch (HltvApiExceptionLegacy) { throw; }
                 }
                 else
                 {
                     //in Datenbank aber nicht lokal
                     try { player = new FullPlayer(await Tools.RequestApiJObject("getPlayerByName", properties, values)); }
-                    catch(HltvApiException) { throw; }
+                    catch(HltvApiExceptionLegacy) { throw; }
                 }
 
                 Directory.CreateDirectory($"./cache/playercards/{playername.ToLower()}");
@@ -190,7 +190,7 @@ namespace HLTVDiscordBridge.Modules
 
                 Embed embed;
                 try { embed = await GetPlayerCard(arg.Data.Options.First().Value.ToString()); }
-                catch(HltvApiException e) { embed = ErrorHandling.GetErrorEmbed(e); }
+                catch(HltvApiExceptionLegacy e) { embed = ErrorHandling.GetErrorEmbed(e); }
                 
 
                 StatsUpdater.StatsTracker.MessagesSent += 2;

@@ -27,7 +27,7 @@ namespace HLTVDiscordBridge.Modules
                 await arg.DeleteOriginalResponseAsync();
                 await arg.Channel.SendFileAsync(res.Item2, embed: res.Item1);
             }
-            catch(HltvApiException e) { await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ErrorHandling.GetErrorEmbed(e)); }
+            catch(HltvApiExceptionLegacy e) { await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ErrorHandling.GetErrorEmbed(e)); }
             
             
         }
@@ -45,7 +45,7 @@ namespace HLTVDiscordBridge.Modules
                 {
                     req = await Tools.RequestApiJObject("getTeamByName", properties, values);
                 }
-                catch (HltvApiException) { throw; }
+                catch (HltvApiExceptionLegacy) { throw; }
                 
 
                 FullTeam fullTeam = new FullTeam(req);
@@ -54,7 +54,7 @@ namespace HLTVDiscordBridge.Modules
                 {
                     fullTeamStats = await HltvFullTeamStats.GetFullTeamStats(fullTeam.id);
                 }
-                catch(HltvApiException) { throw; }
+                catch(HltvApiExceptionLegacy) { throw; }
 
                 Directory.CreateDirectory($"./cache/teamcards/{fullTeam.name.ToLower().Replace(' ', '-')}");
 
@@ -91,7 +91,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 res = await GetFullTeamAndFullTeamStats(name);
             }
-            catch (HltvApiException) { throw; }
+            catch (HltvApiExceptionLegacy) { throw; }
             
             EmbedBuilder builder = new();
             FullTeam fullTeam = res.Item1;

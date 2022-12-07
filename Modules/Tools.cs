@@ -65,7 +65,7 @@ namespace HLTVDiscordBridge.Modules
             try
             { 
                 JObject error = JObject.Parse(await resp.Content.ReadAsStringAsync());
-                throw new HltvApiException(error);
+                throw new HltvApiExceptionLegacy(error);
             }
             catch(JsonReaderException) { throw new Exception("Deployment Error"); }
         }
@@ -107,7 +107,7 @@ namespace HLTVDiscordBridge.Modules
             try
             {
                 JObject error = JObject.Parse(await resp.Content.ReadAsStringAsync());
-                throw new HltvApiException(error); 
+                throw new HltvApiExceptionLegacy(error); 
             }
             catch (JsonReaderException) { throw new Exception("Deployment Error"); }
         }
@@ -151,7 +151,7 @@ namespace HLTVDiscordBridge.Modules
             try
             {
                 JObject error = JObject.Parse(await resp.Content.ReadAsStringAsync());
-                throw new HltvApiException(error);
+                throw new HltvApiExceptionLegacy(error);
             }
             catch (JsonReaderException) { throw new Exception("Deployment Error"); }
         }

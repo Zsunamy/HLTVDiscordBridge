@@ -28,7 +28,7 @@ namespace HLTVDiscordBridge.Modules
                 File.WriteAllText("./cache/matches/liveMatches.json", JArray.FromObject(matches).ToString());
                 return matches;
             }
-            catch (HltvApiException) { throw; }
+            catch (HltvApiExceptionLegacy) { throw; }
         }
 
         private async static Task<Embed> GetLiveMatchesEmbed()
@@ -38,7 +38,7 @@ namespace HLTVDiscordBridge.Modules
             {
                 matches = await GetLiveMatches();
             }
-            catch(HltvApiException) { throw; }
+            catch(HltvApiExceptionLegacy) { throw; }
 
             EmbedBuilder builder = new();
             if (matches.Count == 0)
@@ -74,7 +74,7 @@ namespace HLTVDiscordBridge.Modules
                 await arg.DeleteOriginalResponseAsync();
                 await arg.Channel.SendMessageAsync(embed: embed);
             }
-            catch (HltvApiException e) { await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ErrorHandling.GetErrorEmbed(e)); }
+            catch (HltvApiExceptionLegacy e) { await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ErrorHandling.GetErrorEmbed(e)); }
         }
     }
 }

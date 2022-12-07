@@ -217,7 +217,7 @@ namespace HLTVDiscordBridge.Modules
             properties.Add("id");
             values.Add(eventId.ToString());
             try { var req = await Tools.RequestApiJObject("getEvent", properties, values); return new FullEvent(req); }
-            catch (HltvApiException) { throw; }
+            catch (HltvApiExceptionLegacy) { throw; }
         }
         public static async Task<FullEvent> GetFullEvent(string eventName)
         {
@@ -230,7 +230,7 @@ namespace HLTVDiscordBridge.Modules
                 JObject req = await Tools.RequestApiJObject("getEventByName", properties, values);
                 return new FullEvent(req);
             }
-            catch (HltvApiException) { throw; }
+            catch (HltvApiExceptionLegacy) { throw; }
         }
         public static Embed GetEventEndedEmbed(FullEvent eventObj)
         {
@@ -516,14 +516,14 @@ namespace HLTVDiscordBridge.Modules
                     .WithSelectMenu(builder);
                 await arg.ModifyOriginalResponseAsync(msg => { msg.Embed = embed; msg.Components = compBuilder.Build(); });
             }
-            catch (HltvApiException e) { embed = ErrorHandling.GetErrorEmbed(e); await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed); }  
+            catch (HltvApiExceptionLegacy e) { embed = ErrorHandling.GetErrorEmbed(e); await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed); }  
         }
         public static async Task SendEvent(SocketSlashCommand arg)
         {
             await arg.DeferAsync();
             Embed embed; 
             try { embed = await GetEventEmbed(await GetFullEvent(arg.Data.Options.First().Value.ToString())); }
-            catch (HltvApiException e) { embed = ErrorHandling.GetErrorEmbed(e); }
+            catch (HltvApiExceptionLegacy e) { embed = ErrorHandling.GetErrorEmbed(e); }
             await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
         }
         private static DateTime UnixTimeStampToDateTime(ulong unixTimeStamp)
