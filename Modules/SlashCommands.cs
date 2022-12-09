@@ -10,7 +10,7 @@ namespace HLTVDiscordBridge.Modules
 {
     public class SlashCommands
     {
-        private static DiscordSocketClient _client = null;
+        private readonly DiscordSocketClient _client;
         public SlashCommands (DiscordSocketClient client)
         {
             _client = client;
@@ -227,56 +227,51 @@ namespace HLTVDiscordBridge.Modules
         public async Task SlashCommandHandler(SocketSlashCommand arg)
         {
             if (_client == null) { throw new InvalidOperationException("client wasn't initialized"); }
-            
-            Task.Run(async () =>
-            {
-                switch (arg.CommandName)
-                {
-                    case "servercount":
-                        await arg.RespondAsync(_client.Guilds.Count.ToString());
-                        break;
-                    case "live":
-                        await HltvLiveMatches.SendLiveMatchesEmbed(arg);
-                        break;
-                    case "player":
-                        await HltvPlayer.SendPlayerCard(arg);
-                        break;
-                    case "event":
-                        await HltvEvents.SendEvent(arg);
-                        break;
-                    case "team":
-                        await HltvTeams.SendTeamCard(arg);
-                        break;
-                    case "support":
-                        await SupportCommand.DispSupport(arg);
-                        break;
-                    case "help":
-                        await Commands.SendHelpEmbed(arg);
-                        break;
-                    case "init":
-                        await Config.InitTextChannel(arg);
-                        break;
-                    case "set":
-                        await Config.ChangeServerConfig(arg);
-                        break;
-                    case "events":
-                        await HltvEvents.SendEvents(arg);
-                        break;
-                    case "upcomingevents":
-                        await HltvEvents.SendUpcomingEvents(arg);
-                        break;
-                    case "update":
-                        await Developer.Update(arg, _client);
-                        break;
-                    case "upcomingmatches":
-                        await HltvUpcomingMatches.SendUpcomingMatches(arg);
-                        break;
-                    case "ranking":
-                        await HltvRanking.SendRanking(arg);
-                        break;
-
-                }
-            });
+            switch (arg.CommandName)
+            { 
+                case "servercount":
+                    await arg.RespondAsync(_client.Guilds.Count.ToString());
+                    break;
+                case "live":
+                    await HltvLiveMatches.SendLiveMatchesEmbed(arg);
+                    break;
+                case "player":
+                    await HltvPlayer.SendPlayerCard(arg);
+                    break;
+                case "event":
+                    await HltvEvents.SendEvent(arg);
+                    break;
+                case "team":
+                    await HltvTeams.SendTeamCard(arg);
+                    break;
+                case "support":
+                    await SupportCommand.DispSupport(arg);
+                    break;
+                case "help":
+                    await Commands.SendHelpEmbed(arg);
+                    break;
+                case "init":
+                    await Config.InitTextChannel(arg);
+                    break;
+                case "set":
+                    await Config.ChangeServerConfig(arg);
+                    break;
+                case "events":
+                    await HltvEvents.SendEvents(arg);
+                    break;
+                case "upcomingevents":
+                    await HltvEvents.SendUpcomingEvents(arg);
+                    break;
+                case "update":
+                    await Developer.Update(arg, _client);
+                    break;
+                case "upcomingmatches":
+                    await HltvUpcomingMatches.SendUpcomingMatches(arg);
+                    break;
+                case "ranking":
+                    await HltvRanking.SendRanking(arg);
+                    break;
+            }
         }
     }
 }

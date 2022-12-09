@@ -42,8 +42,8 @@ namespace HLTVDiscordBridge.Modules
             }
             
             await File.WriteAllTextAsync("./cache/news/news.json", JArray.FromObject(latestNews).ToString());
-            
-            List<News> oldNews = JsonSerializer.Deserialize<List<News>>(await File.ReadAllTextAsync("./cache/news/news.json") , ApiRequestBody.SerializeOptions);
+
+            List<News> oldNews = News.ParseFromFile("./cache/news/news.json");
             //List<News> oldNews = oldNewsJArray.Select(item => new News(JObject.FromObject(item))).ToList();
             return (from newItem in latestNews 
                     where oldNews.All(oldItem => Tools.GetIdFromUrl(newItem.Link) != Tools.GetIdFromUrl(oldItem.Link))

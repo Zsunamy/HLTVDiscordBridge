@@ -76,7 +76,6 @@ namespace HLTVDiscordBridge
         private async Task Ready()
         {
             await Config.ServerConfigStartUp(_client);
-            
             await BgTask();
         }
 
@@ -154,6 +153,7 @@ namespace HLTVDiscordBridge
                 updateGgStatsTimer.Enabled = true;
             }
             (Timer, Func<Task>)[] timers = { (new Timer(), HltvResults.SendNewResults), (new Timer(), HltvEvents.AktEvents), (new Timer(), HltvNews.SendNewNews) };
+            await HltvNews.SendNewNews();
             foreach ((Timer timer, Func<Task> function) in timers)
             {
                 try
@@ -168,7 +168,7 @@ namespace HLTVDiscordBridge
                 timer.Interval = _botConfig.CheckResultsTimeInterval;
                 timer.Elapsed += async (sender, e) => await function();
                 timer.Enabled = true;
-                await Task.Delay(_botConfig.DelayBetweenRequests);
+                await Task.Delay(timers.Length / _botConfig.CheckResultsTimeInterval * 1000);
             }
         }
 

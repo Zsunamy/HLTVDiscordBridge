@@ -1,4 +1,8 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace HLTVDiscordBridge.Shared
 {
@@ -16,6 +20,10 @@ namespace HLTVDiscordBridge.Shared
 
         public News() {}
 
+        public static List<News> ParseFromFile(string path)
+        {
+            return JsonSerializer.Deserialize<List<News>>(File.ReadAllText(path), ApiRequestBody.SerializeOptions);
+        }
         public string Title { get; set; }
         public string Description { get; set; }
         public string Link { get; set; }
