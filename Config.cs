@@ -318,7 +318,6 @@ namespace HLTVDiscordBridge
                 {
                     //TODO send message to server owner.
                     throw new NotImplementedException();
-                    return;
                 }
             }
             else 
