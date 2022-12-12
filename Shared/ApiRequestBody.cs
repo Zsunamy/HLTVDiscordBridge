@@ -42,21 +42,8 @@ public class ApiRequestBody
             if (ex.StatusCode == HttpStatusCode.BadRequest)
             {
                 throw (await resp.Content.ReadFromJsonAsync<HltvApiException>())!;
-                //throw JsonSerializer.Deserialize<HltvApiException>(await resp.Content.ReadAsStringAsync(), SerializeOptions)!;
             }
             throw new DeploymentException(resp);
         }
-        /*switch (resp.StatusCode)
-        {
-            case HttpStatusCode.OK:
-                Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
-                StatsUpdater.StatsTracker.ApiRequest = +1;
-                StatsUpdater.UpdateStats();
-                return JsonSerializer.Deserialize<T>(await resp.Content.ReadAsStringAsync(), SerializeOptions);
-            case HttpStatusCode.BadRequest:
-                throw JsonSerializer.Deserialize<HltvApiException>(await resp.Content.ReadAsStringAsync(), SerializeOptions)!;
-            default:
-                throw new DeploymentException(resp);
-        }*/
     }
 }

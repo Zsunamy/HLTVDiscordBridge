@@ -1,20 +1,14 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Newtonsoft.Json.Linq;
 
-namespace HLTVDiscordBridge.Shared
+namespace HLTVDiscordBridge.HttpResponses
 {
     public class News
     {
-        [JsonIgnore]
-        public const string Path = "./cache/news/news.json";
         public string Title { get; set; }
         public string Description { get; set; }
         public string Link { get; set; }
+        public int Id { get; set; }
         public News(JObject jObject)
         {
             Title = jObject.TryGetValue("title", out JToken titleTok) ? titleTok.ToString() : null;
@@ -26,16 +20,6 @@ namespace HLTVDiscordBridge.Shared
         }
 
         public News() {}
-
-        public static List<News> ParseFromFile()
-        {
-            return JsonSerializer.Deserialize<List<News>>(File.ReadAllText(Path), ApiRequestBody.SerializeOptions);
-        }
-
-        public static void SaveToFile(List<News> news)
-        {
-            File.WriteAllText(Path, JsonSerializer.Serialize(news, ApiRequestBody.SerializeOptions));
-        }
 
         public Embed ToEmbed()
         {

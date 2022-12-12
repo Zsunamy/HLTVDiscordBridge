@@ -5,12 +5,18 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using HLTVDiscordBridge.HttpResponses;
 using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge.Modules;
 
-public class HltvNews
+public static class HltvNews
 {
+    public const string Path = "./cache/news/news.json";
+    public static List<News> ParseFromFile()
+    {
+        return JsonSerializer.Deserialize<List<News>>(File.ReadAllText(Path), ApiRequestBody.SerializeOptions);
+    }
     private static async Task<bool> VerifyFile(string path)
     {
         if (File.Exists(path))
@@ -22,18 +28,23 @@ public class HltvNews
             }
             catch (JsonException) {}
         }
-        News.SaveToFile(await GetLatestNews());
+        SaveToFile(await GetLatestNews());
         return false;
+    }
+
+    private static void SaveToFile(object content)
+    {
+        File.WriteAllText(Path, JsonSerializer.Serialize(content, ApiRequestBody.SerializeOptions));
     }
     private static async Task<List<News>> GetNewNews()
     {
-        if (!await VerifyFile(News.Path))
+        if (!await VerifyFile(Path))
         {
             return new List<News>();
         }
         List<News> latestNews = await GetLatestNews();
-        List<News> oldNews = News.ParseFromFile();
-        News.SaveToFile(latestNews);
+        List<News> oldNews = ParseFromFile();
+        SaveToFile(latestNews);
         return (from newItem in latestNews 
             where oldNews.All(oldItem => Tools.GetIdFromUrl(newItem.Link) != Tools.GetIdFromUrl(oldItem.Link))
             select newItem).ToList();
