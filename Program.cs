@@ -163,12 +163,11 @@ namespace HLTVDiscordBridge
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
-                    throw;
                 }
                 timer.Interval = _botConfig.CheckResultsTimeInterval;
-                timer.Elapsed += async (sender, e) => await function();
+                timer.Elapsed += async (s, e) => await function();
                 timer.Enabled = true;
-                await Task.Delay(timers.Length / _botConfig.CheckResultsTimeInterval * 1000);
+                await Task.Delay(_botConfig.CheckResultsTimeInterval / timers.Length);
             }
         }
 
