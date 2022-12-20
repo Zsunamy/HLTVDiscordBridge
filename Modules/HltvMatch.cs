@@ -7,31 +7,30 @@ using System.Threading.Tasks;
 using HLTVDiscordBridge.Shared;
 using Newtonsoft.Json.Linq;
 
-namespace HLTVDiscordBridge.Modules
+namespace HLTVDiscordBridge.Modules;
+
+public static class HltvMatch
 {
-    public class HltvMatch
+    public static async Task<Match> GetMatch(string url)
     {
-        public static async Task<Match> GetMatch(string url)
-        {
-            List<string> properties = new();
-            List<string> values = new();
-            properties.Add("id");
-            values.Add(url.Substring(29, 7));
-            var req = await Tools.RequestApiJObject("getMatch", properties, values);
-            if (req == null) { return null; }
-            Match match = new(req);
-            return match;
-        }
-        public static async Task<Match> GetMatch(MatchResult matchResult)
-        {
-            List<string> properties = new();
-            List<string> values = new();
-            properties.Add("id");
-            values.Add(matchResult.id.ToString());
-            var req = await Tools.RequestApiJObject("getMatch", properties, values);
-            if (req == null) { return null; }
-            Match match = new(req);
-            return match;
-        }
+        List<string> properties = new();
+        List<string> values = new();
+        properties.Add("id");
+        values.Add(url.Substring(29, 7));
+        var req = await Tools.RequestApiJObject("getMatch", properties, values);
+        if (req == null) { return null; }
+        Match match = new(req);
+        return match;
+    }
+    public static async Task<Match> GetMatch(Result result)
+    {
+        List<string> properties = new();
+        List<string> values = new();
+        properties.Add("id");
+        values.Add(result.id.ToString());
+        var req = await Tools.RequestApiJObject("getMatch", properties, values);
+        if (req == null) { return null; }
+        Match match = new(req);
+        return match;
     }
 }

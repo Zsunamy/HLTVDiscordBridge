@@ -2,17 +2,18 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Threading.Tasks;
-using HLTVDiscordBridge.Modules;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using HLTVDiscordBridge.Modules;
+using HLTVDiscordBridge.Shared;
 
-namespace HLTVDiscordBridge.Shared;
+namespace HLTVDiscordBridge.Requests;
 
 public class ApiRequestBody
 {
     [JsonIgnore]
-    protected static HttpClient Client;
+    private static readonly HttpClient Client = new();
 
     [JsonIgnore]
     public static readonly JsonSerializerOptions SerializeOptions = new JsonSerializerOptions
@@ -21,14 +22,10 @@ public class ApiRequestBody
         WriteIndented = true
     };
     public int DelayBetweenRequests = 300;
-    public ApiRequestBody()
-    {
-        Client ??= new HttpClient();
-    }
     public async Task<T> SendRequest<T>(string endpoint)
     {
         Uri uri = new($"{BotConfig.GetBotConfig().ApiLink}/api/{endpoint}");
-        HttpResponseMessage resp = await Program.GetInstance().DefaultHttpClient.PostAsJsonAsync(uri, this, SerializeOptions);
+        HttpResponseMessage resp = await Client.PostAsJsonAsync(uri, this, SerializeOptions);
         try
         {
             resp.EnsureSuccessStatusCode();

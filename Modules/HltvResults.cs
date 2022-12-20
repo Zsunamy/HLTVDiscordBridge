@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using HLTVDiscordBridge.Requests;
 using HLTVDiscordBridge.Shared;
 using Newtonsoft.Json.Linq;
 
@@ -13,22 +13,64 @@ namespace HLTVDiscordBridge.Modules;
 public static class HltvResults
 {
     private const string Path = "./cache/results/results.json";
-    
-    public static async Task<List<MatchResult>> GetMatchResultsOfEvent(uint eventId)
+
+    private static async Task<List<Result>> GetLatestResults()
+    {
+        string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddDays(-2));
+        string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
+        ResultRequest request = new (startDate, endDate);
+        return await request.SendRequest<List<Result>>("getResults");
+    }
+
+    private static async Task<List<(Result, Match)>> GetNewResults()
+    {
+        if (!await AutomatedMessageHelper.VerifyFile(Path, GetLatestResults))
+        {
+            return new List<(Result, Match)>();
+        }
+
+        List<Result> latestResults = await GetLatestResults();
+        List<Result> oldResults = AutomatedMessageHelper.ParseFromFile<Result>(Path);
+        List<(Result, Match)> matchResults = new();
+        foreach (Result latestResult in latestResults)
+        {
+            bool found = oldResults.Any(oldResult => latestResult.Id == oldResult.Id);
+            if (!found)
+            {
+                GetMatch request = new(latestResult.Id);
+                matchResults.Add((latestResult, await request.SendRequest<Match>("getMatch")));
+            }
+        }
+
+        return matchResults;
+    }
+
+    public static async Task SendNewResults()
+    {
+        Stopwatch watch = new(); watch.Start();
+        foreach ((Result result, Match match) in await GetNewResults())
+        {
+            await Tools.SendMessagesWithWebhook(x => x.ResultWebhookId != null,
+                x => x.ResultWebhookId, x=> x.ResultWebhookToken , GetResultEmbed(result, match), GetMessageComponent(match));
+        }
+        Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
+    }
+
+    public static async Task<List<Result>> GetMatchResultsOfEvent(uint eventId)
     {
         List<uint> eventIds = new() { eventId };
         return await GetMatchResultsOfEvent(eventIds);
     }
-    private static async Task<List<MatchResult>> GetMatchResultsOfEvent(IEnumerable<uint> eventIds)
+    private static async Task<List<Result>> GetMatchResultsOfEvent(IEnumerable<uint> eventIds)
     {
         List<string> eventIdsString = eventIds.Select(eventId => eventId.ToString()).ToList();
         List<List<string>> values = new() { eventIdsString };
         List<string> properties = new() { "eventIds" };
         JArray req = await Tools.RequestApiJArray("getResults", properties, values);
 
-        return req.Select(matchResult => new MatchResult(matchResult as JObject)).ToList();
+        return req.Select(matchResult => new Result(matchResult as JObject)).ToList();
     }
-    public static async Task<List<MatchResult>> GetMatchResults(uint teamId)
+    public static async Task<List<Result>> GetMatchResults(uint teamId)
     {
         List<string> teamIds = new() { teamId.ToString() };
 
@@ -37,37 +79,9 @@ public static class HltvResults
 
         JArray req = await Tools.RequestApiJArray("getResults", properties, values);
 
-        return req.Select(result => new MatchResult(JObject.Parse(result.ToString()))).ToList();
+        return req.Select(result => new Result(JObject.Parse(result.ToString()))).ToList();
     }
-    private static async Task<List<MatchResult>> GetAllResults()
-    {
-        List<string> properties = new();
-        List<string> values = new();
-        properties.Add("startDate"); properties.Add("endDate");
-        string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddDays(-2));
-        string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
-        values.Add(startDate); values.Add(endDate);
-
-        JArray req = await Tools.RequestApiJArray("getResults", properties, values);
-            
-        Directory.CreateDirectory("./cache/results");
-
-        return req.Select(jTok => new MatchResult(jTok as JObject)).ToList();
-    }
-    private static async Task<List<MatchResult>> GetNewMatchResults()
-    {
-        List<MatchResult> newResults = await GetAllResults();
-
-        JArray oldResultsJArray = JArray.Parse(await File.ReadAllTextAsync("./cache/results/results.json"));
-        List<MatchResult> oldResults = oldResultsJArray.Select(jToken => JObject.Parse(jToken.ToString()))
-            .Select(jObj => new MatchResult(jObj)).ToList();
-        List<MatchResult> results = (from newResult in newResults
-            let found = oldResults.Any(oldResult => newResult.id == oldResult.id) where !found select newResult).ToList();
-            
-        await File.WriteAllTextAsync("./cache/results/results.json", JArray.FromObject(newResults).ToString());
-        return results;
-    }
-    private static Embed GetResultEmbed(MatchResult matchResult, Match match)
+    private static Embed GetResultEmbed(Result result, Match match)
     {
         EmbedBuilder builder = new();
         string title = match.winnerTeam.name == match.team1.name ? $"👑 {match.team1.name} vs. {match.team2.name}" :
@@ -81,7 +95,7 @@ public static class HltvResults
             .WithCurrentTimestamp();
         string footerString = "";
         Emoji emo = new("⭐");
-        for (int i = 1; i <= matchResult.stars; i++)
+        for (int i = 1; i <= result.stars; i++)
         {
             footerString += emo;
         }
@@ -121,32 +135,6 @@ public static class HltvResults
             match.format.type == "bo1" ? "overallstats_bo1" : "overallstats_def");
         return compBuilder.Build();
     }
-    public static async Task SendNewResults()
-    {
-        Stopwatch watch = new();
-        watch.Start();
-        List<MatchResult> newMatchResults = await GetNewMatchResults();
-        if (newMatchResults == null)
-        {
-            return;
-        }
-
-        List<Match> newMatches = new();
-        foreach (MatchResult matchResult in newMatchResults)
-        {
-            newMatches.Add(await HltvMatch.GetMatch(matchResult));
-        }
-
-        foreach (MatchResult matchResult in newMatchResults)
-        {
-
-            Match newMatch = newMatches.ElementAt(newMatchResults.IndexOf(matchResult));
-            await Tools.SendMessagesWithWebhook(x => x.ResultWebhookId != null && x.MinimumStars >= matchResult.stars,
-                x => x.ResultWebhookId, x => x.ResultWebhookToken, GetResultEmbed(matchResult, newMatch),
-                GetMessageComponent(newMatch));
-        }
-        Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
-    }
     private static string GetFormatFromAcronym(string arg)
     {
         return arg switch
@@ -175,6 +163,7 @@ public static class HltvResults
             "de_vertigo" => "Vertigo",
             "de_season" => "Season",
             "de_ancient" => "Ancient",
+            "de_anubis" => "Anubis",
             _ => arg[0].ToString().ToUpper() + arg[1..],
         };
     }

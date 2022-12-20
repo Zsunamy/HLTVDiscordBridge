@@ -341,12 +341,12 @@ namespace HLTVDiscordBridge.Modules
             } 
             else if(startDate < DateTime.UtcNow && endDate > DateTime.UtcNow)
             {
-                List<Shared.MatchResult> results = await HltvResults.GetMatchResultsOfEvent(eventObj.id);
+                List<Shared.Result> results = await HltvResults.GetMatchResultsOfEvent(eventObj.id);
                 List<string> matchResultString = new();
                 if(results.Count > 0)
                 {
                     
-                    foreach (Shared.MatchResult result in results)
+                    foreach (Shared.Result result in results)
                     {
                         if (string.Join("\n", matchResultString).Length > 700)
                         {

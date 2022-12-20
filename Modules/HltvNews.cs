@@ -1,50 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using HLTVDiscordBridge.HttpResponses;
+using HLTVDiscordBridge.Requests;
 using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge.Modules;
 
 public static class HltvNews
 {
-    public const string Path = "./cache/news/news.json";
-    public static List<News> ParseFromFile()
-    {
-        return JsonSerializer.Deserialize<List<News>>(File.ReadAllText(Path), ApiRequestBody.SerializeOptions);
-    }
-    private static async Task<bool> VerifyFile(string path)
-    {
-        if (File.Exists(path))
-        {
-            try
-            {
-                JsonDocument.Parse(await File.ReadAllTextAsync(path));
-                return true;
-            }
-            catch (JsonException) {}
-        }
-        SaveToFile(await GetLatestNews());
-        return false;
-    }
-
-    private static void SaveToFile(object content)
-    {
-        File.WriteAllText(Path, JsonSerializer.Serialize(content, ApiRequestBody.SerializeOptions));
-    }
+    private const string Path = "./cache/news/news.json";
     private static async Task<List<News>> GetNewNews()
     {
-        if (!await VerifyFile(Path))
+        if (!await AutomatedMessageHelper.VerifyFile(Path, GetLatestNews))
         {
             return new List<News>();
         }
         List<News> latestNews = await GetLatestNews();
-        List<News> oldNews = ParseFromFile();
-        SaveToFile(latestNews);
+        List<News> oldNews = AutomatedMessageHelper.ParseFromFile<News>(Path);
+        AutomatedMessageHelper.SaveToFile(Path, latestNews);
         return (from newItem in latestNews 
             where oldNews.All(oldItem => Tools.GetIdFromUrl(newItem.Link) != Tools.GetIdFromUrl(oldItem.Link))
             select newItem).ToList();

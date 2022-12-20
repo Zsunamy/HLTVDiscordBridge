@@ -53,10 +53,5 @@ namespace HLTVDiscordBridge.Shared
         public List<Map> maps { get; set; }
         public List<Highlight> highlights { get; set; }
         public string link { get; set; }
-
-        public override string ToString()
-        {
-            return JObject.FromObject(this).ToString();
-        }
     }
 }

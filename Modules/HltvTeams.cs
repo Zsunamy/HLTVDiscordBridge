@@ -166,7 +166,7 @@ namespace HLTVDiscordBridge.Modules
             builder.AddField("\u200b", "\u200b", true);
 
             //recentResults
-            List<Shared.MatchResult> recentResults = await HltvResults.GetMatchResults(fullTeam.id);
+            List<Shared.Result> recentResults = await HltvResults.GetMatchResults(fullTeam.id);
             string recentResultsString = "";
             if (recentResults.Count == 0)
             {
@@ -174,7 +174,7 @@ namespace HLTVDiscordBridge.Modules
             }
             else
             {
-                foreach (Shared.MatchResult matchResult in recentResults)
+                foreach (Shared.Result matchResult in recentResults)
                 {
                     string opponentTeam;
                     if (matchResult.team1.name == fullTeam.name)
