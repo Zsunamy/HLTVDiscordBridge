@@ -1,9 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using HLTVDiscordBridge.HttpResponses;
 
 namespace HLTVDiscordBridge.Shared
@@ -12,24 +8,24 @@ namespace HLTVDiscordBridge.Shared
     {
         public FullEvent(JObject jObject)
         {
-            id = jObject.TryGetValue("id", out JToken idTok) ? uint.Parse(idTok.ToString()) : 0;
-            name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;
+            Id = jObject.TryGetValue("id", out JToken idTok) ? int.Parse(idTok.ToString()) : 0;
+            Name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;
             if (jObject.TryGetValue("logo", out JToken logoTok))
             {
                 string logoLink = logoTok.ToString();
                 if (!logoLink.Contains("http"))
                 {
-                    logo = "https://www.hltv.org" + logoLink;
+                    Logo = "https://www.hltv.org" + logoLink;
                 }
-                else { logo = logoLink; }
+                else { Logo = logoLink; }
             }
-            dateStart = jObject.TryGetValue("dateStart", out JToken dateStartTok) ? ulong.Parse(dateStartTok.ToString()) : 0;
-            dateEnd = jObject.TryGetValue("dateEnd", out JToken dateEndTok) ? ulong.Parse(dateEndTok.ToString()) : 0;
-            prizePool = jObject.TryGetValue("prizePool", out JToken prizePoolTok) ? prizePoolTok.ToString() : null;
-            location = jObject.TryGetValue("location", out JToken locationTok) ? new Location(locationTok as JObject) : null;
-            numberOfTeams = jObject.TryGetValue("numberOfTeams", out JToken numberOfTeamsTok) ? ushort.Parse(numberOfTeamsTok.ToString()) : (ushort)0;
-            allMatchesListed = jObject.TryGetValue("allMatchesListed", out JToken allMatchesListedTok) ? bool.Parse(allMatchesListedTok.ToString()) : false;
-            link = id != 0 && name != null ? $"https://www.hltv.org/events/{id}/{name.ToLower().Replace(' ', '-')}" : null;
+            DateStart = jObject.TryGetValue("dateStart", out JToken dateStartTok) ? ulong.Parse(dateStartTok.ToString()) : 0;
+            DateEnd = jObject.TryGetValue("dateEnd", out JToken dateEndTok) ? ulong.Parse(dateEndTok.ToString()) : 0;
+            PrizePool = jObject.TryGetValue("prizePool", out JToken prizePoolTok) ? prizePoolTok.ToString() : null;
+            Location = jObject.TryGetValue("location", out JToken locationTok) ? new Location(locationTok as JObject) : null;
+            NumberOfTeams = jObject.TryGetValue("numberOfTeams", out JToken numberOfTeamsTok) ? ushort.Parse(numberOfTeamsTok.ToString()) : (ushort)0;
+            AllMatchesListed = jObject.TryGetValue("allMatchesListed", out JToken allMatchesListedTok) ? bool.Parse(allMatchesListedTok.ToString()) : false;
+            Link = Id != 0 && Name != null ? $"https://www.hltv.org/events/{Id}/{Name.ToLower().Replace(' ', '-')}" : null;
             List<EventTeam> teams = new();
             if(jObject.TryGetValue("teams", out JToken teamsTok))
             {
@@ -37,7 +33,7 @@ namespace HLTVDiscordBridge.Shared
                 {
                     teams.Add(new EventTeam(teamTok as JObject));
                 }
-                this.teams = teams;
+                this.Teams = teams;
             }
             List<Prize> prizeDistribution = new();
             if(jObject.TryGetValue("prizeDistribution", out JToken prizeDistributionTok))
@@ -46,7 +42,7 @@ namespace HLTVDiscordBridge.Shared
                 {
                     prizeDistribution.Add(new Prize(prizeTok as JObject));
                 }
-                this.prizeDistribution = prizeDistribution;
+                this.PrizeDistribution = prizeDistribution;
             }
             List<Event> relatedEvents = new();
             if(jObject.TryGetValue("relatedEvents", out JToken relatedEventsTok))
@@ -55,7 +51,7 @@ namespace HLTVDiscordBridge.Shared
                 {
                     relatedEvents.Add(new Event(relatedEventTok as JObject));
                 }
-                this.relatedEvents = relatedEvents;
+                this.RelatedEvents = relatedEvents;
             }
             List<EventFormat> formats = new();
             if(jObject.TryGetValue("formats", out JToken formatsTok))
@@ -64,7 +60,7 @@ namespace HLTVDiscordBridge.Shared
                 {
                     formats.Add(new EventFormat(formatTok as JObject));
                 }
-                this.formats = formats;
+                this.Formats = formats;
             }
             List<string> mapPool = new();
             if(jObject.TryGetValue("mapPool", out JToken mapPoolTok))
@@ -73,7 +69,7 @@ namespace HLTVDiscordBridge.Shared
                 {
                     mapPool.Add(map.ToString());
                 }
-                this.mapPool = mapPool;
+                this.MapPool = mapPool;
             }
             List<EventHighlight> highlights = new();
             if(jObject.TryGetValue("highlights", out JToken hightlightsTok))
@@ -82,7 +78,7 @@ namespace HLTVDiscordBridge.Shared
                 {
                     highlights.Add(new EventHighlight(hightlightTok as JObject));
                 }
-                this.highlights = highlights;
+                this.Highlights = highlights;
             }
             List<News> news = new();
             if(jObject.TryGetValue("news", out JToken newsTok))
@@ -91,25 +87,25 @@ namespace HLTVDiscordBridge.Shared
                 {
                     news.Add(new News(newTok as JObject));
                 }
-                this.news = news;
+                this.News = news;
             }
         }
-        public uint id { get; set; }
-        public string name { get; set; }
-        public string logo { get; set; }
-        public ulong dateStart { get; set; }
-        public ulong dateEnd { get; set; }
-        public string prizePool { get; set; }
-        public Location location { get; set; }
-        public ushort numberOfTeams { get; set; }
-        public bool allMatchesListed { get; set; }
-        public string link { get; set; }
-        public List<EventTeam> teams { get; set; }
-        public List<Prize> prizeDistribution { get; set; }
-        public List<Event> relatedEvents { get; set; }
-        public List<EventFormat> formats { get; set; }
-        public List<string> mapPool { get; set; }
-        public List<EventHighlight> highlights { get; set; } 
-        public List<News> news { get; set; }
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Logo { get; set; }
+        public ulong DateStart { get; set; }
+        public ulong DateEnd { get; set; }
+        public string PrizePool { get; set; }
+        public Location Location { get; set; }
+        public int NumberOfTeams { get; set; }
+        public bool AllMatchesListed { get; set; }
+        public string Link { get; set; }
+        public List<EventTeam> Teams { get; set; }
+        public List<Prize> PrizeDistribution { get; set; }
+        public List<Event> RelatedEvents { get; set; }
+        public List<EventFormat> Formats { get; set; }
+        public List<string> MapPool { get; set; }
+        public List<EventHighlight> Highlights { get; set; } 
+        public List<News> News { get; set; }
     }
 }

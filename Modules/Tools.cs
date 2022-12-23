@@ -244,5 +244,46 @@ namespace HLTVDiscordBridge.Modules
                 catch (InvalidOperationException) {}
             }
         }
+        public static string GetFormatFromAcronym(string arg)
+        {
+            return arg switch
+            {
+                "bo1" => "Best of 1",
+                "bo3" => "Best of 3",
+                "bo5" => "Best of 5",
+                "bo7" => "Best of 7",
+                _ => "n.A",
+            };
+        }
+        public static string GetMapNameByAcronym(string arg)
+        {
+            return arg switch
+            {
+                "tba" => "to be announced",
+                "de_train" => "Train",
+                "de_cbble" => "Cobble",
+                "de_inferno" => "Inferno",
+                "de_cache" => "Cache",
+                "de_mirage" => "Mirage",
+                "de_overpass" => "Overpass",
+                "de_dust2" => "Dust 2",
+                "de_nuke" => "Nuke",
+                "de_tuscan" => "Tuscan",
+                "de_vertigo" => "Vertigo",
+                "de_season" => "Season",
+                "de_ancient" => "Ancient",
+                "de_anubis" => "Anubis",
+                _ => arg[0].ToString().ToUpper() + arg[1..],
+            };
+        }
+        public static string SpliceText(string text, int lineLength)
+        {
+            int charCount = 0;
+            IEnumerable<string> lines = text.Split(new [] { " " }, StringSplitOptions.RemoveEmptyEntries)
+                .GroupBy(w => (charCount += w.Length + 1) / lineLength)
+                .Select(g => string.Join(" ", g));
+
+            return string.Join("\n", lines.ToArray());
+        }
     }
 }

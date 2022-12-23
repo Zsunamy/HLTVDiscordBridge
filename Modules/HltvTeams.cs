@@ -52,27 +52,27 @@ namespace HLTVDiscordBridge.Modules
                 FullTeamStats fullTeamStats;
                 try
                 {
-                    fullTeamStats = await HltvFullTeamStats.GetFullTeamStats(fullTeam.id);
+                    fullTeamStats = await HltvFullTeamStats.GetFullTeamStats(fullTeam.Id);
                 }
                 catch(HltvApiExceptionLegacy) { throw; }
 
-                Directory.CreateDirectory($"./cache/teamcards/{fullTeam.name.ToLower().Replace(' ', '-')}");
+                Directory.CreateDirectory($"./cache/teamcards/{fullTeam.Name.ToLower().Replace(' ', '-')}");
 
                 //Thumbnail
                 HttpClient http = new();
-                HttpResponseMessage res = await http.GetAsync(new Uri(fullTeam.logo));
+                HttpResponseMessage res = await http.GetAsync(new Uri(fullTeam.Logo));
                 string thumbPath;
-                try { thumbPath = ConvertSVGtoPNG(await res.Content.ReadAsByteArrayAsync(), fullTeam.name); }
+                try { thumbPath = ConvertSVGtoPNG(await res.Content.ReadAsByteArrayAsync(), fullTeam.Name); }
                 catch (System.Xml.XmlException)
                 {
                     Bitmap.FromStream(await res.Content.ReadAsStreamAsync()).Save($"./cache/teamcards/" +
-                        $"{fullTeam.name.ToLower().Replace(' ', '-')}/{fullTeam.name.ToLower().Replace(' ', '-')}_logo.png", System.Drawing.Imaging.ImageFormat.Png); thumbPath = $"./cache/teamcards/" +
-                        $"{fullTeam.name.ToLower().Replace(' ', '-')}/{fullTeam.name.ToLower().Replace(' ', '-')}_logo.png";
+                        $"{fullTeam.Name.ToLower().Replace(' ', '-')}/{fullTeam.Name.ToLower().Replace(' ', '-')}_logo.png", System.Drawing.Imaging.ImageFormat.Png); thumbPath = $"./cache/teamcards/" +
+                        $"{fullTeam.Name.ToLower().Replace(' ', '-')}/{fullTeam.Name.ToLower().Replace(' ', '-')}_logo.png";
                 }
-                fullTeam.localThumbnailPath = thumbPath;
+                fullTeam.LocalThumbnailPath = thumbPath;
                 
-                File.WriteAllText($"./cache/teamcards/{fullTeam.name.ToLower().Replace(' ', '-')}/fullteam.json", fullTeam.ToString());
-                File.WriteAllText($"./cache/teamcards/{fullTeam.name.ToLower().Replace(' ', '-')}/fullteamstats.json", fullTeamStats.ToString());
+                File.WriteAllText($"./cache/teamcards/{fullTeam.Name.ToLower().Replace(' ', '-')}/fullteam.json", fullTeam.ToString());
+                File.WriteAllText($"./cache/teamcards/{fullTeam.Name.ToLower().Replace(' ', '-')}/fullteamstats.json", fullTeamStats.ToString());
 
                 return (fullTeam, fullTeamStats);
 
@@ -105,21 +105,21 @@ namespace HLTVDiscordBridge.Modules
                 return (builder.Build(), "");
             }
 
-            builder.WithTitle(fullTeam?.name);
+            builder.WithTitle(fullTeam?.Name);
 
             //TeamLink
-            builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", fullTeam?.link);
+            builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", fullTeam?.Link);
 
             //Thumbnail            
-            builder.WithThumbnailUrl($"attachment://{fullTeam.name.ToLower().Replace(' ', '-')}_logo.png");
+            builder.WithThumbnailUrl($"attachment://{fullTeam.Name.ToLower().Replace(' ', '-')}_logo.png");
 
             //rank + development
             short development;
             string rankDevString;
-            if (fullTeam.rankingDevelopment.Count < 2) { rankDevString = "n.A"; }
+            if (fullTeam.RankingDevelopment.Count < 2) { rankDevString = "n.A"; }
             else
             {
-                development = (short)(short.Parse(fullTeam.rankingDevelopment[fullTeam.rankingDevelopment.Count - 1].ToString()) - short.Parse(fullTeam.rankingDevelopment[fullTeam.rankingDevelopment.Count - 2].ToString()));
+                development = (short)(short.Parse(fullTeam.RankingDevelopment[fullTeam.RankingDevelopment.Count - 1].ToString()) - short.Parse(fullTeam.RankingDevelopment[fullTeam.RankingDevelopment.Count - 2].ToString()));
                 Emoji emote;
                 string rank = "--";
                 if (fullTeam.rank != 0) { rank = fullTeam.rank.ToString(); }
@@ -139,10 +139,10 @@ namespace HLTVDiscordBridge.Modules
 
             //teammember
             string lineUpString = "";
-            if (fullTeam.players.Count == 0) { lineUpString = "n.A"; }
+            if (fullTeam.Players.Count == 0) { lineUpString = "n.A"; }
             else
             {
-                foreach (TeamPlayer pl in fullTeam.players)
+                foreach (TeamPlayer pl in fullTeam.Players)
                 {
                     lineUpString += $"[{pl.name}]({pl.link}) ({pl.type})\n";
                 }
@@ -166,7 +166,7 @@ namespace HLTVDiscordBridge.Modules
             builder.AddField("\u200b", "\u200b", true);
 
             //recentResults
-            List<Shared.Result> recentResults = await HltvResults.GetMatchResults(fullTeam.id);
+            List<Result> recentResults = await HltvResults.GetMatchResults(fullTeam.Id);
             string recentResultsString = "";
             if (recentResults.Count == 0)
             {
@@ -177,10 +177,10 @@ namespace HLTVDiscordBridge.Modules
                 foreach (Shared.Result matchResult in recentResults)
                 {
                     string opponentTeam;
-                    if (matchResult.team1.name == fullTeam.name)
-                    { opponentTeam = matchResult.team2.name; }
-                    else { opponentTeam = matchResult.team1.name; }
-                    recentResultsString += $"[vs. {opponentTeam}]({matchResult.link})\n";
+                    if (matchResult.Team1.name == fullTeam.Name)
+                    { opponentTeam = matchResult.Team2.name; }
+                    else { opponentTeam = matchResult.Team1.name; }
+                    recentResultsString += $"[vs. {opponentTeam}]({matchResult.Link})\n";
 
                     if(recentResults.IndexOf(matchResult) == 3) { break; }
                 }            
@@ -234,7 +234,7 @@ namespace HLTVDiscordBridge.Modules
             }
             StatsUpdater.UpdateStats();*/
 
-            return (builder.Build(), fullTeam.localThumbnailPath);
+            return (builder.Build(), fullTeam.LocalThumbnailPath);
         }
         private static string ConvertSVGtoPNG(byte[] svgFile, string teamname)
         {

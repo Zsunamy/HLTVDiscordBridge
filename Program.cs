@@ -94,7 +94,7 @@ namespace HLTVDiscordBridge
                             matchLink = ((EmbedAuthor)e.Author).Url;
                         }
                         match = await HltvMatch.GetMatch(matchLink);
-                        MatchMapStats mapStats = await HltvMatchMapStats.GetMatchMapStats(match.maps[0]);
+                        MatchMapStats mapStats = await HltvMatchMapStats.GetMatchMapStats(match.Maps[0]);
                         await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(mapStats));
                         break;
                     case "overallstats_def":

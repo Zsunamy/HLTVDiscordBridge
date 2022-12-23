@@ -10,7 +10,7 @@ namespace HLTVDiscordBridge.Modules
 {
     public class HltvFullTeamStats
     {
-        public static async Task<FullTeamStats> GetFullTeamStats(uint id)
+        public static async Task<FullTeamStats> GetFullTeamStats(int id)
         {
             List<string> properties = new();
             List<string> values = new();
