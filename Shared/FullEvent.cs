@@ -19,8 +19,8 @@ namespace HLTVDiscordBridge.Shared
                 }
                 else { Logo = logoLink; }
             }
-            DateStart = jObject.TryGetValue("dateStart", out JToken dateStartTok) ? ulong.Parse(dateStartTok.ToString()) : 0;
-            DateEnd = jObject.TryGetValue("dateEnd", out JToken dateEndTok) ? ulong.Parse(dateEndTok.ToString()) : 0;
+            DateStart = jObject.TryGetValue("dateStart", out JToken dateStartTok) ? long.Parse(dateStartTok.ToString()) : 0;
+            DateEnd = jObject.TryGetValue("dateEnd", out JToken dateEndTok) ? long.Parse(dateEndTok.ToString()) : 0;
             PrizePool = jObject.TryGetValue("prizePool", out JToken prizePoolTok) ? prizePoolTok.ToString() : null;
             Location = jObject.TryGetValue("location", out JToken locationTok) ? new Location(locationTok as JObject) : null;
             NumberOfTeams = jObject.TryGetValue("numberOfTeams", out JToken numberOfTeamsTok) ? ushort.Parse(numberOfTeamsTok.ToString()) : (ushort)0;
@@ -93,8 +93,8 @@ namespace HLTVDiscordBridge.Shared
         public int Id { get; set; }
         public string Name { get; set; }
         public string Logo { get; set; }
-        public ulong DateStart { get; set; }
-        public ulong DateEnd { get; set; }
+        public long DateStart { get; set; }
+        public long DateEnd { get; set; }
         public string PrizePool { get; set; }
         public Location Location { get; set; }
         public int NumberOfTeams { get; set; }

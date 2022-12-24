@@ -1,5 +1,4 @@
-﻿using Discord;
-using Discord.WebSocket;
+﻿using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
 using Newtonsoft.Json.Linq;
 using System;
@@ -8,13 +7,56 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using HLTVDiscordBridge.Requests;
 
 namespace HLTVDiscordBridge.Modules;
 
 public static class HltvEvents
 {
-    private const string Path = "./cache/events";
+    private const string CurrentEventsPath = "./cache/events/currentEvents.json";
+    private const string PastEventsPath = "./cache/events/pastEvents.json";
+
+    private static async Task<List<EventPreview>> GetEvents()
+    {
+        ApiRequestBody request = new();
+        return await request.SendRequest<List<EventPreview>>("GetEvents");
+    }
+
+    private static async Task<List<EventPreview>> GetPastEvents(string a)
+    {
+        string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddMonths(-1));
+        string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
+        GetPastEvents request = new(startDate, endDate);
+        return await request.SendRequest<List<EventPreview>>("GetPastEvents");
+    }
+
+    private static async Task<List<EventPreview>> GetNewStartedEvents()
+    {
+        if (!await AutomatedMessageHelper.VerifyFile(CurrentEventsPath, GetEvents))
+        {
+            return new List<EventPreview>();
+        }
+
+        List<EventPreview> oldEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(CurrentEventsPath);
+        List<EventPreview> newEvents = await GetEvents();
+        AutomatedMessageHelper.SaveToFile(CurrentEventsPath, newEvents);
+        return (from oldEvent in oldEvents 
+            from newEvent in newEvents 
+            where oldEvent.Id == newEvent.Id && newEvent.DateStart > DateTimeOffset.Now.ToUnixTimeSeconds()
+            select newEvent).ToList();
+    }
+
+    public static async Task SendNewStartedEvents()
+    {
+        foreach (EventPreview startedEvent in await GetNewStartedEvents())
+        {
+            FullEvent fullEvent = await GetFullEvent(startedEvent);
+            await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
+                x => x.EventWebhookId, x=> x.EventWebhookToken , GetEventStartedEmbed(fullEvent));
+        }
+    }
+
     public static async Task AktEvents()
     {
         Stopwatch watch = new(); watch.Start();
@@ -47,7 +89,7 @@ public static class HltvEvents
             }
         }
     }
-
+    
     //3 Funktionen:
     //GetOngoingEvents => /getEvents => Neu in ongoing = Event started
     //GetUpcomingEvents => /getEvents
@@ -73,7 +115,7 @@ public static class HltvEvents
 
         foreach(EventPreview eventPreview in upcomingAndOngoingEvents)
         {
-            if(UnixTimeStampToDateTime(eventPreview.dateEnd) > DateTime.UtcNow && UnixTimeStampToDateTime(eventPreview.dateStart) < DateTime.UtcNow)
+            if(UnixTimeStampToDateTime(eventPreview.DateEnd) > DateTime.UtcNow && UnixTimeStampToDateTime(eventPreview.DateStart) < DateTime.UtcNow)
             {
                 ongoingEvents.Add(new OngoingEventPreview(JObject.FromObject(eventPreview)));
             }
@@ -100,7 +142,7 @@ public static class HltvEvents
 
         foreach (EventPreview eventPreview in upcomingAndOngoingEvents)
         {
-            if (eventPreview.location != null)
+            if (eventPreview.Location != null)
             {
                 upcomingEvents.Add(eventPreview);
             }
@@ -157,7 +199,7 @@ public static class HltvEvents
             bool started = true;
             foreach(OngoingEventPreview oldOngoingEvent in oldOngoingEvents)
             {
-                if(newOngoingEvent.id == oldOngoingEvent.id)
+                if(newOngoingEvent.Id == oldOngoingEvent.Id)
                 {
                     started = false;
                 }
@@ -191,7 +233,7 @@ public static class HltvEvents
             bool started = true;
             foreach (EventPreview oldPastEvent in oldPastEvents)
             {
-                if (newPastEvent.id == oldPastEvent.id)
+                if (newPastEvent.Id == oldPastEvent.Id)
                 {
                     started = false;
                     break;
@@ -208,13 +250,13 @@ public static class HltvEvents
     }
     static async Task<FullEvent> GetFullEvent(OngoingEventPreview eventPreview)
     {
-        return await GetFullEvent(eventPreview.id);
+        return await GetFullEvent(eventPreview.Id);
     }
     static async Task<FullEvent> GetFullEvent(EventPreview eventPreview)
     {
-        return await GetFullEvent(eventPreview.id);
+        return await GetFullEvent(eventPreview.Id);
     }
-    public static async Task<FullEvent> GetFullEvent(uint eventId)
+    public static async Task<FullEvent> GetFullEvent(int eventId)
     {
         List<string> properties = new();
         List<string> values = new();
@@ -423,15 +465,15 @@ public static class HltvEvents
 
         foreach (OngoingEventPreview ongoingEvent in ongoingEvents)
         {
-            DateTime startDate = UnixTimeStampToDateTime(ongoingEvent.dateStart);
-            DateTime endDate = UnixTimeStampToDateTime(ongoingEvent.dateEnd);
-            if (ongoingEvent.featured)
+            DateTime startDate = UnixTimeStampToDateTime(ongoingEvent.DateStart);
+            DateTime endDate = UnixTimeStampToDateTime(ongoingEvent.DateEnd);
+            if (ongoingEvent.Featured)
             {
-                menuBuilder.AddOption(ongoingEvent.name, ongoingEvent.id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}", new Emoji("⭐"));
+                menuBuilder.AddOption(ongoingEvent.Name, ongoingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}", new Emoji("⭐"));
             }
             else
             {
-                menuBuilder.AddOption(ongoingEvent.name, ongoingEvent.id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}");
+                menuBuilder.AddOption(ongoingEvent.Name, ongoingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}");
             }
         }
 
@@ -471,15 +513,15 @@ public static class HltvEvents
 
         foreach(EventPreview upcomingEvent in upcomingEvents)
         {
-            DateTime startDate = UnixTimeStampToDateTime(upcomingEvent.dateStart);
-            DateTime endDate = UnixTimeStampToDateTime(upcomingEvent.dateEnd);
-            if(upcomingEvent.featured)
+            DateTime startDate = UnixTimeStampToDateTime(upcomingEvent.DateStart);
+            DateTime endDate = UnixTimeStampToDateTime(upcomingEvent.DateEnd);
+            if(upcomingEvent.Featured)
             {
-                menuBuilder.AddOption(upcomingEvent.name, upcomingEvent.id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.location.name}", new Emoji("⭐"));
+                menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}", new Emoji("⭐"));
             } 
             else
             {
-                menuBuilder.AddOption(upcomingEvent.name, upcomingEvent.id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.location.name}");
+                menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}");
             }
             if(menuBuilder.Options.Count > 24)
             {
@@ -498,7 +540,7 @@ public static class HltvEvents
         Embed embed;
         try
         {
-            FullEvent fullEvent = await GetFullEvent(uint.Parse(arg.Data.Values.First()));
+            FullEvent fullEvent = await GetFullEvent(int.Parse(arg.Data.Values.First()));
             embed = await GetEventEmbed(fullEvent);
             var msg = arg.Message;
 
@@ -530,7 +572,7 @@ public static class HltvEvents
         catch (HltvApiExceptionLegacy e) { embed = ErrorHandling.GetErrorEmbed(e); }
         await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
     }
-    private static DateTime UnixTimeStampToDateTime(ulong unixTimeStamp)
+    private static DateTime UnixTimeStampToDateTime(long unixTimeStamp)
     {
         DateTime dtDateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         dtDateTime = dtDateTime.AddMilliseconds(double.Parse(unixTimeStamp.ToString())).ToUniversalTime();

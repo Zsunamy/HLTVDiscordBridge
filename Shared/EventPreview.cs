@@ -11,24 +11,24 @@ namespace HLTVDiscordBridge.Shared
     {
         public EventPreview(JObject jObject)
         {
-            id = jObject.TryGetValue("id", out JToken idTok) ? uint.Parse(idTok.ToString()) : 0;
-            name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;
-            dateStart = jObject.TryGetValue("dateStart", out JToken dateStartTok) ? ulong.Parse(dateStartTok.ToString()) : 0;
-            dateEnd = jObject.TryGetValue("dateEnd", out JToken dateEndTok) ? ulong.Parse(dateEndTok.ToString()) : 0;
-            location = jObject.TryGetValue("location", out JToken locationTok) ? new Location(locationTok as JObject) : null;
-            prizePool = jObject.TryGetValue("prizePool", out JToken prizePoolTok) ? prizePoolTok.ToString() : null;
-            numberOfTeams = jObject.TryGetValue("numberOfTeams", out JToken numberOfTeamsTok) ? uint.Parse(numberOfTeamsTok.ToString()) : 0;
-            featured = jObject.TryGetValue("featured", out JToken featuredTok) ? bool.Parse(featuredTok.ToString()) : false;
+            Id = jObject.TryGetValue("id", out JToken idTok) ? int.Parse(idTok.ToString()) : 0;
+            Name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;
+            DateStart = jObject.TryGetValue("dateStart", out JToken dateStartTok) ? long.Parse(dateStartTok.ToString()) : 0;
+            DateEnd = jObject.TryGetValue("dateEnd", out JToken dateEndTok) ? long.Parse(dateEndTok.ToString()) : 0;
+            Location = jObject.TryGetValue("location", out JToken locationTok) ? new Location(locationTok as JObject) : null;
+            PrizePool = jObject.TryGetValue("prizePool", out JToken prizePoolTok) ? prizePoolTok.ToString() : null;
+            NumberOfTeams = jObject.TryGetValue("numberOfTeams", out JToken numberOfTeamsTok) ? uint.Parse(numberOfTeamsTok.ToString()) : 0;
+            Featured = jObject.TryGetValue("featured", out JToken featuredTok) ? bool.Parse(featuredTok.ToString()) : false;
         }
 
-        public uint id { get; set; }
-        public string name { get; set; }
-        public ulong dateStart { get; set; }
-        public ulong dateEnd { get; set; }
-        public Location location { get; set; }
-        public string prizePool { get; set; }
-        public uint numberOfTeams { get; set; }
-        public bool featured { get; set; }
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public long DateStart { get; set; }
+        public long DateEnd { get; set; }
+        public Location Location { get; set; }
+        public string PrizePool { get; set; }
+        public uint NumberOfTeams { get; set; }
+        public bool Featured { get; set; }
 
         
     }
