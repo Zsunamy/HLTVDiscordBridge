@@ -38,7 +38,7 @@ public class ApiRequestBody
         {
             if (ex.StatusCode == HttpStatusCode.BadRequest)
             {
-                throw (await resp.Content.ReadFromJsonAsync<HltvApiException>())!;
+                throw (await resp.Content.ReadFromJsonAsync<ApiError>())!;
             }
             throw new DeploymentException(resp);
         }

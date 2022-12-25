@@ -3,7 +3,6 @@ using HLTVDiscordBridge.Shared;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -31,65 +30,39 @@ public static class HltvEvents
         return await request.SendRequest<List<EventPreview>>("GetPastEvents");
     }
 
-    private static async Task<List<EventPreview>> GetNewStartedEvents()
+    private static async Task<List<EventPreview>> GetNewEvents(string path, Func<Task<List<EventPreview>>> getEvents)
     {
-        if (!await AutomatedMessageHelper.VerifyFile(CurrentEventsPath, GetEvents))
+        if (!await AutomatedMessageHelper.VerifyFile(path, getEvents))
         {
             return new List<EventPreview>();
         }
 
-        List<EventPreview> oldEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(CurrentEventsPath);
-        List<EventPreview> newEvents = await GetEvents();
-        AutomatedMessageHelper.SaveToFile(CurrentEventsPath, newEvents);
-        return (from oldEvent in oldEvents 
-            from newEvent in newEvents 
-            where oldEvent.Id == newEvent.Id && newEvent.DateStart > DateTimeOffset.Now.ToUnixTimeSeconds()
-            select newEvent).ToList();
+        List<EventPreview> oldEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(path);
+        List<EventPreview> newEvents = await getEvents();
+        AutomatedMessageHelper.SaveToFile(path, newEvents);
+
+        return (from newEvent in newEvents
+            let found = oldEvents.Any(oldEvent => newEvent.Id == oldEvent.Id)
+            where !found select newEvent).ToList();
     }
 
     public static async Task SendNewStartedEvents()
     {
-        foreach (EventPreview startedEvent in await GetNewStartedEvents())
+        foreach (EventPreview startedEvent in await GetNewEvents(CurrentEventsPath, GetEvents))
         {
-            FullEvent fullEvent = await GetFullEvent(startedEvent);
             await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
-                x => x.EventWebhookId, x=> x.EventWebhookToken , GetEventStartedEmbed(fullEvent));
+                x => x.EventWebhookId, x=> x.EventWebhookToken , (await GetFullEvent(startedEvent)).ToStartedEmbed());
         }
     }
 
-    public static async Task AktEvents()
+    public static async Task SendNewPastEvents()
     {
-        Stopwatch watch = new(); watch.Start();
-        List<OngoingEventPreview> startedEvents = await GetStartedEvents();
-        if (startedEvents.Count > 0)
+        foreach (EventPreview startedEvent in await GetNewEvents(PastEventsPath, GetPastEvents))
         {
-            foreach (OngoingEventPreview startedEvent in startedEvents)
-            {
-                FullEvent fullEvent = await GetFullEvent(startedEvent);
-                if (fullEvent != null)
-                {
-                    await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
-                        x => x.EventWebhookId, x=> x.EventWebhookToken , GetEventStartedEmbed(fullEvent));
-                }
-            }
-            Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
-        }
-
-        List<EventPreview> endedEvents = await GetEndedEvents();
-        if (endedEvents.Count > 0)
-        {
-            foreach (EventPreview endedEvent in endedEvents)
-            {
-                FullEvent fullEvent = await GetFullEvent(endedEvent);
-                if (fullEvent != null)
-                {
-                    await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
-                        x => x.EventWebhookId, x=> x.EventWebhookToken , GetEventStartedEmbed(fullEvent), null);
-                }
-            }
+            await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
+                x => x.EventWebhookId, x=> x.EventWebhookToken , (await GetFullEvent(startedEvent)).ToStartedEmbed());
         }
     }
-    
     //3 Funktionen:
     //GetOngoingEvents => /getEvents => Neu in ongoing = Event started
     //GetUpcomingEvents => /getEvents
@@ -115,7 +88,7 @@ public static class HltvEvents
 
         foreach(EventPreview eventPreview in upcomingAndOngoingEvents)
         {
-            if(UnixTimeStampToDateTime(eventPreview.DateEnd) > DateTime.UtcNow && UnixTimeStampToDateTime(eventPreview.DateStart) < DateTime.UtcNow)
+            if(Tools.UnixTimeToDateTime(eventPreview.DateEnd) > DateTime.UtcNow && Tools.UnixTimeToDateTime(eventPreview.DateStart) < DateTime.UtcNow)
             {
                 ongoingEvents.Add(new OngoingEventPreview(JObject.FromObject(eventPreview)));
             }
@@ -125,6 +98,52 @@ public static class HltvEvents
 
         return ongoingEvents;
     }
+    private static async Task<List<EventPreview>> GetPastEvents()
+    {
+        string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddMonths(-1));
+        string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
+
+        GetPastEvents request = new(startDate, endDate);
+        List<EventPreview> pastEvents = await request.SendRequest<List<EventPreview>>("GetPastEvents");
+
+        AutomatedMessageHelper.SaveToFile(PastEventsPath, pastEvents);
+
+        return pastEvents;
+    }
+    /*
+     public static async Task AktEvents()
+    {
+        Stopwatch watch = new(); watch.Start();
+        List<OngoingEventPreview> startedEvents = await GetStartedEvents();
+        if (startedEvents.Count > 0)
+        {
+            foreach (OngoingEventPreview startedEvent in startedEvents)
+            {
+                FullEvent fullEvent = await GetFullEvent(startedEvent);
+                if (fullEvent != null)
+                {
+                    await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
+                        x => x.EventWebhookId, x=> x.EventWebhookToken , fullEvent.ToStartedEmbed());
+                }
+            }
+            Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
+        }
+
+        List<EventPreview> endedEvents = await GetEndedEvents();
+        if (endedEvents.Count > 0)
+        {
+            foreach (EventPreview endedEvent in endedEvents)
+            {
+                FullEvent fullEvent = await GetFullEvent(endedEvent);
+                if (fullEvent != null)
+                {
+                    await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
+                        x => x.EventWebhookId, x=> x.EventWebhookToken , fullEvent.ToStartedEmbed(), null);
+                }
+            }
+        }
+    }
+    
     public static async Task<List<EventPreview>> GetUpcomingEvents()
     {
         ApiRequestBody request = new();
@@ -151,34 +170,6 @@ public static class HltvEvents
         File.WriteAllText("./cache/events/upcoming.json", JArray.FromObject(upcomingEvents).ToString());
 
         return upcomingEvents;
-    }
-    public static async Task<List<EventPreview>> GetPastEvents()
-    {
-        List<EventPreview> pastEvents = new();
-        Directory.CreateDirectory("./cache/events");
-
-        List<string> properties = new();
-        List<string> values = new();
-        properties.Add("startDate");
-        properties.Add("endDate");
-
-        DateTime date = DateTime.Now;
-        string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddMonths(-1));
-        string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
-        values.Add(startDate);
-        values.Add(startDate);
-
-        var req = await Tools.RequestApiJArray("getPastEvents", properties, values);
-
-
-        foreach (JToken eventTok in req)
-        {
-            pastEvents.Add(new EventPreview(eventTok as JObject));
-        }
-
-        File.WriteAllText("./cache/events/past.json", JArray.FromObject(pastEvents).ToString());
-
-        return pastEvents;
     }
     public static async Task<List<OngoingEventPreview>> GetStartedEvents()
     {
@@ -213,6 +204,7 @@ public static class HltvEvents
         File.WriteAllText("./cache/events/newongoing.json", JArray.FromObject(startedEvents).ToString());
         return startedEvents;
     }
+    
     private static async Task<List<EventPreview>> GetEndedEvents()
     {
         
@@ -248,10 +240,12 @@ public static class HltvEvents
         File.WriteAllText("./cache/events/newendedevents.json", JArray.FromObject(endedEvents).ToString());
         return endedEvents;
     }
+    
     static async Task<FullEvent> GetFullEvent(OngoingEventPreview eventPreview)
     {
         return await GetFullEvent(eventPreview.Id);
     }
+    */
     static async Task<FullEvent> GetFullEvent(EventPreview eventPreview)
     {
         return await GetFullEvent(eventPreview.Id);
@@ -271,169 +265,10 @@ public static class HltvEvents
         List<string> values = new();
         properties.Add("name");
         values.Add(eventName);
-        try
-        {
-            JObject req = await Tools.RequestApiJObject("getEventByName", properties, values);
-            return new FullEvent(req);
-        }
-        catch (HltvApiExceptionLegacy) { throw; }
+        JObject req = await Tools.RequestApiJObject("getEventByName", properties, values);
+        return new FullEvent(req);
     }
-    public static Embed GetEventEndedEmbed(FullEvent eventObj)
-    {
-        EmbedBuilder builder = new();
-        if (eventObj == null) { return null; }
-        builder.WithTitle($"{eventObj.Name} just ended!");
-        builder.AddField("startDate:", UnixTimeStampToDateTime(eventObj.DateStart).ToShortDateString(), true);
-        builder.AddField("endDate:", UnixTimeStampToDateTime(eventObj.DateEnd).ToShortDateString(), true);
-        builder.AddField("\u200b", "\u200b", true);
-        builder.AddField("prize pool:", eventObj.PrizePool, true);
-        builder.AddField("location:", eventObj.Location.name, true);
-        builder.AddField("\u200b", "\u200b", true);
 
-        List<string> prizeList = new();
-        foreach (Prize prize in eventObj.PrizeDistribution)
-        {
-            if(string.Join("\n", prizeList).Length > 600)
-            {
-                prizeList.Add($"and {eventObj.PrizeDistribution.Count - eventObj.PrizeDistribution.IndexOf(prize)} more");
-                break;
-            }
-            List<string> prizes = new();
-            if(prize.prize != null)
-                prizes.Add($"wins: {prize.prize}"); 
-            if(prize.qualifiesFor != null)
-                prizes.Add($"qualifies for: [{prize.qualifiesFor.name}]({prize.qualifiesFor.link})"); 
-            if(prize.otherPrize != null)
-                prizes.Add($"qualifies for: {prize.otherPrize}");
-
-            prizeList.Add($"{prize.place} [{prize.team.name}]({prize.team.link}) {string.Join(" & ", prizes)}");
-        }
-        if(prizeList.Count > 0)
-        {
-            builder.AddField("results:", string.Join("\n", prizeList));
-        }
-            
-        builder.WithColor(Color.Gold);
-        builder.WithThumbnailUrl(eventObj.Logo);
-        builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", eventObj.Link);
-        builder.WithCurrentTimestamp();
-        return builder.Build();
-    }
-    public static Embed GetEventStartedEmbed(FullEvent eventObj)
-    {
-        EmbedBuilder builder = new();
-        if (eventObj == null) { return null; }
-        builder.WithTitle($"{eventObj.Name} just started!");
-        builder.AddField("startDate:", UnixTimeStampToDateTime(eventObj.DateStart).ToShortDateString(), true);
-        builder.AddField("endDate:", UnixTimeStampToDateTime(eventObj.DateEnd).ToShortDateString(), true);
-        builder.AddField("\u200b", "\u200b", true);
-        builder.AddField("prize pool:", eventObj.PrizePool, true);
-        builder.AddField("location:", eventObj.Location.name, true);
-        builder.AddField("\u200b", "\u200b", true);
-        List<string> teams = new();
-        foreach (EventTeam team in eventObj.Teams)
-        {
-            if (string.Join("\n", teams).Length > 600)
-            {
-                teams.Add($"and {eventObj.Teams.Count - eventObj.Teams.IndexOf(team)} more");
-                break;
-            }
-            teams.Add($"[{team.name}]({team.link})");
-        }
-        if(teams.Count > 0)
-            builder.AddField("teams:", string.Join("\n", teams));
-        builder.WithColor(Color.Gold);
-        builder.WithThumbnailUrl(eventObj.Logo);
-        builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", eventObj.Link);
-        builder.WithCurrentTimestamp();
-        return builder.Build();
-    }
-    public static async Task<Embed> GetEventEmbed(FullEvent eventObj)
-    {
-        EmbedBuilder builder = new();
-        builder.WithTitle($"{eventObj.Name}")
-            .WithColor(Color.Gold)
-            .WithThumbnailUrl(eventObj.Logo)
-            .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", eventObj.Link)
-            .WithFooter(Tools.GetRandomFooter())
-            .WithCurrentTimestamp();
-        DateTime startDate = UnixTimeStampToDateTime(eventObj.DateStart);
-        DateTime endDate = UnixTimeStampToDateTime(eventObj.DateEnd);
-        string start = startDate > DateTime.UtcNow ? "starting" : "started";
-        string end = endDate > DateTime.UtcNow ? "ending" : "ended";
-        builder.AddField(start, startDate.ToShortDateString(), true)
-            .AddField(end, endDate.ToShortDateString(), true)
-            .AddField("\u200b", "\u200b", true)
-            .AddField("prize pool:", eventObj.PrizePool, true)
-            .AddField("location:", eventObj.Location.name, true)
-            .AddField("\u200b", "\u200b", true);
-
-        List<string> teams = new();
-        foreach (EventTeam team in eventObj.Teams)
-        {
-            if (string.Join("\n", teams).Length > 600)
-            {
-                teams.Add($"and {eventObj.Teams.Count - eventObj.Teams.IndexOf(team)} more");
-                break;
-            }
-            teams.Add($"[{team.name}]({team.link})");
-        }
-        if (teams.Count > 0)
-            builder.AddField("teams:", string.Join("\n", teams));
-
-        if (startDate > DateTime.UtcNow && endDate > DateTime.UtcNow)
-        {
-            //upcoming                
-        } 
-        else if(startDate < DateTime.UtcNow && endDate > DateTime.UtcNow)
-        {
-            List<Shared.Result> results = await HltvResults.GetMatchResultsOfEvent(eventObj.Id);
-            List<string> matchResultString = new();
-            if(results.Count > 0)
-            {
-                    
-                foreach (Shared.Result result in results)
-                {
-                    if (string.Join("\n", matchResultString).Length > 700)
-                    {
-                        matchResultString.Add($"and {results.Count - results.IndexOf(result)} more");
-                        break;
-                    }
-                    matchResultString.Add($"[{result.Team1.name} vs. {result.Team2.name}]({result.Link})");
-                }
-                builder.AddField("latest results:", string.Join("\n", matchResultString), true);
-            }                
-            //live
-        } 
-        else
-        {
-            List<string> prizeList = new();
-            foreach (Prize prize in eventObj.PrizeDistribution)
-            {
-                if (string.Join("\n", prizeList).Length > 600)
-                {
-                    prizeList.Add($"and {eventObj.PrizeDistribution.Count - eventObj.PrizeDistribution.IndexOf(prize)} more");
-                    break;
-                }
-                List<string> prizes = new();
-                if (prize != null)
-                    prizes.Add($"wins: {prize.prize}");
-                if (prize.qualifiesFor != null)
-                    prizes.Add($"qualifies for: [{prize.qualifiesFor.name}]({prize.qualifiesFor.link})");
-                if (prize.otherPrize != null)
-                    prizes.Add($"qualifies for: {prize.otherPrize}");
-
-                prizeList.Add($"{prize.place} [{prize.team.name}]({prize.team.link}) {string.Join(" & ", prizes)}");
-            }
-            if (prizeList.Count > 0)
-            {
-                builder.AddField("results:", string.Join("\n", prizeList));
-            }
-            //past
-        }
-
-        return builder.Build();
-    }
     public static async Task SendEvents(SocketSlashCommand arg)
     {
         await arg.DeferAsync();
@@ -465,8 +300,8 @@ public static class HltvEvents
 
         foreach (OngoingEventPreview ongoingEvent in ongoingEvents)
         {
-            DateTime startDate = UnixTimeStampToDateTime(ongoingEvent.DateStart);
-            DateTime endDate = UnixTimeStampToDateTime(ongoingEvent.DateEnd);
+            DateTime startDate = Tools.UnixTimeToDateTime(ongoingEvent.DateStart);
+            DateTime endDate = Tools.UnixTimeToDateTime(ongoingEvent.DateEnd);
             if (ongoingEvent.Featured)
             {
                 menuBuilder.AddOption(ongoingEvent.Name, ongoingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}", new Emoji("⭐"));
@@ -485,27 +320,14 @@ public static class HltvEvents
     public static async Task SendUpcomingEvents(SocketSlashCommand arg)
     {
         await arg.DeferAsync();
-
+        List<EventPreview> upcomingEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(CurrentEventsPath);
+        
         EmbedBuilder builder = new();
-
-        List<EventPreview> upcomingEvents = new();
-        if(!File.Exists("./cache/events/upcoming.json") || File.GetCreationTimeUtc("./cache/events/upcoming.json") < DateTime.UtcNow.AddMinutes(-10))
-        {
-            upcomingEvents = await GetUpcomingEvents();
-        } 
-        else
-        {
-            foreach(JToken upcomingEvent in JArray.Parse(File.ReadAllText("./cache/events/upcoming.json")))
-            {
-                upcomingEvents.Add(new EventPreview(upcomingEvent as JObject));
-            }
-        }
-
         builder.WithTitle("UPCOMING EVENTS")
             .WithColor(Color.Gold)
             .WithDescription("Please select an event for more information");
 
-        var menuBuilder = new SelectMenuBuilder()
+        SelectMenuBuilder menuBuilder = new SelectMenuBuilder()
             .WithPlaceholder("Select an event")
             .WithCustomId("upcomingEventsMenu")
             .WithMinValues(1)
@@ -513,15 +335,17 @@ public static class HltvEvents
 
         foreach(EventPreview upcomingEvent in upcomingEvents)
         {
-            DateTime startDate = UnixTimeStampToDateTime(upcomingEvent.DateStart);
-            DateTime endDate = UnixTimeStampToDateTime(upcomingEvent.DateEnd);
+            DateTime startDate = Tools.UnixTimeToDateTime(upcomingEvent.DateStart);
+            DateTime endDate = Tools.UnixTimeToDateTime(upcomingEvent.DateEnd);
             if(upcomingEvent.Featured)
             {
-                menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}", new Emoji("⭐"));
+                menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
+                    $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}", new Emoji("⭐"));
             } 
             else
             {
-                menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}");
+                menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
+                    $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}");
             }
             if(menuBuilder.Options.Count > 24)
             {
@@ -529,7 +353,7 @@ public static class HltvEvents
             }
         }
 
-        var compBuilder = new ComponentBuilder()
+        ComponentBuilder compBuilder = new ComponentBuilder()
             .WithSelectMenu(menuBuilder);
 
         await arg.ModifyOriginalResponseAsync(msg => { msg.Embed = builder.Build(); msg.Components = compBuilder.Build(); });
@@ -537,46 +361,53 @@ public static class HltvEvents
     public static async Task SendEvent(SocketMessageComponent arg)
     {
         await arg.DeferAsync();
-        Embed embed;
+        FullEvent fullEvent;
         try
         {
-            FullEvent fullEvent = await GetFullEvent(int.Parse(arg.Data.Values.First()));
-            embed = await GetEventEmbed(fullEvent);
-            var msg = arg.Message;
-
-            SelectMenuComponent menu = msg.Components.First().Components.First() as SelectMenuComponent;
-            SelectMenuBuilder builder = menu.ToBuilder();
-
-            foreach (SelectMenuOptionBuilder option in builder.Options)
-            {
-                if (option.IsDefault == true) { option.IsDefault = false; break; }
-            }
-            foreach (SelectMenuOptionBuilder option in builder.Options)
-            {
-                if (option.Value == arg.Data.Values.First())
-                {
-                    option.IsDefault = true; break;
-                }
-            }
-            var compBuilder = new ComponentBuilder()
-                .WithSelectMenu(builder);
-            await arg.ModifyOriginalResponseAsync(msg => { msg.Embed = embed; msg.Components = compBuilder.Build(); });
+            GetEvent request = new(int.Parse(arg.Data.Values.First()));
+            fullEvent = await request.SendRequest<FullEvent>("GetEvent");
         }
-        catch (HltvApiExceptionLegacy e) { embed = ErrorHandling.GetErrorEmbed(e); await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed); }  
+        catch (ApiError ex)
+        {
+            await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ex.ToEmbed());
+            return;
+        }
+        catch (DeploymentException ex)
+        {
+            await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ex.ToEmbed());
+            return;
+        }
+        SocketUserMessage msg = arg.Message;
+
+        SelectMenuComponent menu = msg.Components.First().Components.First() as SelectMenuComponent;
+        SelectMenuBuilder builder = menu.ToBuilder();
+
+        foreach (SelectMenuOptionBuilder option in builder.Options.Where(option => option.IsDefault == true))
+        {
+            option.IsDefault = false;
+            break;
+        }
+        foreach (SelectMenuOptionBuilder option in builder.Options.Where(option => option.Value == arg.Data.Values.First()))
+        {
+            option.IsDefault = true;
+            break;
+        }
+        ComponentBuilder compBuilder = new ComponentBuilder()
+            .WithSelectMenu(builder);
+        await arg.ModifyOriginalResponseAsync(message => { message.Embed = fullEvent.ToFullEmbed().Result; message.Components = compBuilder.Build(); });
     }
     public static async Task SendEvent(SocketSlashCommand arg)
     {
         await arg.DeferAsync();
-        Embed embed; 
-        try { embed = await GetEventEmbed(await GetFullEvent(arg.Data.Options.First().Value.ToString())); }
-        catch (HltvApiExceptionLegacy e) { embed = ErrorHandling.GetErrorEmbed(e); }
+        Embed embed;
+        try
+        {
+            embed = await (await GetFullEvent(arg.Data.Options.First().Value.ToString())).ToFullEmbed();
+        }
+        catch (HltvApiExceptionLegacy e)
+        {
+            embed = ErrorHandling.GetErrorEmbed(e);
+        }
         await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
-    }
-    private static DateTime UnixTimeStampToDateTime(long unixTimeStamp)
-    {
-        DateTime dtDateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-        dtDateTime = dtDateTime.AddMilliseconds(double.Parse(unixTimeStamp.ToString())).ToUniversalTime();
-        dtDateTime = dtDateTime.AddHours(1);
-        return dtDateTime;
     }
 }
