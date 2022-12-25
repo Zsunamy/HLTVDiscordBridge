@@ -11,7 +11,7 @@ namespace HLTVDiscordBridge.Shared
         public async Task<(Embed, MessageComponent)> ToEmbedAndComponent()
     {
         GetMatch request = new(Id);
-        Match match = await request.SendRequest<Match>("getMatch");
+        Match match = await request.SendRequest<Match>();
         EmbedBuilder builder = new();
         string title = match.WinnerTeam.name == match.Team1.name ? $"👑 {match.Team1.name} vs. {match.Team2.name}" :
             $"{match.Team1.name} vs. {match.Team2.name} 👑";

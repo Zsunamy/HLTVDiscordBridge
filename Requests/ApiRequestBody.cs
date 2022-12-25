@@ -10,10 +10,13 @@ using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge.Requests;
 
-public class ApiRequestBody
+public abstract class ApiRequestBody
 {
     [JsonIgnore]
     private static readonly HttpClient Client = new();
+
+    [JsonIgnore]
+    protected abstract string Endpoint { get; }
 
     [JsonIgnore]
     public static readonly JsonSerializerOptions SerializeOptions = new JsonSerializerOptions
@@ -22,14 +25,14 @@ public class ApiRequestBody
         WriteIndented = true
     };
     public int DelayBetweenRequests = 300;
-    public async Task<T> SendRequest<T>(string endpoint)
+    public async Task<T> SendRequest<T>()
     {
-        Uri uri = new($"{BotConfig.GetBotConfig().ApiLink}/api/{endpoint}");
+        Uri uri = new($"{BotConfig.GetBotConfig().ApiLink}/api/{Endpoint}");
         HttpResponseMessage resp = await Client.PostAsJsonAsync(uri, this, SerializeOptions);
         try
         {
             resp.EnsureSuccessStatusCode();
-            Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
+            Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{Endpoint} was successful");
             StatsUpdater.StatsTracker.ApiRequest = +1;
             StatsUpdater.UpdateStats();
             return JsonSerializer.Deserialize<T>(await resp.Content.ReadAsStringAsync(), SerializeOptions);

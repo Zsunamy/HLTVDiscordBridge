@@ -1,9 +1,8 @@
 ﻿using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -13,23 +12,31 @@ namespace HLTVDiscordBridge.Modules;
 
 public static class HltvEvents
 {
-    private const string CurrentEventsPath = "./cache/events/currentEvents.json";
+    private const string FutureEventsPath = "./cache/events/currentEvents.json";
+    private const string OngoingEventsPath = "-/cache/events/ongoingEvents.json";
     private const string PastEventsPath = "./cache/events/pastEvents.json";
 
     private static async Task<List<EventPreview>> GetEvents()
     {
-        ApiRequestBody request = new();
-        return await request.SendRequest<List<EventPreview>>("GetEvents");
+        GetEvents request = new();
+        List<EventPreview> events = await request.SendRequest<List<EventPreview>>();
+        AutomatedMessageHelper.SaveToFile(PastEventsPath, events);
+        return events;
     }
 
-    private static async Task<List<EventPreview>> GetPastEvents(string a)
+    private static async Task<List<EventPreview>> GetPastEvents()
     {
         string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddMonths(-1));
         string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
-        GetPastEvents request = new(startDate, endDate);
-        return await request.SendRequest<List<EventPreview>>("GetPastEvents");
-    }
 
+        GetPastEvents request = new(startDate, endDate);
+        List<EventPreview> pastEvents = await request.SendRequest<List<EventPreview>>();
+
+        AutomatedMessageHelper.SaveToFile(PastEventsPath, pastEvents);
+
+        return pastEvents;
+    }
+    
     private static async Task<List<EventPreview>> GetNewEvents(string path, Func<Task<List<EventPreview>>> getEvents)
     {
         if (!await AutomatedMessageHelper.VerifyFile(path, getEvents))
@@ -39,30 +46,179 @@ public static class HltvEvents
 
         List<EventPreview> oldEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(path);
         List<EventPreview> newEvents = await getEvents();
-        AutomatedMessageHelper.SaveToFile(path, newEvents);
 
         return (from newEvent in newEvents
             let found = oldEvents.Any(oldEvent => newEvent.Id == oldEvent.Id)
             where !found select newEvent).ToList();
     }
 
+    private static async Task<List<EventPreview>> GetNewOngoingEvents()
+    {
+        List<EventPreview> oldEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(OngoingEventsPath);
+        IEnumerable<EventPreview> newEvents = (await GetEvents()).Where(obj => obj.DateStart < DateTimeOffset.Now.ToUnixTimeSeconds());
+        AutomatedMessageHelper.SaveToFile(OngoingEventsPath, newEvents);
+
+        return (from newEvent in newEvents
+            let found = oldEvents.Any(oldEvent => oldEvent.Id == newEvent.Id)
+            where !found select newEvent).ToList();
+    }
+
     public static async Task SendNewStartedEvents()
     {
-        foreach (EventPreview startedEvent in await GetNewEvents(CurrentEventsPath, GetEvents))
+        foreach (GetEvent request in from startedEvent in await GetNewOngoingEvents() select new GetEvent(startedEvent.Id))
         {
             await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
-                x => x.EventWebhookId, x=> x.EventWebhookToken , (await GetFullEvent(startedEvent)).ToStartedEmbed());
+                x => x.EventWebhookId, x=> x.EventWebhookToken , (await request.SendRequest<FullEvent>()).ToStartedEmbed());
         }
     }
 
     public static async Task SendNewPastEvents()
     {
-        foreach (EventPreview startedEvent in await GetNewEvents(PastEventsPath, GetPastEvents))
+        Stopwatch watch = new(); watch.Start();
+        foreach (GetEvent request in from startedEvent in await GetNewEvents(PastEventsPath, GetPastEvents) select new GetEvent(startedEvent.Id))
         {
             await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
-                x => x.EventWebhookId, x=> x.EventWebhookToken , (await GetFullEvent(startedEvent)).ToStartedEmbed());
+                x => x.EventWebhookId, x=> x.EventWebhookToken , (await request.SendRequest<FullEvent>()).ToStartedEmbed());
         }
+        Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched past events ({watch.ElapsedMilliseconds}ms)");
     }
+
+    public static async Task SendEvents(SocketSlashCommand arg)
+    {
+        await arg.DeferAsync();
+
+        EmbedBuilder builder = new();
+
+        List<EventPreview> ongoingEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(OngoingEventsPath);
+
+        builder.WithTitle("ONGOING EVENTS")
+            .WithColor(Color.Gold)
+            .WithDescription("Please select an event for more information");
+
+        SelectMenuBuilder menuBuilder = new SelectMenuBuilder()
+            .WithPlaceholder("Select an event")
+            .WithCustomId("ongoingEventsMenu")
+            .WithMinValues(1)
+            .WithMaxValues(1);
+
+        foreach (EventPreview ongoingEvent in ongoingEvents)
+        {
+            DateTime startDate = Tools.UnixTimeToDateTime(ongoingEvent.DateStart);
+            DateTime endDate = Tools.UnixTimeToDateTime(ongoingEvent.DateEnd);
+            if (ongoingEvent.Featured)
+            {
+                menuBuilder.AddOption(ongoingEvent.Name, ongoingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}", new Emoji("⭐"));
+            }
+            else
+            {
+                menuBuilder.AddOption(ongoingEvent.Name, ongoingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}");
+            }
+        }
+
+        ComponentBuilder compBuilder = new ComponentBuilder()
+            .WithSelectMenu(menuBuilder);
+
+        await arg.ModifyOriginalResponseAsync(msg => { msg.Embed = builder.Build(); msg.Components = compBuilder.Build(); });
+    }
+    public static async Task SendUpcomingEvents(SocketSlashCommand arg)
+    {
+        await arg.DeferAsync();
+        List<EventPreview> upcomingEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(FutureEventsPath);
+        
+        EmbedBuilder builder = new();
+        builder.WithTitle("UPCOMING EVENTS")
+            .WithColor(Color.Gold)
+            .WithDescription("Please select an event for more information");
+
+        SelectMenuBuilder menuBuilder = new SelectMenuBuilder()
+            .WithPlaceholder("Select an event")
+            .WithCustomId("upcomingEventsMenu")
+            .WithMinValues(1)
+            .WithMaxValues(1);
+
+        foreach(EventPreview upcomingEvent in upcomingEvents)
+        {
+            DateTime startDate = Tools.UnixTimeToDateTime(upcomingEvent.DateStart);
+            DateTime endDate = Tools.UnixTimeToDateTime(upcomingEvent.DateEnd);
+            if(upcomingEvent.Featured)
+            {
+                menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
+                    $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}", new Emoji("⭐"));
+            } 
+            else
+            {
+                menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
+                    $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}");
+            }
+            if(menuBuilder.Options.Count > 24)
+            {
+                break;
+            }
+        }
+
+        ComponentBuilder compBuilder = new ComponentBuilder()
+            .WithSelectMenu(menuBuilder);
+
+        await arg.ModifyOriginalResponseAsync(msg => { msg.Embed = builder.Build(); msg.Components = compBuilder.Build(); });
+    }
+    public static async Task SendEvent(SocketMessageComponent arg)
+    {
+        await arg.DeferAsync();
+        FullEvent fullEvent;
+        try
+        {
+            GetEvent request = new(int.Parse(arg.Data.Values.First()));
+            fullEvent = await request.SendRequest<FullEvent>();
+        }
+        catch (ApiError ex)
+        {
+            await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ex.ToEmbed());
+            return;
+        }
+        catch (DeploymentException ex)
+        {
+            await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ex.ToEmbed());
+            return;
+        }
+        SocketUserMessage msg = arg.Message;
+
+        SelectMenuComponent menu = msg.Components.First().Components.First() as SelectMenuComponent;
+        SelectMenuBuilder builder = menu.ToBuilder();
+
+        foreach (SelectMenuOptionBuilder option in builder.Options.Where(option => option.IsDefault == true))
+        {
+            option.IsDefault = false;
+            break;
+        }
+        foreach (SelectMenuOptionBuilder option in builder.Options.Where(option => option.Value == arg.Data.Values.First()))
+        {
+            option.IsDefault = true;
+            break;
+        }
+        ComponentBuilder compBuilder = new ComponentBuilder()
+            .WithSelectMenu(builder);
+        await arg.ModifyOriginalResponseAsync(message => { message.Embed = fullEvent.ToFullEmbed().Result; message.Components = compBuilder.Build(); });
+    }
+    public static async Task SendEvent(SocketSlashCommand arg)
+    {
+        await arg.DeferAsync();
+        Embed embed;
+        GetEventByName request = new(arg.Data.Options.First().Value.ToString());
+        try
+        {
+            embed = await (await request.SendRequest<FullEvent>()).ToFullEmbed();
+        }
+        catch (ApiError ex)
+        {
+            embed = ex.ToEmbed();
+        }
+        catch (DeploymentException ex)
+        {
+            embed = ex.ToEmbed();
+        }
+        await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
+    }
+    
     //3 Funktionen:
     //GetOngoingEvents => /getEvents => Neu in ongoing = Event started
     //GetUpcomingEvents => /getEvents
@@ -72,7 +228,8 @@ public static class HltvEvents
     //GetStartedEvents
     //GetEndedEvents
 
-    public static async Task<List<OngoingEventPreview>> GetOngoingEvents()
+    /*
+    public static async Task<List<EventPreview>> GetOngoingEvents()
     {
         List<OngoingEventPreview> ongoingEvents = new();
         Directory.CreateDirectory("./cache/events");
@@ -97,20 +254,8 @@ public static class HltvEvents
         File.WriteAllText("./cache/events/ongoing.json", JArray.FromObject(ongoingEvents).ToString());
 
         return ongoingEvents;
+        
     }
-    private static async Task<List<EventPreview>> GetPastEvents()
-    {
-        string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddMonths(-1));
-        string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
-
-        GetPastEvents request = new(startDate, endDate);
-        List<EventPreview> pastEvents = await request.SendRequest<List<EventPreview>>("GetPastEvents");
-
-        AutomatedMessageHelper.SaveToFile(PastEventsPath, pastEvents);
-
-        return pastEvents;
-    }
-    /*
      public static async Task AktEvents()
     {
         Stopwatch watch = new(); watch.Start();
@@ -245,7 +390,7 @@ public static class HltvEvents
     {
         return await GetFullEvent(eventPreview.Id);
     }
-    */
+    
     static async Task<FullEvent> GetFullEvent(EventPreview eventPreview)
     {
         return await GetFullEvent(eventPreview.Id);
@@ -268,146 +413,5 @@ public static class HltvEvents
         JObject req = await Tools.RequestApiJObject("getEventByName", properties, values);
         return new FullEvent(req);
     }
-
-    public static async Task SendEvents(SocketSlashCommand arg)
-    {
-        await arg.DeferAsync();
-
-        EmbedBuilder builder = new();
-
-        List<OngoingEventPreview> ongoingEvents = new();
-        if (!File.Exists("./cache/events/ongoing.json") || File.GetCreationTimeUtc("./cache/events/ongoing.json") < DateTime.UtcNow.AddMinutes(-10))
-        {
-            ongoingEvents = await GetOngoingEvents();
-        }
-        else
-        {
-            foreach (JToken ongoingEvent in JArray.Parse(File.ReadAllText("./cache/events/ongoing.json")))
-            {
-                ongoingEvents.Add(new OngoingEventPreview(ongoingEvent as JObject));
-            }
-        }
-
-        builder.WithTitle("ONGOING EVENTS")
-            .WithColor(Color.Gold)
-            .WithDescription("Please select an event for more information");
-
-        var menuBuilder = new SelectMenuBuilder()
-            .WithPlaceholder("Select an event")
-            .WithCustomId("ongoingEventsMenu")
-            .WithMinValues(1)
-            .WithMaxValues(1);
-
-        foreach (OngoingEventPreview ongoingEvent in ongoingEvents)
-        {
-            DateTime startDate = Tools.UnixTimeToDateTime(ongoingEvent.DateStart);
-            DateTime endDate = Tools.UnixTimeToDateTime(ongoingEvent.DateEnd);
-            if (ongoingEvent.Featured)
-            {
-                menuBuilder.AddOption(ongoingEvent.Name, ongoingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}", new Emoji("⭐"));
-            }
-            else
-            {
-                menuBuilder.AddOption(ongoingEvent.Name, ongoingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}");
-            }
-        }
-
-        var compBuilder = new ComponentBuilder()
-            .WithSelectMenu(menuBuilder);
-
-        await arg.ModifyOriginalResponseAsync(msg => { msg.Embed = builder.Build(); msg.Components = compBuilder.Build(); });
-    }
-    public static async Task SendUpcomingEvents(SocketSlashCommand arg)
-    {
-        await arg.DeferAsync();
-        List<EventPreview> upcomingEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(CurrentEventsPath);
-        
-        EmbedBuilder builder = new();
-        builder.WithTitle("UPCOMING EVENTS")
-            .WithColor(Color.Gold)
-            .WithDescription("Please select an event for more information");
-
-        SelectMenuBuilder menuBuilder = new SelectMenuBuilder()
-            .WithPlaceholder("Select an event")
-            .WithCustomId("upcomingEventsMenu")
-            .WithMinValues(1)
-            .WithMaxValues(1);
-
-        foreach(EventPreview upcomingEvent in upcomingEvents)
-        {
-            DateTime startDate = Tools.UnixTimeToDateTime(upcomingEvent.DateStart);
-            DateTime endDate = Tools.UnixTimeToDateTime(upcomingEvent.DateEnd);
-            if(upcomingEvent.Featured)
-            {
-                menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
-                    $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}", new Emoji("⭐"));
-            } 
-            else
-            {
-                menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
-                    $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}");
-            }
-            if(menuBuilder.Options.Count > 24)
-            {
-                break;
-            }
-        }
-
-        ComponentBuilder compBuilder = new ComponentBuilder()
-            .WithSelectMenu(menuBuilder);
-
-        await arg.ModifyOriginalResponseAsync(msg => { msg.Embed = builder.Build(); msg.Components = compBuilder.Build(); });
-    }
-    public static async Task SendEvent(SocketMessageComponent arg)
-    {
-        await arg.DeferAsync();
-        FullEvent fullEvent;
-        try
-        {
-            GetEvent request = new(int.Parse(arg.Data.Values.First()));
-            fullEvent = await request.SendRequest<FullEvent>("GetEvent");
-        }
-        catch (ApiError ex)
-        {
-            await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ex.ToEmbed());
-            return;
-        }
-        catch (DeploymentException ex)
-        {
-            await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ex.ToEmbed());
-            return;
-        }
-        SocketUserMessage msg = arg.Message;
-
-        SelectMenuComponent menu = msg.Components.First().Components.First() as SelectMenuComponent;
-        SelectMenuBuilder builder = menu.ToBuilder();
-
-        foreach (SelectMenuOptionBuilder option in builder.Options.Where(option => option.IsDefault == true))
-        {
-            option.IsDefault = false;
-            break;
-        }
-        foreach (SelectMenuOptionBuilder option in builder.Options.Where(option => option.Value == arg.Data.Values.First()))
-        {
-            option.IsDefault = true;
-            break;
-        }
-        ComponentBuilder compBuilder = new ComponentBuilder()
-            .WithSelectMenu(builder);
-        await arg.ModifyOriginalResponseAsync(message => { message.Embed = fullEvent.ToFullEmbed().Result; message.Components = compBuilder.Build(); });
-    }
-    public static async Task SendEvent(SocketSlashCommand arg)
-    {
-        await arg.DeferAsync();
-        Embed embed;
-        try
-        {
-            embed = await (await GetFullEvent(arg.Data.Options.First().Value.ToString())).ToFullEmbed();
-        }
-        catch (HltvApiExceptionLegacy e)
-        {
-            embed = ErrorHandling.GetErrorEmbed(e);
-        }
-        await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
-    }
+    */
 }

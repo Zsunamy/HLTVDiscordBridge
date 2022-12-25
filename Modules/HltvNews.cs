@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using HLTVDiscordBridge.HttpResponses;
 using HLTVDiscordBridge.Requests;
-using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge.Modules;
 
@@ -27,8 +26,8 @@ public static class HltvNews
     }
     private static async Task<List<News>> GetLatestNews()
     {
-        ApiRequestBody request = new();
-        return await request.SendRequest<List<News>>("getRssNews");
+        GetRssNews request = new();
+        return await request.SendRequest<List<News>>();
     }
     public static async Task SendNewNews()
     {

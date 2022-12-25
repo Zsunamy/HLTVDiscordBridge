@@ -8,6 +8,8 @@ public class GetResults : ApiRequestBody
     public string EndDate;
     public List<int> TeamIds;
     public List<int> EventIds;
+    protected override string Endpoint => "GetResults";
+
     public GetResults(string startDate = null, string endDate = null, List<int> teamIds = null, List<int> eventIds = null)
     {
         StartDate = startDate;

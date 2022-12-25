@@ -18,7 +18,7 @@ public static class HltvResults
         string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddDays(-2));
         string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
         GetResults request = new (startDate, endDate);
-        return await request.SendRequest<List<Result>>("getResults");
+        return await request.SendRequest<List<Result>>();
     }
 
     private static async Task<List<Result>> GetNewResults()
@@ -55,12 +55,12 @@ public static class HltvResults
     private static async Task<List<Result>> GetMatchResultsOfEvent(List<int> eventIds)
     {
         GetResults request = new(eventIds: eventIds);
-        return await request.SendRequest<List<Result>>("getResults");
+        return await request.SendRequest<List<Result>>();
     }
     public static async Task<List<Result>> GetMatchResults(int teamId)
     {
         List<int> teamIds = new() { teamId };
         GetResults request = new (teamIds: teamIds);
-        return await request.SendRequest<List<Result>>("getResults");
+        return await request.SendRequest<List<Result>>();
     }
 }

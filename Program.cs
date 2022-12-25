@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
+using HLTVDiscordBridge.Requests;
 
 namespace HLTVDiscordBridge;
 
@@ -25,6 +26,7 @@ internal class Program
     private IServiceProvider _services;
     private readonly BotConfig _botConfig;
     public readonly HttpClient DefaultHttpClient;
+    private Task _bgTask;
 
     private Program()
     {
@@ -76,7 +78,7 @@ internal class Program
     private async Task Ready()
     {
         await Config.ServerConfigStartUp(_client);
-        await BgTask();
+        _bgTask ??= BgTask();
     }
 
     private static Task ButtonExecuted(SocketMessageComponent arg)
@@ -84,30 +86,23 @@ internal class Program
         Task handler = Task.Run(async () =>
         {
             string matchLink = "";
-            Match match;
-            switch (arg.Data.CustomId)
+            await arg.DeferAsync();
+            foreach (Embed e in arg.Message.Embeds)
             {
-                case "overallstats_bo1":
-                    await arg.DeferAsync();
-                    foreach (Embed e in arg.Message.Embeds)
-                    {
-                        matchLink = ((EmbedAuthor)e.Author).Url;
-                    }
-                    match = await HltvMatch.GetMatch(matchLink);
-                    MatchMapStats mapStats = await HltvMatchMapStats.GetMatchMapStats(match.Maps[0]);
-                    await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(mapStats));
-                    break;
-                case "overallstats_def":
-                    await arg.DeferAsync();
-                        
-                    foreach (Embed e in arg.Message.Embeds)
-                    {
-                        matchLink = ((EmbedAuthor)e.Author).Url;
-                    }
-                    match = await HltvMatch.GetMatch(matchLink);
-                    MatchStats matchStats = await HltvMatchStats.GetMatchStats(match);
-                    await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(matchStats));
-                    break;
+                matchLink = ((EmbedAuthor)e.Author).Url;
+            }
+            GetMatch request = new(Tools.GetIdFromUrl(matchLink));
+            Match match = await request.SendRequest<Match>();
+
+            if (arg.Data.CustomId == "overallstats_bo1")
+            {
+                MatchMapStats mapStats = await HltvMatchMapStats.GetMatchMapStats(match.Maps[0]);
+                await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(mapStats));
+            }
+            else
+            {
+                MatchStats matchStats = await HltvMatchStats.GetMatchStats(match);
+                await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(matchStats));
             }
         });
         return handler;
