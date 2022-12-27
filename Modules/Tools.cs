@@ -336,11 +336,11 @@ public static class Tools
     
     public static void SaveToFile(string path, object content)
     {
-        File.WriteAllText(path, JsonSerializer.Serialize(content, ApiRequestBody.SerializeOptions));
+        File.WriteAllText(path, JsonSerializer.Serialize(content, ApiRequestBody<GetEvent>.SerializeOptions));
     }
     
     public static T ParseFromFile<T>(string path)
     {
-        return JsonSerializer.Deserialize<T>(File.ReadAllText(path), ApiRequestBody.SerializeOptions);
+        return JsonSerializer.Deserialize<T>(File.ReadAllText(path), ApiRequestBody<GetEvent>.SerializeOptions);
     }
 }

@@ -1,6 +1,6 @@
 namespace HLTVDiscordBridge.Requests;
 
-public class GetRssNews : ApiRequestBody
+public class GetRssNews : ApiRequestBody<GetRssNews>
 {
     protected override string Endpoint => "GetRssNews";
 }

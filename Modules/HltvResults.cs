@@ -17,7 +17,7 @@ public static class HltvResults
     {
         string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddDays(-2));
         string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
-        GetResults request = new (startDate, endDate);
+        GetResults request = new GetResults{StartDate = startDate, EndDate = endDate};
         return await request.SendRequest<List<Result>>();
     }
 
@@ -30,6 +30,7 @@ public static class HltvResults
 
         List<Result> latestResults = await GetLatestResults();
         List<Result> oldResults = Tools.ParseFromFile<List<Result>>(Path);
+        Tools.SaveToFile(Path, latestResults);
 
         return (from latestResult in latestResults
             let found = oldResults.Any(oldResult => latestResult.Id == oldResult.Id)
@@ -43,7 +44,7 @@ public static class HltvResults
         {
             (Embed embed, MessageComponent component) = await result.ToEmbedAndComponent();
             await Tools.SendMessagesWithWebhook(x => x.ResultWebhookId != null,
-                x => x.ResultWebhookId, x=> x.ResultWebhookToken, embed, component);
+                    x => x.ResultWebhookId, x=> x.ResultWebhookToken, embed, component);
         }
         Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
     }
@@ -54,13 +55,13 @@ public static class HltvResults
     }
     private static async Task<List<Result>> GetMatchResultsOfEvent(List<int> eventIds)
     {
-        GetResults request = new(eventIds: eventIds);
+        GetResults request = new GetResults{EventIds = eventIds};
         return await request.SendRequest<List<Result>>();
     }
     public static async Task<List<Result>> GetMatchResults(int teamId)
     {
         List<int> teamIds = new() { teamId };
-        GetResults request = new (teamIds: teamIds);
+        GetResults request = new GetResults{TeamIds = teamIds};
         return await request.SendRequest<List<Result>>();
     }
 }

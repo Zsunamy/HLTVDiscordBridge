@@ -45,7 +45,7 @@ public static class HltvPlayer
     {
         string name = arg.Data.Options.First().Value.ToString()!;
         FullPlayer player;
-        FullPlayerStats stats;
+        PlayerStats stats;
         Embed embed;
         bool isInDatabase = false;
         IAsyncCursor<PlayerDocumentNew> query = await GetPlayerCollection().FindAsync(elem => elem.Alias.Contains(name.ToLower()));
@@ -61,7 +61,7 @@ public static class HltvPlayer
         {
             // Player is cached
             player =  Tools.ParseFromFile<FullPlayer>($"{Path}/{name.ToLower()}/player.json");
-            stats = Tools.ParseFromFile<FullPlayerStats>($"{Path}/{name.ToLower()}/stats.json");
+            stats = Tools.ParseFromFile<PlayerStats>($"{Path}/{name.ToLower()}/stats.json");
             embed = player.ToEmbed(stats);
         }
         else
@@ -71,17 +71,17 @@ public static class HltvPlayer
             {
                 if (isInDatabase)
                 {
-                    GetPlayer request = new(query.First().PlayerId);
+                    GetPlayer request = new GetPlayer{Id = query.First().PlayerId};
                     player = await request.SendRequest<FullPlayer>();
                 }
                 else
                 {
-                    GetPlayerByName request = new(name);
+                    GetPlayerByName request = new GetPlayerByName{Name = name};
                     player = await request.SendRequest<FullPlayer>();
                     await GetPlayerCollection().InsertOneAsync(new PlayerDocumentNew(player));
                 }
-                GetPlayerStats requestStats = new(player.Id);
-                stats = await requestStats.SendRequest<FullPlayerStats>();
+                GetPlayerStats requestStats = new GetPlayerStats{Id = player.Id};
+                stats = await requestStats.SendRequest<PlayerStats>();
                     
                 Tools.SaveToFile($"{Path}/{name}/player.json", player);
                 Tools.SaveToFile($"{Path}/{name}/stats.json", stats);

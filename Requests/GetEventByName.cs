@@ -1,12 +1,7 @@
 namespace HLTVDiscordBridge.Requests;
 
-public class GetEventByName : ApiRequestBody
+public class GetEventByName : ApiRequestBody<GetEventByName>
 {
-    public string Name { get; set; }
     protected override string Endpoint => "GetEventByName";
-
-    public GetEventByName(string name)
-    {
-        Name = name;
-    }
+    public string Name { get; set; }
 }

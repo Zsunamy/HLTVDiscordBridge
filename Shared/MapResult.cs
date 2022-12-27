@@ -1,10 +1,8 @@
-﻿using System.Collections.Generic;
-
-namespace HLTVDiscordBridge.Shared;
+﻿namespace HLTVDiscordBridge.Shared;
 
 public class MapResult
 {
-    public string Team1TotalRounds { get; set; }
-    public string Team2TotalRounds { get; set; }
-    public List<MapHalfResult> MapHalfResults { get; set; }
+    public int Team1TotalRounds { get; set; }
+    public int Team2TotalRounds { get; set; }
+    public MapHalfResult[] HalfResults { get; set; }
 }

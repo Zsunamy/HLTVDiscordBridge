@@ -8,7 +8,7 @@ namespace HLTVDiscordBridge.Modules
     {
         public static async Task<MatchMapStats> GetMatchMapStats(Map map)
         {
-            GetMatchMapStats request = new(map.StatsId);
+            GetMatchMapStats request = new GetMatchMapStats{Id = map.StatsId};
             return await request.SendRequest<MatchMapStats>();
         }
     }

@@ -29,7 +29,7 @@ public static class HltvEvents
         string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddMonths(-1));
         string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
 
-        GetPastEvents request = new(startDate, endDate);
+        GetPastEvents request = new GetPastEvents{StartDate = startDate, EndDate = endDate};
         List<EventPreview> pastEvents = await request.SendRequest<List<EventPreview>>();
 
         Tools.SaveToFile(PastEventsPath, pastEvents);
@@ -65,7 +65,7 @@ public static class HltvEvents
 
     public static async Task SendNewStartedEvents()
     {
-        foreach (GetEvent request in from startedEvent in await GetNewOngoingEvents() select new GetEvent(startedEvent.Id))
+        foreach (GetEvent request in from startedEvent in await GetNewOngoingEvents() select new GetEvent{Id =startedEvent.Id})
         {
             await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
                 x => x.EventWebhookId, x=> x.EventWebhookToken , (await request.SendRequest<FullEvent>()).ToStartedEmbed());
@@ -75,7 +75,7 @@ public static class HltvEvents
     public static async Task SendNewPastEvents()
     {
         Stopwatch watch = new(); watch.Start();
-        foreach (GetEvent request in from startedEvent in await GetNewEvents(PastEventsPath, GetPastEvents) select new GetEvent(startedEvent.Id))
+        foreach (GetEvent request in from startedEvent in await GetNewEvents(PastEventsPath, GetPastEvents) select new GetEvent{Id =startedEvent.Id})
         {
             await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
                 x => x.EventWebhookId, x=> x.EventWebhookToken , (await request.SendRequest<FullEvent>()).ToStartedEmbed());
@@ -167,7 +167,7 @@ public static class HltvEvents
         FullEvent fullEvent;
         try
         {
-            GetEvent request = new(int.Parse(arg.Data.Values.First()));
+            GetEvent request = new GetEvent{Id = int.Parse(arg.Data.Values.First())};
             fullEvent = await request.SendRequest<FullEvent>();
         }
         catch (ApiError ex)
@@ -203,7 +203,7 @@ public static class HltvEvents
     {
         await arg.DeferAsync();
         Embed embed;
-        GetEventByName request = new(arg.Data.Options.First().Value.ToString());
+        GetEventByName request = new GetEventByName{Name = arg.Data.Options.First().Value.ToString()};
         try
         {
             embed = await (await request.SendRequest<FullEvent>()).ToFullEmbed();

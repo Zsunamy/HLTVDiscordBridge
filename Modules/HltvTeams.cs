@@ -28,12 +28,12 @@ public static class HltvTeams
         {
             try
             {
-                GetTeamByName request = new(name);
+                GetTeamByName request = new GetTeamByName{Name = name};
                 team = await request.SendRequest<FullTeam>();
-                FullTeamStats stats = await new GetTeamStats(team.Id).SendRequest<FullTeamStats>();
+                FullTeamStats stats = await new GetTeamStats{Id = team.Id}.SendRequest<FullTeamStats>();
                 HttpResponseMessage res = await Program.GetInstance().DefaultHttpClient.GetAsync(new Uri(team.Logo));
                 
-                team.LocalThumbnailPath = await SavePng(await res.Content.ReadAsByteArrayAsync(), team.Name);
+                team.LocalThumbnailPath = SavePng(await res.Content.ReadAsByteArrayAsync(), team.Name);
                 
                 embed = await team.ToEmbed(stats);
             }
@@ -279,7 +279,7 @@ public static class HltvTeams
         return (builder.Build(), fullTeam.LocalThumbnailPath);
     }
     */
-    private static async Task<string> SavePng(byte[] data, string name)
+    private static string SavePng(byte[] data, string name)
     {
         string path = $"{Path}/{name.ToLower().Replace(' ', '-')}/{name.ToLower().Replace(' ', '-')}_logo.png";
         try

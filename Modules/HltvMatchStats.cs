@@ -3,6 +3,7 @@ using HLTVDiscordBridge.Shared;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HLTVDiscordBridge.Requests;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -10,7 +11,7 @@ namespace HLTVDiscordBridge.Modules
     {
         public static async Task<MatchStats> GetMatchStats(Match match)
         {
-            Requests.GetMatchStats request = new(match.StatsId);
+            GetMatchStats request = new GetMatchStats{Id = match.StatsId};
             return await request.SendRequest<MatchStats>();
         }
         public static Embed GetPlayerStatsEmbed(MatchStats matchStats)

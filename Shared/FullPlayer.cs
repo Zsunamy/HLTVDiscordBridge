@@ -16,12 +16,12 @@ public class FullPlayer
     public string Twitch { get; set; }
     public string Instagram { get; set; }
     public Country Country { get; set; }
-    public Team Team { get; set; }
-    public List<Achievement> Achievements { get; set; }
-    public List<TeamMembership> TeamMemberships { get; set; }
-    public List<News> News { get; set; }
+    public FullPlayerTeam Team { get; set; }
+    public Achievement[] Achievements { get; set; }
+    public TeamMembership[] TeamMemberships { get; set; }
+    public News[] News { get; set; }
 
-    public Embed ToEmbed(FullPlayerStats stats)
+    public Embed ToEmbed(PlayerStats stats)
     {
         EmbedBuilder builder = new();
         if (stats.Image != null)
@@ -69,7 +69,7 @@ public class FullPlayer
         }
         builder.WithCurrentTimestamp();
 
-        if(Achievements.Count != 0)
+        if(Achievements.Length != 0)
         {
             List<string> achievements = new();
             foreach (Achievement achievement in Achievements.TakeWhile(_ => string.Join("\n", achievements).Length <= 600))

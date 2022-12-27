@@ -1,12 +1,7 @@
 namespace HLTVDiscordBridge.Requests;
 
-public class GetTeamByName : ApiRequestBody
+public class GetTeamByName : ApiRequestBody<GetTeamByName>
 {
     protected override string Endpoint => "GetTeamByName";
     public string Name { get; set; }
-
-    public GetTeamByName(string name)
-    {
-        Name = name;
-    }
 }

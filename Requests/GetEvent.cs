@@ -1,13 +1,7 @@
 namespace HLTVDiscordBridge.Requests;
 
-public class GetEvent : ApiRequestBody
+public class GetEvent : ApiRequestBody<GetEvent>
 {
-    public int Id { get; set; }
-
     protected override string Endpoint => "getEvent";
-
-    public GetEvent(int id)
-    {
-        Id = id;
-    }
+    public int Id { get; set; }
 }

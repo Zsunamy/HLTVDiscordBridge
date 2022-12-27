@@ -91,7 +91,7 @@ internal class Program
             {
                 matchLink = ((EmbedAuthor)e.Author).Url;
             }
-            GetMatch request = new(Tools.GetIdFromUrl(matchLink));
+            GetMatch request = new GetMatch{ Id = Tools.GetIdFromUrl(matchLink)};
             Match match = await request.SendRequest<Match>();
 
             if (arg.Data.CustomId == "overallstats_bo1")
@@ -149,11 +149,11 @@ internal class Program
         }
         (Timer, Func<Task>)[] timers = {(new Timer(), HltvNews.SendNewNews), (new Timer(), HltvResults.SendNewResults),
             (new Timer(), HltvEvents.SendNewStartedEvents), (new Timer(), HltvEvents.SendNewPastEvents)};
-        await HltvNews.SendNewNews();
         foreach ((Timer timer, Func<Task> function) in timers)
         {
             try
             {
+                await HltvResults.SendNewResults();
                 await function();
             }
             catch (Exception e)

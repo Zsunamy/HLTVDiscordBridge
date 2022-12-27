@@ -1,6 +1,6 @@
 ﻿namespace HLTVDiscordBridge.Shared;
 
-public class FullPlayerStats
+public class PlayerStats
 {
     public int Id { get; set; }
     public string Name { get; set; }

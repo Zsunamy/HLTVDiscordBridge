@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Discord;
@@ -14,20 +16,20 @@ public class Result
     public ulong Date { get; set; }
     public Team Team1 { get; set; }
     public Team Team2 { get; set; }
-    [JsonPropertyName("Result")]
+    [JsonPropertyName("result")]
     public ResultResult ResultResult { get; set; }
     public string Format { get; set; }
     public string Link { get; set; }
     public async Task<(Embed, MessageComponent)> ToEmbedAndComponent()
     {
-        GetMatch request = new(Id);
+        GetMatch request = new GetMatch{Id = Id};
         Match match = await request.SendRequest<Match>();
         EmbedBuilder builder = new();
-        string title = match.WinnerTeam.Name == match.Team1.Name ? $"👑 {match.Team1.Name} vs. {match.Team2.Name}" :
+        string title = ResultResult.Team1 > ResultResult.Team2 ? $"👑 {match.Team1.Name} vs. {match.Team2.Name}" :
             $"{match.Team1.Name} vs. {match.Team2.Name} 👑";
         builder.WithTitle(title)
             .WithColor(Color.Red)
-            .AddField("event:", $"[{match.EventObj.Name}]({match.EventObj.Link})\n{match.Significance}")
+            .AddField("event:", $"[{match.Event.Name}]({match.Event.Link})\n{match.Significance}")
             .AddField("winner:", $"[{match.WinnerTeam.Name}]({match.WinnerTeam.Link})", true)
             .AddField("format:", $"{Tools.GetFormatFromAcronym(match.Format.Type)} ({match.Format.Location})", true)
             .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", match.Link)
@@ -43,11 +45,11 @@ public class Result
         string mapsString = "";
         foreach(Map map in match.Maps)
         {
-            if(map.MapResult != null)
+            if(map.Result != null)
             {
                 string mapHalfResultString = 
-                    map.MapResult.MapHalfResults.Aggregate("", (current, mapHalfResult) => current + (current == "" ? $"{mapHalfResult.Team1Rounds}:{mapHalfResult.Team2Rounds}" : $" | {mapHalfResult.Team1Rounds}:{mapHalfResult.Team2Rounds}"));
-                mapsString += $"{Tools.GetMapNameByAcronym(map.Name)} ({map.MapResult.Team1TotalRounds}:{map.MapResult.Team2TotalRounds}) ({mapHalfResultString})\n";
+                    map.Result.HalfResults.Aggregate("", (current, mapHalfResult) => current + (current == "" ? $"{mapHalfResult.Team1Rounds}:{mapHalfResult.Team2Rounds}" : $" | {mapHalfResult.Team1Rounds}:{mapHalfResult.Team2Rounds}"));
+                mapsString += $"{Tools.GetMapNameByAcronym(map.Name)} ({map.Result.Team1TotalRounds}:{map.Result.Team2TotalRounds}) ({mapHalfResultString})\n";
             }
             else
             {
@@ -56,10 +58,10 @@ public class Result
         }
         builder.AddField("maps:", mapsString);
                 
-        if (match.Highlights.Count != 0)
+        if (match.Highlights.Length != 0)
         {
-            Highlight[] highlights = new Highlight[2];
-            match.Highlights.CopyTo(0, highlights, 0, 2);
+            IEnumerable<Highlight> highlights = match.Highlights.Take(2);
+            //match.Highlights.CopyTo(0, highlights, 0, 2);
             string highlightsString = highlights.Aggregate
                 ("", (current, highlight) => current + $"[{Tools.SpliceText(highlight.Title, 35)}]({highlight.Link})\n\n");
             builder.AddField("highlights:", highlightsString);

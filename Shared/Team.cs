@@ -1,8 +1,11 @@
-﻿namespace HLTVDiscordBridge.Shared;
+﻿using System.Text.Json.Serialization;
+
+namespace HLTVDiscordBridge.Shared;
 
 public class Team
 {
-    public string Id { get; set; }
     public string Name { get; set; }
-    public string Link { get; set; }
+    public int? Id { get; set; }
+    [JsonIgnore]
+    public string Link => Id != null && Name != null ? $"https://www.hltv.org/team/{Id}/{Name.Replace(' ', '-')}" : null;
 }

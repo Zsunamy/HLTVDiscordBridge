@@ -34,7 +34,7 @@ namespace HLTVDiscordBridge
         public bool EventOutput { get; set; }
     }
 
-    public class Config : ModuleBase<SocketCommandContext>
+    public static class Config
     {
         public static async void InitAllWebhooks(DiscordSocketClient client)
         {
@@ -136,18 +136,11 @@ namespace HLTVDiscordBridge
         }
         public static async Task<List<SocketTextChannel>> GetChannelsLegacy(DiscordSocketClient client)
         {
-            List<SocketTextChannel> channels = new();
             IMongoCollection<ServerConfig> collection = GetCollection();
             List<ServerConfig> configs = (await collection.FindAsync(_ => true)).ToList();
 
-            foreach (ServerConfig cfg in configs)
-            {
-                if ((SocketTextChannel)client.GetChannel(cfg.NewsChannelID) != null)
-                {
-                    channels.Add((SocketTextChannel)client.GetChannel(cfg.NewsChannelID));
-                }
-            }
-            return channels;
+            return (from cfg in configs where (SocketTextChannel)client.GetChannel(cfg.NewsChannelID) != null
+                select (SocketTextChannel)client.GetChannel(cfg.NewsChannelID)).ToList();
         }
         
         public static async Task<List<ServerConfig>> GetServerConfigs(Expression<Func<ServerConfig, bool>> filter)

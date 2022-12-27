@@ -2,6 +2,6 @@ namespace HLTVDiscordBridge.Shared;
 
 public class ResultResult
 {
-    public int Team1;
-    public int Team2;
+    public int Team1 { get; set; }
+    public int Team2 { get; set; }
 }

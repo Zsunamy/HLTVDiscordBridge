@@ -1,12 +1,7 @@
 namespace HLTVDiscordBridge.Requests;
 
-public class GetMatch : ApiRequestBody
+public class GetMatch : ApiRequestBody<GetMatch>
 {
-    public int Id;
     protected override string Endpoint => "GetMatch";
-
-    public GetMatch(int id)
-    {
-        Id = id;
-    }
+    public int Id { get; set; }
 }
