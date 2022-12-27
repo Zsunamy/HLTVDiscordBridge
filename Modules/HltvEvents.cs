@@ -20,7 +20,7 @@ public static class HltvEvents
     {
         GetEvents request = new();
         List<EventPreview> events = await request.SendRequest<List<EventPreview>>();
-        AutomatedMessageHelper.SaveToFile(PastEventsPath, events);
+        Tools.SaveToFile(PastEventsPath, events);
         return events;
     }
 
@@ -32,7 +32,7 @@ public static class HltvEvents
         GetPastEvents request = new(startDate, endDate);
         List<EventPreview> pastEvents = await request.SendRequest<List<EventPreview>>();
 
-        AutomatedMessageHelper.SaveToFile(PastEventsPath, pastEvents);
+        Tools.SaveToFile(PastEventsPath, pastEvents);
 
         return pastEvents;
     }
@@ -44,7 +44,7 @@ public static class HltvEvents
             return new List<EventPreview>();
         }
 
-        List<EventPreview> oldEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(path);
+        List<EventPreview> oldEvents = Tools.ParseFromFile<List<EventPreview>>(path);
         List<EventPreview> newEvents = await getEvents();
 
         return (from newEvent in newEvents
@@ -54,9 +54,9 @@ public static class HltvEvents
 
     private static async Task<List<EventPreview>> GetNewOngoingEvents()
     {
-        List<EventPreview> oldEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(OngoingEventsPath);
+        List<EventPreview> oldEvents = Tools.ParseFromFile<List<EventPreview>>(OngoingEventsPath);
         IEnumerable<EventPreview> newEvents = (await GetEvents()).Where(obj => obj.DateStart < DateTimeOffset.Now.ToUnixTimeSeconds());
-        AutomatedMessageHelper.SaveToFile(OngoingEventsPath, newEvents);
+        Tools.SaveToFile(OngoingEventsPath, newEvents);
 
         return (from newEvent in newEvents
             let found = oldEvents.Any(oldEvent => oldEvent.Id == newEvent.Id)
@@ -89,7 +89,7 @@ public static class HltvEvents
 
         EmbedBuilder builder = new();
 
-        List<EventPreview> ongoingEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(OngoingEventsPath);
+        List<EventPreview> ongoingEvents = Tools.ParseFromFile<List<EventPreview>>(OngoingEventsPath);
 
         builder.WithTitle("ONGOING EVENTS")
             .WithColor(Color.Gold)
@@ -123,7 +123,7 @@ public static class HltvEvents
     public static async Task SendUpcomingEvents(SocketSlashCommand arg)
     {
         await arg.DeferAsync();
-        List<EventPreview> upcomingEvents = AutomatedMessageHelper.ParseFromFile<EventPreview>(FutureEventsPath);
+        List<EventPreview> upcomingEvents = Tools.ParseFromFile<List<EventPreview>>(FutureEventsPath);
         
         EmbedBuilder builder = new();
         builder.WithTitle("UPCOMING EVENTS")
@@ -143,12 +143,12 @@ public static class HltvEvents
             if(upcomingEvent.Featured)
             {
                 menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
-                    $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}", new Emoji("⭐"));
+                    $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.Name}", new Emoji("⭐"));
             } 
             else
             {
                 menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
-                    $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.name}");
+                    $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.Name}");
             }
             if(menuBuilder.Options.Count > 24)
             {

@@ -1,32 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace HLTVDiscordBridge.Shared;
 
-namespace HLTVDiscordBridge.Shared
+public class Achievement
 {
-    public class Achievement
-    {
-        public Achievement(JObject jObject)
-        {
-            place = jObject.TryGetValue("place", out JToken placeTok) ? placeTok.ToString() : null;
-            if (jObject.TryGetValue("event", out JToken eventObjTok))
-            {
-                eventObj = new Event(eventObjTok as JObject);
-            }
-            else if (jObject.TryGetValue("eventObj", out JToken eventTok))
-            {
-                eventObj = new Event(eventTok as JObject);
-            }
-            else
-            {
-                eventObj = null;
-            }
-        }
-
-        public string place { get; set; }
-        public Event eventObj { get; set; }
-    }
+    public string Place { get; set; }
+    public Event EventObj { get; set; }
 }

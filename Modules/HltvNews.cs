@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using HLTVDiscordBridge.HttpResponses;
 using HLTVDiscordBridge.Requests;
+using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge.Modules;
 
@@ -18,8 +18,8 @@ public static class HltvNews
             return new List<News>();
         }
         List<News> latestNews = await GetLatestNews();
-        List<News> oldNews = AutomatedMessageHelper.ParseFromFile<News>(Path);
-        AutomatedMessageHelper.SaveToFile(Path, latestNews);
+        List<News> oldNews = Tools.ParseFromFile<List<News>>(Path);
+        Tools.SaveToFile(Path, latestNews);
         return (from newItem in latestNews 
             where oldNews.All(oldItem => Tools.GetIdFromUrl(newItem.Link) != Tools.GetIdFromUrl(oldItem.Link))
             select newItem).ToList();

@@ -29,7 +29,7 @@ public static class HltvResults
         }
 
         List<Result> latestResults = await GetLatestResults();
-        List<Result> oldResults = AutomatedMessageHelper.ParseFromFile<Result>(Path);
+        List<Result> oldResults = Tools.ParseFromFile<List<Result>>(Path);
 
         return (from latestResult in latestResults
             let found = oldResults.Any(oldResult => latestResult.Id == oldResult.Id)

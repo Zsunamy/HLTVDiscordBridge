@@ -6,16 +6,22 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using HLTVDiscordBridge.Requests;
 
 namespace HLTVDiscordBridge.Modules
 {
     public static class HltvUpcomingMatches
     {
-        public static async Task<List<MatchUpcoming>> GetUpcomingMatches()
+        private const string OngoingPath = "./cache/matches/ongoingMatches.json";
+        private const string UpcomingPath = "./cache/matches/upcomingMatches.json";
+        public static async Task<IEnumerable<MatchUpcoming>> GetUpcomingMatches()
         {
-            Directory.CreateDirectory("./cache/matches");
+            GetMatches request = new();
+            List<MatchUpcoming> matches = await request.SendRequest<List<MatchUpcoming>>();
+            Tools.SaveToFile(OngoingPath, matches);
+            return matches.Where(match => !match.Live);
+            /*Directory.CreateDirectory("./cache/matches");
             try
             {                
                 JArray req = await Tools.RequestApiJArray("getMatches", new List<string>(), new List<string>());
@@ -23,41 +29,30 @@ namespace HLTVDiscordBridge.Modules
                 foreach (JObject jObj in req)
                 {
                     MatchUpcoming match = new MatchUpcoming(jObj);
-                    if (!bool.Parse(jObj.GetValue("live").ToString()) && match.team1 != null) { matches.Add(match); }
+                    if (!bool.Parse(jObj.GetValue("live").ToString()) && match.Team1 != null) { matches.Add(match); }
                 }
                 File.WriteAllText("./cache/matches/upcomingMatches.json", JArray.FromObject(matches).ToString());
                 return matches;
             }
             catch (HltvApiExceptionLegacy) { throw; }
+            */
         }
-        public static List<MatchUpcoming> GetUpcomingMatchesByDate(List<MatchUpcoming> matches, DateTime date)
+        private static IEnumerable<MatchUpcoming> GetUpcomingMatchesByDate(IEnumerable<MatchUpcoming> matches, DateTime date)
         {
-            List<MatchUpcoming> newMatches = new();
-            foreach (MatchUpcoming match in matches)
-            {
-                if(UnixTimeStampToDateTime(match.date).Date == date.Date)
-                {
-                    newMatches.Add(match);
-                }               
-            }
-            return newMatches;
+            return matches.Where(match => UnixTimeStampToDateTime(match.Date).Date == date.Date).ToList();
         }
-        public static List<MatchUpcoming> GetUpcomingMatchesByValue(List<MatchUpcoming> matches, string val)
+        private static IEnumerable<MatchUpcoming> GetUpcomingMatchesByValue(IEnumerable<MatchUpcoming> matches, string val)
         {
-            List<MatchUpcoming> newMatches = new();
             val = val.ToLower();
-            foreach (MatchUpcoming match in matches)
-            {
-                if(match.ToString().ToLower().Contains(val))
-                {
-                    newMatches.Add(match);
-                }
-            }
-            return newMatches;
+            return matches.Where(match => match.ToString().ToLower().Contains(val)).ToList();
         }
-        public static async Task<List<MatchUpcoming>> GetLiveMatches()
+        public static async Task<IEnumerable<MatchUpcoming>> GetLiveMatches()
         {
-            Directory.CreateDirectory("./cache/matches");
+            GetMatches request = new();
+            List<MatchUpcoming> matches = await request.SendRequest<List<MatchUpcoming>>();
+            Tools.SaveToFile(OngoingPath, matches);
+            return matches.Where(match => match.Live);
+            /*
             try
             {
                 JArray req = await Tools.RequestApiJArray("getMatches", new List<string>(), new List<string>());
@@ -70,12 +65,13 @@ namespace HLTVDiscordBridge.Modules
                 return matches;
             }
             catch (HltvApiExceptionLegacy) { throw; }
+        */
         }
         public static async Task<Embed> GetUpcomingMatchesEmbed(SocketSlashCommand command)
         {
             try
             {
-                List<MatchUpcoming> matches = await GetUpcomingMatches();
+                IEnumerable<MatchUpcoming> matches = await GetUpcomingMatches();
                 if(command.Data.Options.Count != 0)
                 {
                     string param = command.Data.Options.First().Value.ToString();
@@ -89,27 +85,27 @@ namespace HLTVDiscordBridge.Modules
                     }
                 }    
                 EmbedBuilder builder = new();
-                for(int i = 0; i < 3 && i < matches.Count; i++)
+                for(int i = 0; i < 3 && i < matches.Count(); i++)
                 {
-                    builder.AddField("match:", $"[{matches.ElementAt(i).team1.name}]({matches.ElementAt(i).team1.link}) vs. [{matches.ElementAt(i).team2.name}]({matches.ElementAt(i).team2.link})", true);
-                    builder.AddField("time:", $"{UnixTimeStampToDateTime(matches.ElementAt(i).date).ToShortDateString()} UTC", true);
+                    builder.AddField("match:", $"[{matches.ElementAt(i).Team1.Name}]({matches.ElementAt(i).Team1.Link}) vs. [{matches.ElementAt(i).Team2.Name}]({matches.ElementAt(i).Team2.Link})", true);
+                    builder.AddField("time:", $"{UnixTimeStampToDateTime(matches.ElementAt(i).Date).ToShortDateString()} UTC", true);
                     builder.AddField("\u200b", "\u200b", true);
-                    builder.AddField("event:", $"[{matches.ElementAt(i).eventObj.name}]({matches.ElementAt(i).eventObj.link})", true);
-                    builder.AddField("format:", GetFormatFromAcronym(matches.ElementAt(i).format), true);
+                    builder.AddField("event:", $"[{matches.ElementAt(i).EventObj.Name}]({matches.ElementAt(i).EventObj.Link})", true);
+                    builder.AddField("format:", GetFormatFromAcronym(matches.ElementAt(i).Format), true);
                     builder.AddField("\u200b", "\u200b", true);
-                    builder.AddField("details:", $"[click here for more details]({matches.ElementAt(i).link})");
+                    builder.AddField("details:", $"[click here for more details]({matches.ElementAt(i).Link})");
                     if(i==2)
                     {
-                        builder.WithFooter($"and {matches.Count - 3} more");
+                        builder.WithFooter($"and {matches.Count() - 3} more");
                     }
-                    else if(i < matches.Count - 1)
+                    else if(i < matches.Count() - 1)
                     {
                         builder.AddField("\u200b", "\u200b");
                     }
                 }
                 builder.WithCurrentTimestamp()
                 .WithColor(Color.Blue);
-                if(matches.Count < 3) { builder.WithFooter(Tools.GetRandomFooter()); }
+                if(matches.Count() < 3) { builder.WithFooter(Tools.GetRandomFooter()); }
                 return builder.Build();
             }
             catch(HltvApiExceptionLegacy) { throw; }

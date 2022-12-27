@@ -13,12 +13,14 @@ using Discord.Net;
 using Discord.Rest;
 using Discord.Webhook;
 using Discord.WebSocket;
+using HLTVDiscordBridge.Requests;
 using HLTVDiscordBridge.Shared;
 using MongoDB.Driver;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace HLTVDiscordBridge.Modules;
 
-public class Tools
+public static class Tools
 {
     public static EmbedFooterBuilder GetRandomFooter()
     {
@@ -330,5 +332,15 @@ public class Tools
         dtDateTime = dtDateTime.AddMilliseconds(double.Parse(unixTimeStamp.ToString())).ToUniversalTime();
         dtDateTime = dtDateTime.AddHours(1);
         return dtDateTime;*/
+    }
+    
+    public static void SaveToFile(string path, object content)
+    {
+        File.WriteAllText(path, JsonSerializer.Serialize(content, ApiRequestBody.SerializeOptions));
+    }
+    
+    public static T ParseFromFile<T>(string path)
+    {
+        return JsonSerializer.Deserialize<T>(File.ReadAllText(path), ApiRequestBody.SerializeOptions);
     }
 }

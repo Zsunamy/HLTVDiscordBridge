@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using HLTVDiscordBridge.Requests;
 using HLTVDiscordBridge.Shared;
-using Newtonsoft.Json.Linq;
 
 namespace HLTVDiscordBridge.Modules
 {
@@ -12,17 +8,8 @@ namespace HLTVDiscordBridge.Modules
     {
         public static async Task<FullTeamStats> GetFullTeamStats(int id)
         {
-            List<string> properties = new();
-            List<string> values = new();
-            properties.Add("id");
-            values.Add(id.ToString());
-            JObject jObject;
-            try
-            {
-                jObject = await Tools.RequestApiJObject("getTeamStats", properties, values);
-            }
-            catch(HltvApiExceptionLegacy) { throw; }
-            return new FullTeamStats(jObject);
+            GetTeamStats request = new(id);
+            return await request.SendRequest<FullTeamStats>();
         }
     }
 }
