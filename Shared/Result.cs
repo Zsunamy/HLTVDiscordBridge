@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -20,10 +19,8 @@ public class Result
     public ResultResult ResultResult { get; set; }
     public string Format { get; set; }
     public string Link { get; set; }
-    public async Task<(Embed, MessageComponent)> ToEmbedAndComponent()
+    public (Embed, MessageComponent) ToEmbedAndComponent(Match match)
     {
-        GetMatch request = new GetMatch{Id = Id};
-        Match match = await request.SendRequest<Match>();
         EmbedBuilder builder = new();
         string title = ResultResult.Team1 > ResultResult.Team2 ? $"👑 {match.Team1.Name} vs. {match.Team2.Name}" :
             $"{match.Team1.Name} vs. {match.Team2.Name} 👑";

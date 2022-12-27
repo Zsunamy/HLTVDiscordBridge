@@ -11,23 +11,23 @@ namespace HLTVDiscordBridge.Modules;
 public static class HltvNews
 {
     private const string Path = "./cache/news/news.json";
-    private static async Task<List<News>> GetNewNews()
+    private static async Task<IEnumerable<News>> GetNewNews()
     {
         if (!await AutomatedMessageHelper.VerifyFile(Path, GetLatestNews))
         {
-            return new List<News>();
+            return Array.Empty<News>();
         }
-        List<News> latestNews = await GetLatestNews();
-        List<News> oldNews = Tools.ParseFromFile<List<News>>(Path);
+        News[] latestNews = await GetLatestNews();
+        News[] oldNews = Tools.ParseFromFile<News[]>(Path);
         Tools.SaveToFile(Path, latestNews);
-        return (from newItem in latestNews 
+        return from newItem in latestNews 
             where oldNews.All(oldItem => Tools.GetIdFromUrl(newItem.Link) != Tools.GetIdFromUrl(oldItem.Link))
-            select newItem).ToList();
+            select newItem;
     }
-    private static async Task<List<News>> GetLatestNews()
+    private static async Task<News[]> GetLatestNews()
     {
         GetRssNews request = new();
-        return await request.SendRequest<List<News>>();
+        return await request.SendRequest<News[]>();
     }
     public static async Task SendNewNews()
     {

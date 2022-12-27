@@ -3,7 +3,9 @@ using HLTVDiscordBridge.Shared;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Discord;
 using HLTVDiscordBridge.Requests;
@@ -12,73 +14,93 @@ namespace HLTVDiscordBridge.Modules;
 
 public static class HltvEvents
 {
-    private const string FutureEventsPath = "./cache/events/currentEvents.json";
-    private const string OngoingEventsPath = "-/cache/events/ongoingEvents.json";
+    private const string CurrentEventsPath = "./cache/events/currentEvents.json";
+    private const string OngoingEventsPath = "./cache/events/ongoingEvents.json";
     private const string PastEventsPath = "./cache/events/pastEvents.json";
 
-    private static async Task<List<EventPreview>> GetEvents()
+    private static async Task<EventPreview[]> GetEvents()
     {
         GetEvents request = new();
-        List<EventPreview> events = await request.SendRequest<List<EventPreview>>();
-        Tools.SaveToFile(PastEventsPath, events);
+        EventPreview[] events = await request.SendRequest<EventPreview[]>();
+        Tools.SaveToFile(CurrentEventsPath, events);
         return events;
     }
 
-    private static async Task<List<EventPreview>> GetPastEvents()
+    private static async Task<EventPreview[]> GetPastEvents()
     {
         string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddMonths(-1));
         string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
 
         GetPastEvents request = new GetPastEvents{StartDate = startDate, EndDate = endDate};
-        List<EventPreview> pastEvents = await request.SendRequest<List<EventPreview>>();
-
-        Tools.SaveToFile(PastEventsPath, pastEvents);
-
-        return pastEvents;
+        return await request.SendRequest<EventPreview[]>();
     }
     
-    private static async Task<List<EventPreview>> GetNewEvents(string path, Func<Task<List<EventPreview>>> getEvents)
+    private static async Task<IEnumerable<EventPreview>> GetNewEvents(string path, Func<Task<EventPreview[]>> getEvents)
     {
         if (!await AutomatedMessageHelper.VerifyFile(path, getEvents))
         {
+            return Array.Empty<EventPreview>();
+        }
+
+        EventPreview[] oldEvents = Tools.ParseFromFile<EventPreview[]>(path);
+        EventPreview[] newEvents = await getEvents();
+        Tools.SaveToFile(path, newEvents);
+
+        return from newEvent in newEvents
+            let found = oldEvents.Any(oldEvent => newEvent.Id == oldEvent.Id)
+            where !found select newEvent;
+    }
+
+    private static async Task<IEnumerable<EventPreview>> GetNewOngoingEvents()
+    {
+        // Customized Tools.VerifyFile
+        if (File.Exists(OngoingEventsPath))
+        {
+            try
+            {
+                JsonDocument.Parse(await File.ReadAllTextAsync(OngoingEventsPath));
+            }
+            catch (JsonException)
+            {
+                Tools.SaveToFile(OngoingEventsPath, (await GetEvents()).Where(obj => obj.DateStart < DateTimeOffset.Now.ToUnixTimeMilliseconds()));
+                return Array.Empty<EventPreview>();
+            }
+        }
+        else
+        {
+            Tools.SaveToFile(OngoingEventsPath, (await GetEvents()).Where(obj => obj.DateStart < DateTimeOffset.Now.ToUnixTimeMilliseconds()));
             return new List<EventPreview>();
         }
 
-        List<EventPreview> oldEvents = Tools.ParseFromFile<List<EventPreview>>(path);
-        List<EventPreview> newEvents = await getEvents();
-
-        return (from newEvent in newEvents
-            let found = oldEvents.Any(oldEvent => newEvent.Id == oldEvent.Id)
-            where !found select newEvent).ToList();
-    }
-
-    private static async Task<List<EventPreview>> GetNewOngoingEvents()
-    {
-        List<EventPreview> oldEvents = Tools.ParseFromFile<List<EventPreview>>(OngoingEventsPath);
-        IEnumerable<EventPreview> newEvents = (await GetEvents()).Where(obj => obj.DateStart < DateTimeOffset.Now.ToUnixTimeSeconds());
+        EventPreview[] events = await GetEvents();
+        EventPreview[] oldEvents = Tools.ParseFromFile<EventPreview[]>(OngoingEventsPath);
+        IEnumerable<EventPreview> newEvents = events.Where(obj => obj.DateStart < DateTimeOffset.Now.ToUnixTimeMilliseconds());
         Tools.SaveToFile(OngoingEventsPath, newEvents);
-
-        return (from newEvent in newEvents
+        
+        return from newEvent in newEvents
             let found = oldEvents.Any(oldEvent => oldEvent.Id == newEvent.Id)
-            where !found select newEvent).ToList();
+            where !found select newEvent;
     }
 
     public static async Task SendNewStartedEvents()
     {
-        foreach (GetEvent request in from startedEvent in await GetNewOngoingEvents() select new GetEvent{Id =startedEvent.Id})
+        Stopwatch watch = new(); watch.Start();
+        foreach (GetEvent request in from startedEvent in await GetNewOngoingEvents() select new GetEvent{Id = startedEvent.Id})
         {
             await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
                 x => x.EventWebhookId, x=> x.EventWebhookToken , (await request.SendRequest<FullEvent>()).ToStartedEmbed());
         }
+        Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched started events ({watch.ElapsedMilliseconds}ms)");
     }
 
     public static async Task SendNewPastEvents()
     {
         Stopwatch watch = new(); watch.Start();
-        foreach (GetEvent request in from startedEvent in await GetNewEvents(PastEventsPath, GetPastEvents) select new GetEvent{Id =startedEvent.Id})
+        IEnumerable<EventPreview> events = await GetNewEvents(PastEventsPath, GetPastEvents);
+        foreach (GetEvent request in from startedEvent in events select new GetEvent{Id = startedEvent.Id})
         {
             await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
-                x => x.EventWebhookId, x=> x.EventWebhookToken , (await request.SendRequest<FullEvent>()).ToStartedEmbed());
+                x => x.EventWebhookId, x=> x.EventWebhookToken , (await request.SendRequest<FullEvent>()).ToPastEmbed());
         }
         Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched past events ({watch.ElapsedMilliseconds}ms)");
     }
@@ -123,7 +145,7 @@ public static class HltvEvents
     public static async Task SendUpcomingEvents(SocketSlashCommand arg)
     {
         await arg.DeferAsync();
-        List<EventPreview> upcomingEvents = Tools.ParseFromFile<List<EventPreview>>(FutureEventsPath);
+        List<EventPreview> upcomingEvents = Tools.ParseFromFile<List<EventPreview>>(CurrentEventsPath);
         
         EmbedBuilder builder = new();
         builder.WithTitle("UPCOMING EVENTS")
@@ -218,200 +240,4 @@ public static class HltvEvents
         }
         await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
     }
-    
-    //3 Funktionen:
-    //GetOngoingEvents => /getEvents => Neu in ongoing = Event started
-    //GetUpcomingEvents => /getEvents
-    //GetPastEvents => /getpastevents => Neu in Past = Event ended
-    //
-    //2 Funktionen:
-    //GetStartedEvents
-    //GetEndedEvents
-
-    /*
-    public static async Task<List<EventPreview>> GetOngoingEvents()
-    {
-        List<OngoingEventPreview> ongoingEvents = new();
-        Directory.CreateDirectory("./cache/events");
-
-        var req = await Tools.RequestApiJArray("getEvents", new List<string>(), new List<string>());
-
-        List<EventPreview> upcomingAndOngoingEvents = new();
-        foreach(JToken eventTok in req)
-        {                
-            upcomingAndOngoingEvents.Add(new EventPreview(eventTok as JObject));
-        }
-            
-
-        foreach(EventPreview eventPreview in upcomingAndOngoingEvents)
-        {
-            if(Tools.UnixTimeToDateTime(eventPreview.DateEnd) > DateTime.UtcNow && Tools.UnixTimeToDateTime(eventPreview.DateStart) < DateTime.UtcNow)
-            {
-                ongoingEvents.Add(new OngoingEventPreview(JObject.FromObject(eventPreview)));
-            }
-        }
-
-        File.WriteAllText("./cache/events/ongoing.json", JArray.FromObject(ongoingEvents).ToString());
-
-        return ongoingEvents;
-        
-    }
-     public static async Task AktEvents()
-    {
-        Stopwatch watch = new(); watch.Start();
-        List<OngoingEventPreview> startedEvents = await GetStartedEvents();
-        if (startedEvents.Count > 0)
-        {
-            foreach (OngoingEventPreview startedEvent in startedEvents)
-            {
-                FullEvent fullEvent = await GetFullEvent(startedEvent);
-                if (fullEvent != null)
-                {
-                    await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
-                        x => x.EventWebhookId, x=> x.EventWebhookToken , fullEvent.ToStartedEmbed());
-                }
-            }
-            Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
-        }
-
-        List<EventPreview> endedEvents = await GetEndedEvents();
-        if (endedEvents.Count > 0)
-        {
-            foreach (EventPreview endedEvent in endedEvents)
-            {
-                FullEvent fullEvent = await GetFullEvent(endedEvent);
-                if (fullEvent != null)
-                {
-                    await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
-                        x => x.EventWebhookId, x=> x.EventWebhookToken , fullEvent.ToStartedEmbed(), null);
-                }
-            }
-        }
-    }
-    
-    public static async Task<List<EventPreview>> GetUpcomingEvents()
-    {
-        ApiRequestBody request = new();
-        List<EventPreview> events = await request.SendRequest<List<EventPreview>>("getEvents");
-        List<EventPreview> upcomingEvents = new();
-        Directory.CreateDirectory("./cache/events");
-
-        var req = await Tools.RequestApiJArray("getEvents", new List<string>(), new List<string>());
-
-        List<EventPreview> upcomingAndOngoingEvents = new();
-        foreach (JToken eventTok in req)
-        {
-            upcomingAndOngoingEvents.Add(new EventPreview(eventTok as JObject));
-        }
-
-        foreach (EventPreview eventPreview in upcomingAndOngoingEvents)
-        {
-            if (eventPreview.Location != null)
-            {
-                upcomingEvents.Add(eventPreview);
-            }
-        }
-
-        File.WriteAllText("./cache/events/upcoming.json", JArray.FromObject(upcomingEvents).ToString());
-
-        return upcomingEvents;
-    }
-    public static async Task<List<OngoingEventPreview>> GetStartedEvents()
-    {
-        Directory.CreateDirectory("./cache/events");
-        if(!File.Exists("./cache/events/ongoing.json")) { await GetOngoingEvents(); return null; }
-
-        List<OngoingEventPreview> oldOngoingEvents = new();
-        foreach(JToken oldOngoingEvent in JArray.Parse(File.ReadAllText("./cache/events/ongoing.json")))
-        {
-            oldOngoingEvents.Add(new OngoingEventPreview(oldOngoingEvent as JObject));
-        }
-
-        List<OngoingEventPreview> newOngoingEvents = await GetOngoingEvents();
-
-        List<OngoingEventPreview> startedEvents = new();
-        foreach (OngoingEventPreview newOngoingEvent in newOngoingEvents)
-        {
-            bool started = true;
-            foreach(OngoingEventPreview oldOngoingEvent in oldOngoingEvents)
-            {
-                if(newOngoingEvent.Id == oldOngoingEvent.Id)
-                {
-                    started = false;
-                }
-            }
-            if(started)
-            {
-                startedEvents.Add(newOngoingEvent);
-            }
-        }
-
-        File.WriteAllText("./cache/events/newongoing.json", JArray.FromObject(startedEvents).ToString());
-        return startedEvents;
-    }
-    
-    private static async Task<List<EventPreview>> GetEndedEvents()
-    {
-        
-        Directory.CreateDirectory("./cache/events");
-        if (!File.Exists("./cache/events/past.json")) { await GetPastEvents(); return null; }
-
-        List<EventPreview> oldPastEvents = new();
-        foreach (JToken oldPastEvent in JArray.Parse(File.ReadAllText("./cache/events/past.json")))
-        {
-            oldPastEvents.Add(new EventPreview(oldPastEvent as JObject));
-        }
-
-        List<EventPreview> newPastEvents = await GetPastEvents();
-
-        List<EventPreview> endedEvents = new();
-        foreach (EventPreview newPastEvent in newPastEvents)
-        {
-            bool started = true;
-            foreach (EventPreview oldPastEvent in oldPastEvents)
-            {
-                if (newPastEvent.Id == oldPastEvent.Id)
-                {
-                    started = false;
-                    break;
-                }
-            }
-            if (started)
-            {
-                endedEvents.Add(newPastEvent);
-            }
-        }
-
-        File.WriteAllText("./cache/events/newendedevents.json", JArray.FromObject(endedEvents).ToString());
-        return endedEvents;
-    }
-    
-    static async Task<FullEvent> GetFullEvent(OngoingEventPreview eventPreview)
-    {
-        return await GetFullEvent(eventPreview.Id);
-    }
-    
-    static async Task<FullEvent> GetFullEvent(EventPreview eventPreview)
-    {
-        return await GetFullEvent(eventPreview.Id);
-    }
-    public static async Task<FullEvent> GetFullEvent(int eventId)
-    {
-        List<string> properties = new();
-        List<string> values = new();
-        properties.Add("id");
-        values.Add(eventId.ToString());
-        try { var req = await Tools.RequestApiJObject("getEvent", properties, values); return new FullEvent(req); }
-        catch (HltvApiExceptionLegacy) { throw; }
-    }
-    public static async Task<FullEvent> GetFullEvent(string eventName)
-    {
-        List<string> properties = new();
-        List<string> values = new();
-        properties.Add("name");
-        values.Add(eventName);
-        JObject req = await Tools.RequestApiJObject("getEventByName", properties, values);
-        return new FullEvent(req);
-    }
-    */
 }

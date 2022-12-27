@@ -326,21 +326,16 @@ public static class Tools
         
     public static DateTime UnixTimeToDateTime(long unixTimeStamp)
     {
-        return DateTimeOffset.FromUnixTimeMilliseconds(unixTimeStamp).UtcDateTime;
-        /*
-        DateTime dtDateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-        dtDateTime = dtDateTime.AddMilliseconds(double.Parse(unixTimeStamp.ToString())).ToUniversalTime();
-        dtDateTime = dtDateTime.AddHours(1);
-        return dtDateTime;*/
+        return DateTimeOffset.FromUnixTimeMilliseconds(unixTimeStamp).DateTime;
     }
     
     public static void SaveToFile(string path, object content)
     {
-        File.WriteAllText(path, JsonSerializer.Serialize(content, ApiRequestBody<GetEvent>.SerializeOptions));
+        File.WriteAllText(path, JsonSerializer.Serialize(content, Program.SerializeOptions));
     }
     
     public static T ParseFromFile<T>(string path)
     {
-        return JsonSerializer.Deserialize<T>(File.ReadAllText(path), ApiRequestBody<GetEvent>.SerializeOptions);
+        return JsonSerializer.Deserialize<T>(File.ReadAllText(path), Program.SerializeOptions);
     }
 }

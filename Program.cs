@@ -7,6 +7,8 @@ using MongoDB.Driver;
 using System;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Timers;
 using HLTVDiscordBridge.Requests;
@@ -27,7 +29,13 @@ internal class Program
     private readonly BotConfig _botConfig;
     public readonly HttpClient DefaultHttpClient;
     private Task _bgTask;
-
+    public static readonly JsonSerializerOptions SerializeOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+    
     private Program()
     {
         DefaultHttpClient = new HttpClient();
@@ -153,7 +161,6 @@ internal class Program
         {
             try
             {
-                await HltvResults.SendNewResults();
                 await function();
             }
             catch (Exception e)
@@ -161,7 +168,18 @@ internal class Program
                 Console.WriteLine(e);
             }
             timer.Interval = _botConfig.CheckResultsTimeInterval;
-            timer.Elapsed += async (s, e) => await function();
+            timer.Elapsed += async (s, e) =>
+            {
+                try
+                {
+                    await function();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                    throw;
+                }
+            };
             timer.Enabled = true;
             await Task.Delay(_botConfig.CheckResultsTimeInterval / timers.Length);
         }

@@ -12,26 +12,13 @@ namespace HLTVDiscordBridge.Requests;
 
 public abstract class ApiRequestBody<TChild> where TChild : ApiRequestBody<TChild>
 {
-    [JsonIgnore]
-    private static readonly HttpClient Client = new();
-    
     protected abstract string Endpoint { get; }
-
-    [JsonIgnore]
-    public static readonly JsonSerializerOptions SerializeOptions = new JsonSerializerOptions
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
-
     public int DelayBetweenRequests { get; } = 300;
-
+    
     public async Task<T> SendRequest<T>()
     {
         Uri uri = new($"{BotConfig.GetBotConfig().ApiLink}/api/{Endpoint}");
-        HttpResponseMessage resp = await Client.PostAsJsonAsync(uri, (TChild)this, SerializeOptions);
-        Console.WriteLine(JsonSerializer.Serialize((TChild)this, SerializeOptions));
+        HttpResponseMessage resp = await Program.GetInstance().DefaultHttpClient.PostAsJsonAsync(uri, (TChild)this, Program.SerializeOptions);
         try
         {
             resp.EnsureSuccessStatusCode();
@@ -47,6 +34,6 @@ public abstract class ApiRequestBody<TChild> where TChild : ApiRequestBody<TChil
         Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{Endpoint} was successful");
         StatsUpdater.StatsTracker.ApiRequest =+ 1;
         StatsUpdater.UpdateStats();
-        return await resp.Content.ReadFromJsonAsync<T>(SerializeOptions);
+        return await resp.Content.ReadFromJsonAsync<T>(Program.SerializeOptions);
     }
 }

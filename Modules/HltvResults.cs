@@ -13,28 +13,28 @@ public static class HltvResults
 {
     private const string Path = "./cache/results/results.json";
 
-    private static async Task<List<Result>> GetLatestResults()
+    private static async Task<Result[]> GetLatestResults()
     {
         string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddDays(-2));
         string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
         GetResults request = new GetResults{StartDate = startDate, EndDate = endDate};
-        return await request.SendRequest<List<Result>>();
+        return await request.SendRequest<Result[]>();
     }
 
-    private static async Task<List<Result>> GetNewResults()
+    private static async Task<IEnumerable<Result>> GetNewResults()
     {
         if (!await AutomatedMessageHelper.VerifyFile(Path, GetLatestResults))
         {
             return new List<Result>();
         }
 
-        List<Result> latestResults = await GetLatestResults();
-        List<Result> oldResults = Tools.ParseFromFile<List<Result>>(Path);
+        Result[] latestResults = await GetLatestResults();
+        Result[] oldResults = Tools.ParseFromFile<Result[]>(Path);
         Tools.SaveToFile(Path, latestResults);
 
-        return (from latestResult in latestResults
+        return from latestResult in latestResults
             let found = oldResults.Any(oldResult => latestResult.Id == oldResult.Id)
-            where !found select latestResult).ToList();
+            where !found select latestResult;
     }
 
     public static async Task SendNewResults()
@@ -42,26 +42,22 @@ public static class HltvResults
         Stopwatch watch = new(); watch.Start();
         foreach (Result result in await GetNewResults())
         {
-            (Embed embed, MessageComponent component) = await result.ToEmbedAndComponent();
+            GetMatch request = new GetMatch{Id = result.Id};
+            (Embed embed, MessageComponent component) = result.ToEmbedAndComponent(await request.SendRequest<Match>());
             await Tools.SendMessagesWithWebhook(x => x.ResultWebhookId != null,
                     x => x.ResultWebhookId, x=> x.ResultWebhookToken, embed, component);
         }
         Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
     }
 
-    public static async Task<List<Result>> GetMatchResultsOfEvent(int eventId)
+    public static async Task<Result[]> GetMatchResultsOfEvent(int eventId)
     {
-        return await GetMatchResultsOfEvent(new List<int> {eventId});
+        GetResults request = new GetResults { EventIds = new List<int> { eventId }};
+        return await request.SendRequest<Result[]>();
     }
-    private static async Task<List<Result>> GetMatchResultsOfEvent(List<int> eventIds)
+    public static async Task<Result[]> GetMatchResults(int teamId)
     {
-        GetResults request = new GetResults{EventIds = eventIds};
-        return await request.SendRequest<List<Result>>();
-    }
-    public static async Task<List<Result>> GetMatchResults(int teamId)
-    {
-        List<int> teamIds = new() { teamId };
-        GetResults request = new GetResults{TeamIds = teamIds};
-        return await request.SendRequest<List<Result>>();
+        GetResults request = new GetResults{TeamIds = new List<int> { teamId }};
+        return await request.SendRequest<Result[]>();
     }
 }

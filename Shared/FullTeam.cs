@@ -104,22 +104,18 @@ public class FullTeam
         builder.AddField("\u200b", "\u200b", true);
 
         //recentResults
-        List<Result> recentResults = await HltvResults.GetMatchResults(Id);
+        Result[] recentResults = await HltvResults.GetMatchResults(Id);
         string recentResultsString = "";
-        if (recentResults.Count == 0)
-        { recentResultsString = "n.A";
+        if (recentResults.Length == 0)
+        { 
+            recentResultsString = "n.A";
         }
         else
         { 
-            foreach (Result matchResult in recentResults)
+            foreach (Result matchResult in recentResults.Take(3))
             {
                 string opponentTeam = matchResult.Team1.Name == Name ? matchResult.Team2.Name : matchResult.Team1.Name;
                 recentResultsString += $"[vs. {opponentTeam}]({matchResult.Link})\n";
-
-                if (recentResults.IndexOf(matchResult) == 3)
-                {
-                    break;
-                }
             }            
         }
         builder.AddField("recent results:", recentResultsString, true);
