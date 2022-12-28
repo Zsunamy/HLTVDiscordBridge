@@ -52,12 +52,7 @@ public static class HltvResults
 
     public static async Task<Result[]> GetMatchResultsOfEvent(int eventId)
     {
-        GetResults request = new GetResults { EventIds = new List<int> { eventId }};
-        return await request.SendRequest<Result[]>();
-    }
-    public static async Task<Result[]> GetMatchResults(int teamId)
-    {
-        GetResults request = new GetResults{TeamIds = new List<int> { teamId }};
+        GetResults request = new GetResults { EventIds = new List<int> { eventId } };
         return await request.SendRequest<Result[]>();
     }
 }

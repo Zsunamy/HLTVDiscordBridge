@@ -24,7 +24,7 @@ namespace HLTVDiscordBridge.Modules
 
     public class DeploymentException : Exception
     {
-        private HttpResponseMessage _httpMessage;
+        private readonly HttpResponseMessage _httpMessage;
 
         public DeploymentException(HttpResponseMessage message)
         {

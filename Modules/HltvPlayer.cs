@@ -12,9 +12,9 @@ using HLTVDiscordBridge.Requests;
 
 namespace HLTVDiscordBridge.Modules;
 
-internal class PlayerDocumentNew
+internal class PlayerDocument
 {
-    public PlayerDocumentNew(FullPlayer player)
+    public PlayerDocument(FullPlayer player)
     {
         PlayerId = player.Id;
         Name = player.Ign;
@@ -29,17 +29,16 @@ internal class PlayerDocumentNew
     public string Name { get; set; }
     public List<string> Alias { get; set; }
     public string Nationality { get; set; }
-
     public string Image { get; set; }
 }
 public static class HltvPlayer
 {
     private const string Path = "./cache/playercards";
-    private static IMongoCollection<PlayerDocumentNew> GetPlayerCollection()
+    private static IMongoCollection<PlayerDocument> GetPlayerCollection()
     {
         MongoClient dbClient = new(BotConfig.GetBotConfig().DatabaseLink);
         IMongoDatabase db = dbClient.GetDatabase(BotConfig.GetBotConfig().Database);
-        return db.GetCollection<PlayerDocumentNew>("players");
+        return db.GetCollection<PlayerDocument>("players");
     }
         
     public static async Task SendPlayerCard(SocketSlashCommand arg)
@@ -50,7 +49,7 @@ public static class HltvPlayer
         PlayerStats stats;
         Embed embed;
         bool isInDatabase = false;
-        List<PlayerDocumentNew> query = (await GetPlayerCollection().FindAsync(
+        List<PlayerDocument> query = (await GetPlayerCollection().FindAsync(
             elem => (elem.Alias != null && elem.Alias.Contains(name)) || elem.Name == name)).ToList();
         if (query.Count != 0)
         {
@@ -68,7 +67,7 @@ public static class HltvPlayer
         }
         else
         {
-            // Player is not cached
+            // Player under provided name is not cached
             try
             {
                 if (isInDatabase)
@@ -80,19 +79,20 @@ public static class HltvPlayer
                 {
                     GetPlayerByName request = new GetPlayerByName{Name = name};
                     player = await request.SendRequest<FullPlayer>();
-                    List<PlayerDocumentNew> alias = (await GetPlayerCollection().FindAsync(elem => elem.Name == player.Ign)).ToList();
+                    List<PlayerDocument> alias = (await GetPlayerCollection().FindAsync(elem => elem.Name == player.Ign)).ToList();
+                    // check if provided name is another nickname for the player and add them to the alias
                     if (alias.Count != 0)
                     {
                         alias.First().Alias.Add(name);
-                        UpdateDefinition<PlayerDocumentNew> update = Builders<PlayerDocumentNew>.Update.Set(x => x.Alias, alias.First().Alias);
+                        UpdateDefinition<PlayerDocument> update = Builders<PlayerDocument>.Update.Set(x => x.Alias, alias.First().Alias);
                         await GetPlayerCollection().UpdateOneAsync(x => x.Id == alias.First().Id, update);
                     }
                     else
                     {
-                        await GetPlayerCollection().InsertOneAsync(new PlayerDocumentNew(player));
+                        await GetPlayerCollection().InsertOneAsync(new PlayerDocument(player));
                     }
                 }
-
+                // check again if player is cached because provided name could have been an unknown nickname
                 if (Directory.Exists($"{Path}/{player.Ign}"))
                 {
                     stats = Tools.ParseFromFile<PlayerStats>($"{Path}/{player.Ign}/stats.json");
