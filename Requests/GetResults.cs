@@ -4,7 +4,7 @@ namespace HLTVDiscordBridge.Requests;
 
 public class GetResults : ApiRequestBody<GetResults>
 {
-    protected override string Endpoint => "GetResults";
+    protected override string Endpoint { get; } = "getResults";
     public string StartDate { get; set; }
     public string EndDate { get; set; }
     public List<int> TeamIds { get; set; }

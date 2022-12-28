@@ -13,7 +13,6 @@ using Discord.Net;
 using Discord.Rest;
 using Discord.Webhook;
 using Discord.WebSocket;
-using HLTVDiscordBridge.Requests;
 using HLTVDiscordBridge.Shared;
 using MongoDB.Driver;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -106,7 +105,7 @@ public static class Tools
             await writer.WriteEndObjectAsync();
         }
 
-        HttpResponseMessage resp = await Program.GetInstance().DefaultHttpClient
+        HttpResponseMessage resp = await Program.DefaultHttpClient
             .PostAsync(uri, new StringContent(sb.ToString(), Encoding.UTF8, "application/json"));
         string res = await resp.Content.ReadAsStringAsync();
         if (resp.IsSuccessStatusCode)
@@ -158,7 +157,7 @@ public static class Tools
             await writer.WriteEndObjectAsync();
         }
 
-        HttpResponseMessage resp = await Program.GetInstance().DefaultHttpClient
+        HttpResponseMessage resp = await Program.DefaultHttpClient
             .PostAsync(uri, new StringContent(sb.ToString(), Encoding.UTF8, "application/json"));
         string res = await resp.Content.ReadAsStringAsync();
         if (resp.IsSuccessStatusCode)
@@ -310,7 +309,7 @@ public static class Tools
             "de_season" => "Season",
             "de_ancient" => "Ancient",
             "de_anubis" => "Anubis",
-            _ => arg[0].ToString().ToUpper() + arg[1..],
+            _ => arg[0].ToString().ToUpper() + arg[1..]
         };
     }
 
@@ -331,6 +330,10 @@ public static class Tools
     
     public static void SaveToFile(string path, object content)
     {
+        if (!File.Exists(path))
+        {
+            File.Create(path!).Dispose();
+        }
         File.WriteAllText(path, JsonSerializer.Serialize(content, Program.SerializeOptions));
     }
     

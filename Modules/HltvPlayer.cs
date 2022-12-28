@@ -16,9 +16,9 @@ internal class PlayerDocumentNew
 {
     public PlayerDocumentNew(FullPlayer player)
     {
-        PlayerId = int.Parse(player.Id.ToString());
+        PlayerId = player.Id;
         Name = player.Ign;
-        Alias = null;
+        Alias = new List<string>();
         Image = player.Image;
         Nationality = player.Country.Code;
     }
@@ -29,6 +29,7 @@ internal class PlayerDocumentNew
     public string Name { get; set; }
     public List<string> Alias { get; set; }
     public string Nationality { get; set; }
+
     public string Image { get; set; }
 }
 public static class HltvPlayer
@@ -43,25 +44,26 @@ public static class HltvPlayer
         
     public static async Task SendPlayerCard(SocketSlashCommand arg)
     {
-        string name = arg.Data.Options.First().Value.ToString()!;
+        await arg.DeferAsync();
+        string name = arg.Data.Options.First().Value.ToString()!.ToLower();
         FullPlayer player;
         PlayerStats stats;
         Embed embed;
         bool isInDatabase = false;
-        IAsyncCursor<PlayerDocumentNew> query = await GetPlayerCollection().FindAsync(elem => elem.Alias.Contains(name.ToLower()));
-
-        if (query.ToList().Count != 0)
+        List<PlayerDocumentNew> query = (await GetPlayerCollection().FindAsync(
+            elem => (elem.Alias != null && elem.Alias.Contains(name)) || elem.Name == name)).ToList();
+        if (query.Count != 0)
         {
             // Player is in Database
             isInDatabase = true;
             name = query.First().Name;
         }
-            
+
         if (Directory.Exists($"{Path}/{name.ToLower()}"))
         {
             // Player is cached
-            player =  Tools.ParseFromFile<FullPlayer>($"{Path}/{name.ToLower()}/player.json");
-            stats = Tools.ParseFromFile<PlayerStats>($"{Path}/{name.ToLower()}/stats.json");
+            player =  Tools.ParseFromFile<FullPlayer>($"{Path}/{name}/player.json");
+            stats = Tools.ParseFromFile<PlayerStats>($"{Path}/{name}/stats.json");
             embed = player.ToEmbed(stats);
         }
         else
@@ -78,13 +80,31 @@ public static class HltvPlayer
                 {
                     GetPlayerByName request = new GetPlayerByName{Name = name};
                     player = await request.SendRequest<FullPlayer>();
-                    await GetPlayerCollection().InsertOneAsync(new PlayerDocumentNew(player));
+                    List<PlayerDocumentNew> alias = (await GetPlayerCollection().FindAsync(elem => elem.Name == player.Ign)).ToList();
+                    if (alias.Count != 0)
+                    {
+                        alias.First().Alias.Add(name);
+                        UpdateDefinition<PlayerDocumentNew> update = Builders<PlayerDocumentNew>.Update.Set(x => x.Alias, alias.First().Alias);
+                        await GetPlayerCollection().UpdateOneAsync(x => x.Id == alias.First().Id, update);
+                    }
+                    else
+                    {
+                        await GetPlayerCollection().InsertOneAsync(new PlayerDocumentNew(player));
+                    }
                 }
-                GetPlayerStats requestStats = new GetPlayerStats{Id = player.Id};
-                stats = await requestStats.SendRequest<PlayerStats>();
-                    
-                Tools.SaveToFile($"{Path}/{name}/player.json", player);
-                Tools.SaveToFile($"{Path}/{name}/stats.json", stats);
+
+                if (Directory.Exists($"{Path}/{player.Ign}"))
+                {
+                    stats = Tools.ParseFromFile<PlayerStats>($"{Path}/{player.Ign}/stats.json");
+                }
+                else
+                {
+                    GetPlayerStats requestStats = new GetPlayerStats{Id = player.Id};
+                    stats = await requestStats.SendRequest<PlayerStats>();
+                    Directory.CreateDirectory($"{Path}/{player.Ign}");
+                    Tools.SaveToFile($"{Path}/{player.Ign}/stats.json", stats);
+                }
+                Tools.SaveToFile($"{Path}/{player.Ign}/player.json", player);
 
                 embed = player.ToEmbed(stats);
             }
@@ -102,137 +122,4 @@ public static class HltvPlayer
         StatsUpdater.StatsTracker.MessagesSent += 1;
         StatsUpdater.UpdateStats();
     }
-        
-    /*
-    private static async void GetPlayer_new(string playername)
-    {
-        Embed embed;
-        GetPlayerByName request = new(playername);
-        try
-        {
-            FullPlayer player = await request.SendRequest<FullPlayer>();
-        }
-        catch (ApiError ex)
-        {
-            embed = ex.ToEmbed();
-        }
-        catch (DeploymentException ex)
-        {
-            embed = ex.ToEmbed();
-        }
-    }
-    
-    public static async Task<Embed> SendPlayer(string name)
-    {
-        
-        List<string> properties = new(); properties.Add("name");
-        List<string> values = new(); values.Add(name);
-
-        if (query1.CountDocuments() == 0 && query2.CountDocuments() == 0)
-        {
-            //nicht in Datenbank
-            try { player = new FullPlayer(await Tools.RequestApiJObject("getPlayerByName", properties, values)); }
-            catch (HltvApiExceptionLegacy) { throw; }
-
-            collection.InsertOne(new PlayerDocumentNew(player));
-        }
-        else if (query2.CountDocuments() != 0)
-        {
-            //unter Alias in Datenbank
-            name = query2.FirstOrDefault().Name;
-            values.Clear(); values.Add(name);
-            if (Directory.Exists($"./cache/playercards/{name.ToLower()}"))
-            {
-                //Ist unter "richtigem Namen" doch gecached
-                player = new(JObject.Parse(File.ReadAllText($"./cache/playercards/{name.ToLower()}/id.json")));
-                fullPlayerStats = new(JObject.Parse(File.ReadAllText($"./cache/playercards/{name.ToLower()}/stats.json")));
-                return (player, fullPlayerStats);
-            }
-
-            try { player = new FullPlayer(await Tools.RequestApiJObject("getPlayerByName", properties, values)); }
-            catch (HltvApiExceptionLegacy) { throw; }
-        }
-        else
-        {
-            //in Datenbank aber nicht lokal
-            try { player = new FullPlayer(await Tools.RequestApiJObject("getPlayerByName", properties, values)); }
-            catch(HltvApiExceptionLegacy) { throw; }
-        }
-
-        Directory.CreateDirectory($"./cache/playercards/{name.ToLower()}");
-        File.WriteAllText($"./cache/playercards/{name.ToLower()}/id.json", JObject.FromObject(player).ToString());
-        properties.Clear(); properties.Add("id");
-        values.Clear(); values.Add(player.Id.ToString());
-        try { fullPlayerStats = new(await Tools.RequestApiJObject("getPlayerStats", properties, values)); }
-        catch { throw; }
-        File.WriteAllText($"./cache/playercards/{name.ToLower()}/stats.json", JObject.FromObject(fullPlayerStats).ToString());
-        return (player, fullPlayerStats);
-    }
-    
-    }
-    
-    private static async Task<Embed> GetPlayerCard(string playername)
-    {
-        EmbedBuilder builder = new();
-        (FullPlayer, FullPlayerStats) req;
-        try { req = await GetPlayerStats_new(playername); }
-        catch (Exception) { throw; }
-
-        FullPlayer fullPlayer = req.Item1;
-        FullPlayerStats fullPlayerStats = req.Item2;
-
-        if (fullPlayerStats.Image != null) { builder.WithThumbnailUrl(fullPlayerStats.Image); }
-        if (fullPlayerStats.Id != 0 && fullPlayerStats.Ign != null) 
-        { builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", 
-            $"https://hltv.org/player/{fullPlayerStats.Id}/{fullPlayerStats.Ign}"); 
-        }
-        if(fullPlayerStats.Country.Code != null && fullPlayerStats.Ign != null) { builder.WithTitle(fullPlayerStats.Ign + $" :flag_{fullPlayerStats.Country.Code}:"); }
-        if(fullPlayerStats.Name != null) { builder.AddField("Name:", fullPlayerStats.Name, true); }
-        if(fullPlayerStats.Age != null) { builder.AddField("Age:", fullPlayerStats.Age, true); } else { builder.AddField("\u200b", "\u200b"); }
-        if(fullPlayerStats.Team != null) { builder.AddField("Team:", $"[{fullPlayerStats.Team.Name}]({fullPlayerStats.Team.Link})", true); } else { builder.AddField("Team:", "none"); }
-        if (fullPlayerStats.OverviewStatistics != null) 
-        {
-            builder.AddField("Stats:", "Maps played:\nKills/Deaths:\nHeadshot %:\nADR:\nKills per round:\nAssists per round:\nDeaths per round:", true);
-            builder.AddField("\u200b", $"{fullPlayerStats.OverviewStatistics.MapsPlayed}\n{fullPlayerStats.OverviewStatistics.Kills}/{fullPlayerStats.OverviewStatistics.Deaths} " +
-                $"({fullPlayerStats.OverviewStatistics.KdRatio})\n{fullPlayerStats.OverviewStatistics.Headshots}\n{fullPlayerStats.OverviewStatistics.DamagePerRound}\n " +
-                $"{fullPlayerStats.OverviewStatistics.KillsPerRound}\n {fullPlayerStats.OverviewStatistics.AssistsPerRound}\n {fullPlayerStats.OverviewStatistics.DeathsPerRound}", true);
-        }
-        builder.WithCurrentTimestamp();
-
-        if(fullPlayer.Achievements.Count != 0)
-        {
-            List<string> achievements = new();
-            foreach(Achievement achievement in fullPlayer.Achievements)
-            {             
-                if(string.Join("\n", achievements).Length > 600) { break; }
-                achievements.Add($"[{achievement.EventObj.Name}]({achievement.EventObj.Link}) finished: {achievement.Place}");
-            }
-            builder.AddField("Achievements:", string.Join("\n", achievements));
-
-        } else
-        {
-            builder.AddField("Achievements:", $"none");
-        }
-        builder.WithFooter(Tools.GetRandomFooter());
-
-        bool tracked = false;
-        foreach (PlayerReq plReq in StatsUpdater.StatsTracker.Players)
-        {
-            if (plReq.Name == fullPlayerStats.Ign)
-            {
-                StatsUpdater.StatsTracker.Players.Remove(plReq);
-                plReq.Reqs += 1;
-                StatsUpdater.StatsTracker.Players.Add(new PlayerReq(fullPlayerStats.Ign, (int)fullPlayerStats.Id, plReq.Reqs));
-                tracked = true;
-                break;
-            }
-        }
-        if (!tracked)
-        {
-            StatsUpdater.StatsTracker.Players.Add(new PlayerReq(fullPlayerStats.Ign, (int)fullPlayerStats.Id, 1));
-        }
-        StatsUpdater.UpdateStats();
-        return builder.Build();
-    }  
-    */
 }

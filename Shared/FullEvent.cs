@@ -25,7 +25,7 @@ public class FullEvent
     public List<EventFormat> Formats { get; set; }
     public List<string> MapPool { get; set; }
     public List<EventHighlight> Highlights { get; set; } 
-    public List<News> News { get; set; }
+    public List<RssNews> News { get; set; }
         
     public Embed ToStartedEmbed()
     {

@@ -2,12 +2,12 @@
 
 namespace HLTVDiscordBridge.Shared;
 
-public class News
+public class RssNews
 {
     public string Title { get; set; }
     public string Description { get; set; }
     public string Link { get; set; }
-    public int Id { get; set; }
+    public long Date { get; set; }
     public Embed ToEmbed()
     {
         EmbedBuilder builder = new();

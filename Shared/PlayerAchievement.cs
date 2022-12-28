@@ -1,7 +1,7 @@
 ﻿namespace HLTVDiscordBridge.Shared;
 
-public class Achievement
+public class PlayerAchievement
 {
     public string Place { get; set; }
-    public Event EventObj { get; set; }
+    public Event Event { get; set; }
 }

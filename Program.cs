@@ -27,7 +27,7 @@ internal class Program
     private readonly DiscordSocketClient _client;
     private IServiceProvider _services;
     private readonly BotConfig _botConfig;
-    public readonly HttpClient DefaultHttpClient;
+    public static HttpClient DefaultHttpClient { get; } = new();
     private Task _bgTask;
     public static readonly JsonSerializerOptions SerializeOptions = new JsonSerializerOptions
     {
@@ -38,7 +38,6 @@ internal class Program
     
     private Program()
     {
-        DefaultHttpClient = new HttpClient();
         _client = new DiscordSocketClient( new DiscordSocketConfig
             { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites });
         SlashCommands commands = new(_client);

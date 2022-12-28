@@ -11,28 +11,28 @@ namespace HLTVDiscordBridge.Modules;
 public static class HltvNews
 {
     private const string Path = "./cache/news/news.json";
-    private static async Task<IEnumerable<News>> GetNewNews()
+    private static async Task<IEnumerable<RssNews>> GetNewNews()
     {
         if (!await AutomatedMessageHelper.VerifyFile(Path, GetLatestNews))
         {
-            return Array.Empty<News>();
+            return Array.Empty<RssNews>();
         }
-        News[] latestNews = await GetLatestNews();
-        News[] oldNews = Tools.ParseFromFile<News[]>(Path);
+        RssNews[] latestNews = await GetLatestNews();
+        RssNews[] oldNews = Tools.ParseFromFile<RssNews[]>(Path);
         Tools.SaveToFile(Path, latestNews);
         return from newItem in latestNews 
             where oldNews.All(oldItem => Tools.GetIdFromUrl(newItem.Link) != Tools.GetIdFromUrl(oldItem.Link))
             select newItem;
     }
-    private static async Task<News[]> GetLatestNews()
+    private static async Task<RssNews[]> GetLatestNews()
     {
         GetRssNews request = new();
-        return await request.SendRequest<News[]>();
+        return await request.SendRequest<RssNews[]>();
     }
     public static async Task SendNewNews()
     {
         Stopwatch watch = new(); watch.Start();
-        foreach (News news in await GetNewNews())
+        foreach (RssNews news in await GetNewNews())
         {
             await Tools.SendMessagesWithWebhook(x => x.NewsWebhookId != null,
                 x => x.NewsWebhookId, x=> x.NewsWebhookToken , news.ToEmbed());

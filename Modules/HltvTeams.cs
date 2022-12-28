@@ -31,7 +31,7 @@ public static class HltvTeams
                 GetTeamByName request = new GetTeamByName{Name = name};
                 team = await request.SendRequest<FullTeam>();
                 FullTeamStats stats = await new GetTeamStats{Id = team.Id}.SendRequest<FullTeamStats>();
-                HttpResponseMessage res = await Program.GetInstance().DefaultHttpClient.GetAsync(new Uri(team.Logo));
+                HttpResponseMessage res = await Program.DefaultHttpClient.GetAsync(new Uri(team.Logo));
                 
                 team.LocalThumbnailPath = SavePng(await res.Content.ReadAsByteArrayAsync(), team.Name);
                 

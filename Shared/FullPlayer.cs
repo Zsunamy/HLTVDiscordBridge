@@ -11,15 +11,15 @@ public class FullPlayer
     public string Name { get; set; }
     public string Ign { get; set; }
     public string Image { get; set; }
-    public string Age { get; set; }
+    public int? Age { get; set; }
     public string Twitter { get; set; }
     public string Twitch { get; set; }
     public string Instagram { get; set; }
     public Country Country { get; set; }
     public FullPlayerTeam Team { get; set; }
-    public Achievement[] Achievements { get; set; }
+    public PlayerAchievement[] Achievements { get; set; }
     public TeamMembership[] TeamMemberships { get; set; }
-    public News[] News { get; set; }
+    public Article[] News { get; set; }
 
     public Embed ToEmbed(PlayerStats stats)
     {
@@ -35,7 +35,7 @@ public class FullPlayer
         }
         if (stats.Country.Code != null && stats.Ign != null)
         {
-            builder.WithTitle(stats.Ign + $" :flag_{stats.Country.Code}:");
+            builder.WithTitle(stats.Ign + $" :flag_{stats.Country.Code.ToLower()}:");
         }
         if (stats.Name != null)
         {
@@ -72,9 +72,9 @@ public class FullPlayer
         if(Achievements.Length != 0)
         {
             List<string> achievements = new();
-            foreach (Achievement achievement in Achievements.TakeWhile(_ => string.Join("\n", achievements).Length <= 600))
+            foreach (PlayerAchievement achievement in Achievements.TakeWhile(_ => string.Join("\n", achievements).Length <= 600))
             {
-                achievements.Add($"[{achievement.EventObj.Name}]({achievement.EventObj.Link}) finished: {achievement.Place}");
+                achievements.Add($"[{achievement.Event.Name}]({achievement.Event.Link}) finished: {achievement.Place}");
             }
             builder.AddField("Achievements:", string.Join("\n", achievements));
 

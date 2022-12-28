@@ -2,8 +2,6 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using HLTVDiscordBridge.Modules;
 using HLTVDiscordBridge.Shared;
@@ -18,7 +16,7 @@ public abstract class ApiRequestBody<TChild> where TChild : ApiRequestBody<TChil
     public async Task<T> SendRequest<T>()
     {
         Uri uri = new($"{BotConfig.GetBotConfig().ApiLink}/api/{Endpoint}");
-        HttpResponseMessage resp = await Program.GetInstance().DefaultHttpClient.PostAsJsonAsync(uri, (TChild)this, Program.SerializeOptions);
+        HttpResponseMessage resp = await Program.DefaultHttpClient.PostAsJsonAsync(uri, (TChild)this, Program.SerializeOptions);
         try
         {
             resp.EnsureSuccessStatusCode();

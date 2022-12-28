@@ -17,7 +17,7 @@ public class FullTeam
     public int Rank { get; set; }
     public List<TeamPlayer> Players { get; set; }
     public List<uint> RankingDevelopment { get; set; }
-    public List<News> News { get; set; }
+    public List<RssNews> News { get; set; }
     public string? LocalThumbnailPath { get; set; }
     public string Link { get; set; }
 
