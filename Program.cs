@@ -144,6 +144,8 @@ internal class Program
         HttpRequestMessage reqBots = new (HttpMethod.Post, $"https://discord.bots.gg/api/v1/bots/${_client.Guilds.Count}/stats");
         reqBots.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
         await DefaultHttpClient.SendAsync(reqBots);
+        
+        CacheCleaner.Clean();
     }
 
     private async Task BgTask()

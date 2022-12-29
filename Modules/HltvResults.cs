@@ -49,10 +49,4 @@ public static class HltvResults
         }
         Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
     }
-
-    public static async Task<Result[]> GetMatchResultsOfEvent(int eventId)
-    {
-        GetResults request = new GetResults { EventIds = new List<int> { eventId } };
-        return await request.SendRequest<Result[]>();
-    }
 }

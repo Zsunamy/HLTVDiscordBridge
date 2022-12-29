@@ -1,15 +1,14 @@
-﻿using Discord.Commands;
-using Discord.WebSocket;
+﻿using Discord.WebSocket;
 using System;
 using System.IO;
 
 namespace HLTVDiscordBridge.Modules
 {
-    public class CacheCleaner : ModuleBase<SocketCommandContext>
+    public static class CacheCleaner
     {             
-        public static void Cleaner(DiscordSocketClient client)
+        public static void Clean()
         {
-            //delete playercards after 7 days
+            //delete player-cards after 7 days
             Directory.CreateDirectory("./cache/playercards");
             foreach (string dir in Directory.GetDirectories("./cache/playercards"))
             {
@@ -20,7 +19,7 @@ namespace HLTVDiscordBridge.Modules
                 }                
             }
 
-            //delete teamcards after 7 days
+            //delete team-cards after 7 days
             Directory.CreateDirectory("./cache/teamcards");
             foreach (string dir in Directory.GetDirectories("./cache/teamcards"))
             {
@@ -35,14 +34,22 @@ namespace HLTVDiscordBridge.Modules
             //ranking
             Directory.CreateDirectory("./cache/ranking");
             bool rankingDeleted = false;
-            if (DateTime.Now.DayOfWeek == DayOfWeek.Tuesday && !rankingDeleted)
+            switch (DateTime.Now.DayOfWeek)
             {
-                rankingDeleted = true;
-                foreach(string file in Directory.GetFiles("./cache/ranking"))
+                case DayOfWeek.Tuesday when !rankingDeleted:
                 {
-                    File.Delete(file);
+                    rankingDeleted = true;
+                    foreach(string file in Directory.GetFiles("./cache/ranking"))
+                    {
+                        File.Delete(file);
+                    }
+
+                    break;
                 }
-            } else if(DateTime.Now.DayOfWeek == DayOfWeek.Wednesday) { rankingDeleted = false; }
+                case DayOfWeek.Wednesday:
+                    rankingDeleted = false;
+                    break;
+            }
 
             //live matches
             Directory.CreateDirectory("./cache/livematches");

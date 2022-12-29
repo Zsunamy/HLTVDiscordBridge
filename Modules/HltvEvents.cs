@@ -187,10 +187,13 @@ public static class HltvEvents
     {
         await arg.DeferAsync();
         FullEvent fullEvent;
+        List<Result> results;
         try
         {
             GetEvent request = new GetEvent{Id = int.Parse(arg.Data.Values.First())};
             fullEvent = await request.SendRequest<FullEvent>();
+            GetResults requestResults = new GetResults { EventIds = new[] { fullEvent.Id } };
+            results = await requestResults.SendRequest<List<Result>>();
         }
         catch (ApiError ex)
         {
@@ -219,7 +222,11 @@ public static class HltvEvents
         }
         ComponentBuilder compBuilder = new ComponentBuilder()
             .WithSelectMenu(builder);
-        await arg.ModifyOriginalResponseAsync(message => { message.Embed = fullEvent.ToFullEmbed().Result; message.Components = compBuilder.Build(); });
+        await arg.ModifyOriginalResponseAsync(message =>
+        {
+            message.Embed = fullEvent.ToFullEmbed(results);
+            message.Components = compBuilder.Build();
+        });
     }
     public static async Task SendEvent(SocketSlashCommand arg)
     {
@@ -228,7 +235,9 @@ public static class HltvEvents
         GetEventByName request = new GetEventByName{Name = arg.Data.Options.First().Value.ToString()};
         try
         {
-            embed = await (await request.SendRequest<FullEvent>()).ToFullEmbed();
+            FullEvent myEvent = await request.SendRequest<FullEvent>();
+            GetResults requestResults = new GetResults { EventIds = new[] { myEvent.Id } };
+            embed = myEvent.ToFullEmbed(await requestResults.SendRequest<List<Result>>());
         }
         catch (ApiError ex)
         {

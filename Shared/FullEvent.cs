@@ -97,7 +97,7 @@ public class FullEvent
         return builder.Build();
     }
         
-    public async Task<Embed> ToFullEmbed()
+    public Embed ToFullEmbed(List<Result> results)
     {
         EmbedBuilder builder = new();
         builder.WithTitle($"{Name}")
@@ -136,7 +136,6 @@ public class FullEvent
         } 
         else if(startDate < DateTime.Now && endDate > DateTime.Now)
         {
-            List<Result> results = (await HltvResults.GetMatchResultsOfEvent(Id)).ToList();
             List<string> matchResultString = new();
 
             foreach (Result result in results)

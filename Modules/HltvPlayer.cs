@@ -50,7 +50,7 @@ public static class HltvPlayer
         Embed embed;
         bool isInDatabase = false;
         List<PlayerDocument> query = (await GetPlayerCollection().FindAsync(
-            elem => elem.Alias.Contains(name) || elem.Name == name)).ToList();
+            elem => elem.Alias.Contains(name) || elem.Name.ToLower() == name)).ToList();
         if (query.Count != 0)
         {
             // Player is in Database
@@ -81,13 +81,13 @@ public static class HltvPlayer
                     player = await request.SendRequest<FullPlayer>();
                     List<PlayerDocument> alias = (await GetPlayerCollection().FindAsync(elem => elem.Name == player.Ign)).ToList();
                     // check if provided name is another nickname for the player and add them to the alias
-                    if (alias.Count != 0)
+                    if (alias.Count != 0 && !alias.First().Name.ToLower().Contains(name))
                     {
                         alias.First().Alias.Add(name);
                         UpdateDefinition<PlayerDocument> update = Builders<PlayerDocument>.Update.Set(x => x.Alias, alias.First().Alias);
                         await GetPlayerCollection().UpdateOneAsync(x => x.Id == alias.First().Id, update);
                     }
-                    else
+                    else if (alias.Count == 0)
                     {
                         await GetPlayerCollection().InsertOneAsync(new PlayerDocument(player));
                     }
