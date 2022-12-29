@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using Discord;
 using HLTVDiscordBridge.Modules;
-using HLTVDiscordBridge.Requests;
 
 namespace HLTVDiscordBridge.Shared;
 
@@ -15,10 +13,16 @@ public class Result
     public ulong Date { get; set; }
     public Team Team1 { get; set; }
     public Team Team2 { get; set; }
+    public ResultEvent Event { get; set; }
+    
     [JsonPropertyName("result")]
     public ResultResult ResultResult { get; set; }
     public string Format { get; set; }
-    public string Link { get; set; }
+
+    [JsonIgnore]
+    public string Link => $"https://www.hltv.org/matches/{Id}/" +
+                          $"{Team1.Name.ToLower().Replace(" ", "-")}-vs-{Team2.Name.ToLower().Replace(" ", "-")}-" +
+                          $"{Event.Name.ToLower().Replace(" ", "-")}";
     public (Embed, MessageComponent) ToEmbedAndComponent(Match match)
     {
         EmbedBuilder builder = new();

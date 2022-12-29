@@ -58,7 +58,7 @@ public static class HltvTeams
         Embed embed;
         bool isInDatabase = false;
         List<TeamDocument> query = (await GetTeamCollection().FindAsync(
-            elem => (elem.Alias != null && elem.Alias.Contains(name)) || elem.Name == name)).ToList();
+            elem => elem.Alias.Contains(name) || elem.Name == name)).ToList();
         if (query.Count != 0)
         {
             // Team is in Database

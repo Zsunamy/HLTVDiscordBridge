@@ -50,7 +50,7 @@ public static class HltvPlayer
         Embed embed;
         bool isInDatabase = false;
         List<PlayerDocument> query = (await GetPlayerCollection().FindAsync(
-            elem => (elem.Alias != null && elem.Alias.Contains(name)) || elem.Name == name)).ToList();
+            elem => elem.Alias.Contains(name) || elem.Name == name)).ToList();
         if (query.Count != 0)
         {
             // Player is in Database

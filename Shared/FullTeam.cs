@@ -67,11 +67,7 @@ public class FullTeam
 
         //team-member
         string lineUpString = "";
-        if (Players.Length == 0) { lineUpString = "n.A"; }
-        else
-        {
-            lineUpString = Players.Aggregate(lineUpString, (current, pl) => current + $"[{pl.Name}]({pl.Link}) ({pl.Type})\n");
-        }
+        lineUpString = Players.Length == 0 ? "n.A" : Players.Aggregate(lineUpString, (current, pl) => current + $"[{pl.Name}]({pl.Link}) ({pl.Type})\n");
         builder.AddField("member:", lineUpString, true);
 
         //map-stats
@@ -102,7 +98,7 @@ public class FullTeam
             foreach (Result matchResult in recentResults[..4])
             {
                 string opponentTeam = matchResult.Team1.Name == Name ? matchResult.Team2.Name : matchResult.Team1.Name;
-                recentResultsString += $"[vs. {opponentTeam}]({matchResult.Link})\n";
+                recentResultsString += $"[vs. {opponentTeam}]({matchResult.Link})\n";;
             }            
         }
 
