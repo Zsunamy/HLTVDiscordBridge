@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Discord;
 using HLTVDiscordBridge.Modules;
 
@@ -21,11 +19,11 @@ public class FullEvent
     public string Link { get; set; }
     public List<EventTeam> Teams { get; set; }
     public List<Prize> PrizeDistribution { get; set; }
-    public List<Event> RelatedEvents { get; set; }
-    public List<EventFormat> Formats { get; set; }
-    public List<string> MapPool { get; set; }
-    public List<EventHighlight> Highlights { get; set; } 
-    public List<RssNews> News { get; set; }
+    public Event[] RelatedEvents { get; set; }
+    public EventFormat[] Formats { get; set; }
+    public string[] MapPool { get; set; }
+    public EventHighlight[] Highlights { get; set; } 
+    public Article[] News { get; set; }
         
     public Embed ToStartedEmbed()
     {

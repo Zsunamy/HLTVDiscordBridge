@@ -1,6 +1,6 @@
 ﻿namespace HLTVDiscordBridge.Shared;
 
-public class MatchUpcoming 
+public class MatchPreview 
 {
     public uint Id { get; set; }
     public ulong Date { get; set; }

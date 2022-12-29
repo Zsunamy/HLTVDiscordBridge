@@ -1,105 +1,129 @@
 using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using HLTVDiscordBridge.Requests;
+using HLTVDiscordBridge.Shared;
 
-namespace HLTVDiscordBridge.Modules
+namespace HLTVDiscordBridge.Modules;
+
+public static class HltvRanking
 {
-    public class HltvRanking : ModuleBase<SocketCommandContext>
+    private const string Path = "./cache/ranking.json";
+    private static readonly string[] Months =
+        { "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december" };
+
+    public static async Task UpdateTeamRanking()
     {
-        private static readonly string[] Months = { "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december" };
-        
-        public static async Task SendRanking(SocketSlashCommand cmd)
+        if (DateTime.Now.DayOfWeek == DayOfWeek.Monday || !File.Exists(Path))
         {
-            await cmd.DeferAsync();
-            EmbedBuilder embedBuilder = new();
-            List<string> properties = new();
-            List<string> values = new();
-            DateTime now = DateTime.UtcNow;
-            DateTime lastMonday = GetLastMonday(now.Day.ToString(), now.Month.ToString(), now.Year.ToString());
-            string region = "GLOBAL";
-
-            foreach(SocketSlashCommandDataOption opt in cmd.Data.Options)
-            { 
-                if(opt.Name == "date" && DateTime.TryParse(opt.Value.ToString(), out DateTime time))
-                {
-                    lastMonday = GetLastMonday(time.Day.ToString(), time.Month.ToString(), time.Year.ToString());
-                    properties.Add("year");
-                    properties.Add("month");
-                    properties.Add("day");
-                    values.Add(lastMonday.Year.ToString());
-                    values.Add(Months[lastMonday.Month - 1]);
-                    var day = lastMonday.Day.ToString().Length == 1 ? $"0{lastMonday.Day}" : lastMonday.Day.ToString();
-                    values.Add(day);
-                }
-                else if(opt.Name == "region")
-                {
-                    region = opt.Value.ToString();
-                    if (region.Contains('-'))
-                    {
-                        region = "";
-                        foreach (string str in region.Split('-')) { region += $"{str} "; }
-                    }
-                    properties.Add("country");
-                    values.Add(region.ToLower());
-                }
-            }
-
-            JArray jArr;
-            try
-            {
-                jArr = await Tools.RequestApiJArray("getTeamRanking", properties, values);
-            } 
-            catch(HltvApiExceptionLegacy ex)
-            {
-                await cmd.Channel.SendMessageAsync(embed: ErrorHandling.GetErrorEmbed(ex));
-                return;
-            }
-            
-            string val = "";
-            int maxTeams = 10;
-            for (int i = 0; i < maxTeams && i < jArr.Count; i++)
-            {
-                JObject jObj = JObject.Parse(jArr[i].ToString());
-                string development = "";
-                if (bool.Parse(jObj.GetValue("isNew").ToString())) { development = "(🆕)"; }
-                else
-                {
-                    short change = jObj.TryGetValue("change", out JToken changeTok) ? short.Parse(changeTok.ToString()) : (short)-20;
-                    development = change switch
-                    {
-                        < 0 => "(⬇️ " + Math.Abs(change) + ")",
-                        > 0 => "(⬆️ " + Math.Abs(change) + ")",
-                        _ => "(⏺️ 0)",
-                    };
-                }
-                JObject teamJObj = JObject.Parse(JObject.Parse(jArr[i].ToString()).GetValue("team").ToString());
-                string teamLink = $"https://www.hltv.org/team/{teamJObj.GetValue("id")}/{teamJObj.GetValue("name").ToString().Replace(' ', '-')}";
-                val += $"{i + 1}.\t[{teamJObj.GetValue("name")}]({teamLink}) {development}\n";
-            }
-            embedBuilder.WithTitle($"TOP {Math.Max(maxTeams, jArr.Count)} {lastMonday.ToShortDateString()}")
-                .AddField("teams:", val)
-                .WithColor(Color.Blue)
-                .WithFooter(Tools.GetRandomFooter());
-            /*StatsUpdater.StatsTracker.MessagesSent += 1;
-            StatsUpdater.UpdateStats();*/
-            await cmd.DeleteOriginalResponseAsync();
-            await cmd.Channel.SendMessageAsync(embed: embedBuilder.Build());
-        }        
-
-        private static DateTime GetLastMonday(string day, string month, string year)
-        {
-            DateTime date = DateTime.Parse($"{day}/{month}/{year}");
-            
-            while (date.DayOfWeek != DayOfWeek.Monday)
-            {
-                date = date.AddDays(-1);
-            }
-
-            return date;
+            GetTeamRanking request = new();
+            Tools.SaveToFile(Path, await request.SendRequest<TeamRanking[]>());
         }
+    }
+
+    public static async Task SendRanking(SocketSlashCommand cmd)
+    {
+        await cmd.DeferAsync();
+        Embed embed;
+        DateTime date = DateTime.Now;
+        try
+        {
+            GetTeamRanking request = null;
+            foreach (SocketSlashCommandDataOption opt in cmd.Data.Options)
+            {
+                request = new GetTeamRanking();
+                switch (opt.Name)
+                {
+                    case "date" when DateTime.TryParse(opt.Value.ToString(), out date):
+                    {
+                        date = GetLastMonday(date);
+                        request.Year = date.Year;
+                        request.Month = Months[date.Month - 1];
+                        request.Day = date.Day;
+                        break;
+                    }
+                    case "region":
+                    {
+                        string region = opt.Value.ToString();
+                        if (region!.Contains('-'))
+                        {
+                            region = "";
+                            foreach (string str in region.Split('-'))
+                            {
+                                region += $"{str} ";
+                            }
+                        }
+                        request.Country = region.ToLower();
+                        break;
+                    }
+                }
+            }
+
+            TeamRanking[] ranking;
+            if (request == null)
+            {
+                ranking = Tools.ParseFromFile<TeamRanking[]>(Path);
+            }
+            else
+            {
+                ranking = await request.SendRequest<TeamRanking[]>();
+            }
+            embed = GetRankingEmbed(ranking, date);
+        }
+        catch (ApiError ex)
+        {
+            embed = ex.ToEmbed();
+        }
+        catch (DeploymentException ex)
+        {
+            embed = ex.ToEmbed();
+        }
+
+            
+        StatsUpdater.StatsTracker.MessagesSent += 1;
+        StatsUpdater.UpdateStats();
+        await cmd.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
+    }
+
+    private static Embed GetRankingEmbed(TeamRanking[] ranking, DateTime date)
+    {
+        EmbedBuilder embedBuilder = new();
+        string val = "";
+        const int maxTeams = 10;
+        foreach (TeamRanking rank in ranking.Take(maxTeams))
+        {
+            string development;
+            if (rank.IsNew)
+            {
+                development = "(🆕)";
+            }
+            else
+            {
+                development = rank.Change switch
+                {
+                    < 0 => "(⬇️ " + Math.Abs(rank.Change) + ")",
+                    > 0 => "(⬆️ " +  rank.Change + ")",
+                    _ => "(⏺️ 0)",
+                };
+            }
+            val += $"{Array.IndexOf(ranking, rank) + 1}.\t[{rank.Team.Name}]({rank.Team.Link}) {development}\n";
+        }
+        embedBuilder.WithTitle($"TOP {Math.Max(maxTeams, ranking.Length)} {date.ToShortDateString()}")
+            .AddField("teams:", val)
+            .WithColor(Color.Blue)
+            .WithFooter(Tools.GetRandomFooter());
+        return embedBuilder.Build();
+    }
+
+    private static DateTime GetLastMonday(DateTime date)
+    {
+        while (date.DayOfWeek != DayOfWeek.Monday)
+        {
+            date = date.AddDays(-1);
+        }
+        return date;
     }
 }

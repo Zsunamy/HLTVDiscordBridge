@@ -1,9 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
@@ -18,14 +14,14 @@ namespace HLTVDiscordBridge.Modules
 
         public async Task InitSlashCommands()
         {
-            ulong guildId = 792139588743331841;
+            const ulong guildId = 792139588743331841;
 
-            var guildSupportCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildSupportCommand = new SlashCommandBuilder()
                 .WithName("support")
                 .WithDescription("Sends the support page.");
             await _client.CreateGlobalApplicationCommandAsync(guildSupportCommand.Build());
 
-            var guildEventCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildEventCommand = new SlashCommandBuilder()
             .WithName("event")
             .WithDescription("Gives you selected information about an event.")
             .AddOption(new SlashCommandOptionBuilder()
@@ -36,7 +32,7 @@ namespace HLTVDiscordBridge.Modules
             );
             await _client.CreateGlobalApplicationCommandAsync(guildEventCommand.Build());
 
-            var guildTeamCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildTeamCommand = new SlashCommandBuilder()
                 .WithName("team")
                 .WithDescription("Gives you selected information about a team.")
                 .AddOption(new SlashCommandOptionBuilder()
@@ -47,7 +43,7 @@ namespace HLTVDiscordBridge.Modules
                     );
             await _client.CreateGlobalApplicationCommandAsync(guildTeamCommand.Build());
 
-            var guildPlayerCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildPlayerCommand = new SlashCommandBuilder()
             .WithName("player")
             .WithDescription("Gives you selected information about a player.")
             .AddOption(new SlashCommandOptionBuilder()
@@ -58,7 +54,7 @@ namespace HLTVDiscordBridge.Modules
             );
             await _client.CreateGlobalApplicationCommandAsync(guildPlayerCommand.Build());
 
-            var guildHelpCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildHelpCommand = new SlashCommandBuilder()
                 .WithName("help")
                 .WithDescription("Gives you help about our commands")
                 .AddOption(new SlashCommandOptionBuilder()
@@ -81,7 +77,7 @@ namespace HLTVDiscordBridge.Modules
                 );
             await _client.CreateGlobalApplicationCommandAsync(guildHelpCommand.Build());
 
-            var guildInitCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildInitCommand = new SlashCommandBuilder()
                 .WithName("init")
                 .WithDescription("Initializes the bot to the given Channel")
                 .WithDefaultMemberPermissions(GuildPermission.ManageGuild)
@@ -93,7 +89,7 @@ namespace HLTVDiscordBridge.Modules
                 );
             await _client.CreateGlobalApplicationCommandAsync(guildInitCommand.Build());
 
-            var guildSetCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildSetCommand = new SlashCommandBuilder()
                 .WithName("set")
                 .WithDescription("sets options within the bot")
                 .WithDefaultMemberPermissions(GuildPermission.ManageGuild)
@@ -157,19 +153,19 @@ namespace HLTVDiscordBridge.Modules
 
             await _client.CreateGlobalApplicationCommandAsync(guildSetCommand.Build());
 
-            var guildEventsCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildEventsCommand = new SlashCommandBuilder()
                 .WithName("events")
                 .WithDescription("Dropdown of all ongoing events");
 
             await _client.CreateGlobalApplicationCommandAsync(guildEventsCommand.Build());
 
-            var guildUpcomingEventsCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildUpcomingEventsCommand = new SlashCommandBuilder()
                 .WithName("upcomingevents")
                 .WithDescription("Dropdown of all upcoming events");
 
             await _client.CreateGlobalApplicationCommandAsync(guildUpcomingEventsCommand.Build());
 
-            var guildUpdateCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildUpdateCommand = new SlashCommandBuilder()
                 .WithName("update")
                 .WithDescription("sends an update to every server")
                 .AddOption(new SlashCommandOptionBuilder()
@@ -186,12 +182,12 @@ namespace HLTVDiscordBridge.Modules
                     );
             await _client.Rest.CreateGuildCommand(guildUpdateCommand.Build(), guildId);
 
-            var serverCountCommand = new SlashCommandBuilder()
+            SlashCommandBuilder serverCountCommand = new SlashCommandBuilder()
                 .WithName("servercount")
                 .WithDescription("sends the servercount");
             await _client.Rest.CreateGuildCommand(serverCountCommand.Build(), guildId);
 
-            var guildUpcomingMatchesCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildUpcomingMatchesCommand = new SlashCommandBuilder()
                 .WithName("upcomingmatches")
                 .WithDescription("gets upcoming matches")
                 .AddOption(new SlashCommandOptionBuilder()
@@ -202,7 +198,7 @@ namespace HLTVDiscordBridge.Modules
                     );
             await _client.CreateGlobalApplicationCommandAsync(guildUpcomingMatchesCommand.Build());
 
-            var guildRankingCommand = new SlashCommandBuilder()
+            SlashCommandBuilder guildRankingCommand = new SlashCommandBuilder()
                 .WithName("ranking")
                 .WithDescription("gets the ranking of a specified region/date")
                 .AddOption(new SlashCommandOptionBuilder()
@@ -219,59 +215,62 @@ namespace HLTVDiscordBridge.Modules
                     );
             await _client.CreateGlobalApplicationCommandAsync(guildRankingCommand.Build());
 
-            var liveCommand = new SlashCommandBuilder()
+            SlashCommandBuilder liveCommand = new SlashCommandBuilder()
                 .WithName("live")
                 .WithDescription("shows all live matches");
             await _client.CreateGlobalApplicationCommandAsync(liveCommand.Build());
         }
-        public async Task SlashCommandHandler(SocketSlashCommand arg)
+        public Task SlashCommandHandler(SocketSlashCommand arg)
         {
-            if (_client == null) { throw new InvalidOperationException("client wasn't initialized"); }
-            switch (arg.CommandName)
-            { 
-                case "servercount":
-                    await arg.RespondAsync(_client.Guilds.Count.ToString());
-                    break;
-                case "live":
-                    await HltvLiveMatches.SendLiveMatchesEmbed(arg);
-                    break;
-                case "player":
-                    await HltvPlayer.SendPlayerCard(arg);
-                    break;
-                case "event":
-                    await HltvEvents.SendEvent(arg);
-                    break;
-                case "team":
-                    await HltvTeams.SendTeamCard(arg);
-                    break;
-                case "support":
-                    await SupportCommand.DispSupport(arg);
-                    break;
-                case "help":
-                    await Commands.SendHelpEmbed(arg);
-                    break;
-                case "init":
-                    await Config.InitTextChannel(arg);
-                    break;
-                case "set":
-                    await Config.ChangeServerConfig(arg);
-                    break;
-                case "events":
-                    await HltvEvents.SendEvents(arg);
-                    break;
-                case "upcomingevents":
-                    await HltvEvents.SendUpcomingEvents(arg);
-                    break;
-                case "update":
-                    await Developer.Update(arg, _client);
-                    break;
-                case "upcomingmatches":
-                    await HltvUpcomingMatches.SendUpcomingMatches(arg);
-                    break;
-                case "ranking":
-                    await HltvRanking.SendRanking(arg);
-                    break;
-            }
+            _ = Task.Run(async () =>
+            {
+                switch (arg.CommandName)
+                { 
+                    case "servercount":
+                        await arg.RespondAsync(_client.Guilds.Count.ToString());
+                        break;
+                    case "live":
+                        await HltvMatches.SendLiveMatchesEmbed(arg);
+                        break;
+                    case "player":
+                        await HltvPlayer.SendPlayerCard(arg);
+                        break;
+                    case "event":
+                        await HltvEvents.SendEvent(arg);
+                        break;
+                    case "team":
+                        await HltvTeams.SendTeamCard(arg);
+                        break;
+                    case "support":
+                        await SupportCommand.DispSupport(arg);
+                        break;
+                    case "help":
+                        await Commands.SendHelpEmbed(arg);
+                        break;
+                    case "init":
+                        await Config.InitTextChannel(arg);
+                        break;
+                    case "set":
+                        await Config.ChangeServerConfig(arg);
+                        break;
+                    case "events":
+                        await HltvEvents.SendEvents(arg);
+                        break;
+                    case "upcomingevents":
+                        await HltvEvents.SendUpcomingEvents(arg);
+                        break;
+                    case "update":
+                        await Developer.Update(arg, _client);
+                        break;
+                    case "upcomingmatches":
+                        await HltvUpcomingMatches.SendUpcomingMatches(arg);
+                        break;
+                    case "ranking":
+                        await HltvRanking.SendRanking(arg);
+                        break;
+                }
+            });
+            return Task.CompletedTask;
         }
     }
 }

@@ -13,10 +13,10 @@ namespace HLTVDiscordBridge.Modules
     {
         private const string OngoingPath = "./cache/matches/ongoingMatches.json";
         private const string UpcomingPath = "./cache/matches/upcomingMatches.json";
-        public static async Task<IEnumerable<MatchUpcoming>> GetUpcomingMatches()
+        public static async Task<IEnumerable<MatchPreview>> GetUpcomingMatches()
         {
             GetMatches request = new();
-            List<MatchUpcoming> matches = await request.SendRequest<List<MatchUpcoming>>();
+            List<MatchPreview> matches = await request.SendRequest<List<MatchPreview>>();
             Tools.SaveToFile(OngoingPath, matches);
             return matches.Where(match => !match.Live);
             /*Directory.CreateDirectory("./cache/matches");
@@ -35,19 +35,19 @@ namespace HLTVDiscordBridge.Modules
             catch (HltvApiExceptionLegacy) { throw; }
             */
         }
-        private static IEnumerable<MatchUpcoming> GetUpcomingMatchesByDate(IEnumerable<MatchUpcoming> matches, DateTime date)
+        private static IEnumerable<MatchPreview> GetUpcomingMatchesByDate(IEnumerable<MatchPreview> matches, DateTime date)
         {
             return matches.Where(match => UnixTimeStampToDateTime(match.Date).Date == date.Date).ToList();
         }
-        private static IEnumerable<MatchUpcoming> GetUpcomingMatchesByValue(IEnumerable<MatchUpcoming> matches, string val)
+        private static IEnumerable<MatchPreview> GetUpcomingMatchesByValue(IEnumerable<MatchPreview> matches, string val)
         {
             val = val.ToLower();
             return matches.Where(match => match.ToString().ToLower().Contains(val)).ToList();
         }
-        public static async Task<IEnumerable<MatchUpcoming>> GetLiveMatches()
+        public static async Task<IEnumerable<MatchPreview>> GetLiveMatches()
         {
             GetMatches request = new();
-            List<MatchUpcoming> matches = await request.SendRequest<List<MatchUpcoming>>();
+            List<MatchPreview> matches = await request.SendRequest<List<MatchPreview>>();
             Tools.SaveToFile(OngoingPath, matches);
             return matches.Where(match => match.Live);
             /*
@@ -69,7 +69,7 @@ namespace HLTVDiscordBridge.Modules
         {
             try
             {
-                IEnumerable<MatchUpcoming> matches = await GetUpcomingMatches();
+                IEnumerable<MatchPreview> matches = await GetUpcomingMatches();
                 if(command.Data.Options.Count != 0)
                 {
                     string param = command.Data.Options.First().Value.ToString();

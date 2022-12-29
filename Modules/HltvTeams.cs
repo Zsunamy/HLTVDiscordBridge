@@ -52,6 +52,7 @@ public static class HltvTeams
     {
         await arg.DeferAsync();
         string name = arg.Data.Options.First().Value.ToString()!.ToLower();
+        HttpResponseMessage resp = null;
         FullTeam team = null;
         FullTeamStats stats;
         Result[] recentResults;
@@ -65,19 +66,22 @@ public static class HltvTeams
             isInDatabase = true;
             name = query.First().Name;
         }
-        
-        if (Directory.Exists($"{Path}/{name}"))
+        try
         {
-            // Team is cached
-            team =  Tools.ParseFromFile<FullTeam>($"{Path}/{name}/player.json");
-            stats = Tools.ParseFromFile<FullTeamStats>($"{Path}/{name}/stats.json");
-            recentResults = Tools.ParseFromFile<Result[]>($"{Path}/{name}/results.json");
-            embed = team.ToEmbed(stats, recentResults);
-        }
-        else
-        {
-            HttpResponseMessage resp = null;
-            try
+            string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddMonths(-3));
+            string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
+            GetResults resultsRequest = new GetResults { StartDate = startDate, EndDate = endDate };
+            
+            if (Directory.Exists($"{Path}/{name}"))
+            {
+                // Team is cached
+                team =  Tools.ParseFromFile<FullTeam>($"{Path}/{name}/player.json");
+                stats = Tools.ParseFromFile<FullTeamStats>($"{Path}/{name}/stats.json");
+                resultsRequest.TeamIds = new[] { team.Id };
+                recentResults = await resultsRequest.SendRequest<Result[]>();
+                embed = team.ToEmbed(stats, recentResults);
+            }
+            else
             {
                 if (isInDatabase)
                 {
@@ -108,18 +112,18 @@ public static class HltvTeams
                 if (Directory.Exists($"{Path}/{team.FormattedName}"))
                 {
                     stats = Tools.ParseFromFile<FullTeamStats>($"{Path}/{team.FormattedName}/stats.json");
-                    recentResults = Tools.ParseFromFile<Result[]>($"{Path}/{team.FormattedName}/results.json");
+                    resultsRequest.TeamIds = new[] { team.Id };
+                    recentResults = await resultsRequest.SendRequest<Result[]>();
                 }
                 else
                 {
                     GetTeamStats statsRequest = new GetTeamStats { Id = team.Id };
-                    GetResults resultsRequest = new GetResults { TeamIds = new[] { team.Id } };
+                    resultsRequest.TeamIds = new[] { team.Id };
                     stats = await statsRequest.SendRequest<FullTeamStats>();
                     recentResults = await resultsRequest.SendRequest<Result[]>();
 
                     Directory.CreateDirectory($"{Path}/{team.FormattedName}");
                     Tools.SaveToFile($"{Path}/{team.FormattedName}/stats.json", stats);
-                    Tools.SaveToFile($"{Path}/{team.FormattedName}/results.json", recentResults);
                 }
 
                 resp = await Program.DefaultHttpClient.GetAsync(new Uri(team.Logo));
@@ -129,18 +133,19 @@ public static class HltvTeams
 
                 embed = team.ToEmbed(stats, recentResults);
             }
-            catch (ApiError ex)
-            {
-                embed = ex.ToEmbed();
-            }
-            catch (DeploymentException ex)
-            {
-                embed = ex.ToEmbed();
-            }
-            catch (HttpRequestException)
-            {
-                embed = new DeploymentException(resp).ToEmbed();
-            }
+        }
+        
+        catch (ApiError ex)
+        {
+            embed = ex.ToEmbed();
+        }
+        catch (DeploymentException ex)
+        {
+            embed = ex.ToEmbed();
+        }
+        catch (HttpRequestException)
+        {
+            embed = new DeploymentException(resp).ToEmbed();
         }
 
         await arg.ModifyOriginalResponseAsync(msg =>

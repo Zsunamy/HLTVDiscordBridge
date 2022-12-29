@@ -208,7 +208,7 @@ public static class HltvEvents
         SocketUserMessage msg = arg.Message;
 
         SelectMenuComponent menu = msg.Components.First().Components.First() as SelectMenuComponent;
-        SelectMenuBuilder builder = menu.ToBuilder();
+        SelectMenuBuilder builder = menu!.ToBuilder();
 
         foreach (SelectMenuOptionBuilder option in builder.Options.Where(option => option.IsDefault == true))
         {

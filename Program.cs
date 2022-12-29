@@ -2,7 +2,6 @@
 using Discord.WebSocket;
 using HLTVDiscordBridge.Modules;
 using HLTVDiscordBridge.Shared;
-using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using System;
 using System.Net.Http;
@@ -25,7 +24,7 @@ internal class Program
 
     private static Program _instance;
     private readonly DiscordSocketClient _client;
-    private IServiceProvider _services;
+
     private readonly BotConfig _botConfig;
     public static HttpClient DefaultHttpClient { get; } = new();
     private Task _bgTask;
@@ -41,7 +40,6 @@ internal class Program
         _client = new DiscordSocketClient( new DiscordSocketConfig
             { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites });
         SlashCommands commands = new(_client);
-        _services = new ServiceCollection().AddSingleton(_client).BuildServiceProvider();
         _botConfig = BotConfig.GetBotConfig();
             
         _client.Log += Log;
@@ -84,6 +82,7 @@ internal class Program
 
     private async Task Ready()
     {
+        //await new SlashCommands(_client).InitSlashCommands();
         await Config.ServerConfigStartUp(_client);
         _bgTask ??= BgTask();
     }
@@ -96,20 +95,20 @@ internal class Program
             await arg.DeferAsync();
             foreach (Embed e in arg.Message.Embeds)
             {
-                matchLink = ((EmbedAuthor)e.Author).Url;
+                matchLink = ((EmbedAuthor)e.Author!).Url;
             }
             GetMatch request = new GetMatch{ Id = Tools.GetIdFromUrl(matchLink)};
             Match match = await request.SendRequest<Match>();
 
             if (arg.Data.CustomId == "overallstats_bo1")
             {
-                MatchMapStats mapStats = await HltvMatchMapStats.GetMatchMapStats(match.Maps[0]);
-                await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(mapStats));
+                GetMatchMapStats requestMapStats = new GetMatchMapStats{Id = match.Maps[0].StatsId};
+                await arg.Channel.SendMessageAsync(embed: (await requestMapStats.SendRequest<MatchMapStats>()).ToEmbed());
             }
             else
             {
-                MatchStats matchStats = await HltvMatchStats.GetMatchStats(match);
-                await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(matchStats));
+                GetMatchStats requestMatchStats = new GetMatchStats{Id = match.StatsId};
+                await arg.Channel.SendMessageAsync(embed: (await requestMatchStats.SendRequest<MatchStats>()).ToEmbed());
             }
         });
         return handler;
@@ -132,42 +131,53 @@ internal class Program
     }
 
     private async Task UpdateGgServerStats()
-    {   //top.gg
-        HttpClient client = new();
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.TopGgApiKey);
-        HttpRequestMessage reqTop = new(HttpMethod.Post, $"https://top.gg/api/bots/${_client.CurrentUser.Id}/stats");
-        reqTop.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
-        await DefaultHttpClient.SendAsync(reqTop);
+    {
+        if (_client.CurrentUser.Id == _botConfig.ProductionBotId)
+        {
+            //top.gg
+            HttpClient client = new();
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.TopGgApiKey);
+            HttpRequestMessage reqTop = new(HttpMethod.Post, $"https://top.gg/api/bots/${_client.CurrentUser.Id}/stats");
+            reqTop.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+            await DefaultHttpClient.SendAsync(reqTop);
             
-        //bots.gg
-        DefaultHttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.BotsGgApiKey);
-        HttpRequestMessage reqBots = new (HttpMethod.Post, $"https://discord.bots.gg/api/v1/bots/${_client.Guilds.Count}/stats");
-        reqBots.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
-        await DefaultHttpClient.SendAsync(reqBots);
-        
+            //bots.gg
+            DefaultHttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.BotsGgApiKey);
+            HttpRequestMessage reqBots = new (HttpMethod.Post, $"https://discord.bots.gg/api/v1/bots/${_client.Guilds.Count}/stats");
+            reqBots.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+            await DefaultHttpClient.SendAsync(reqBots);
+        }
+
+        //CacheCleaner
         CacheCleaner.Clean();
+        
+        //update ranking
+        await HltvRanking.UpdateTeamRanking();
     }
 
     private async Task BgTask()
     {
-        if (_client.CurrentUser.Id == _botConfig.ProductionBotId)
-        {
-            Timer updateGgStatsTimer = new(1000 * 60 * 60);
-            updateGgStatsTimer.Elapsed += async (sender, e) => await UpdateGgServerStats();
-            updateGgStatsTimer.Enabled = true;
-        }
-        (Timer, Func<Task>)[] timers = {(new Timer(), HltvNews.SendNewNews), (new Timer(), HltvResults.SendNewResults),
-            (new Timer(), HltvEvents.SendNewStartedEvents), (new Timer(), HltvEvents.SendNewPastEvents)};
-        foreach ((Timer timer, Func<Task> function) in timers)
+        await UpdateGgServerStats();
+        Timer updateGgStatsTimer = new(1000 * 60 * 60);
+        updateGgStatsTimer.Elapsed += async (sender, e) =>
         {
             try
             {
-                await function();
+                await UpdateGgServerStats();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine(e);
+                Console.WriteLine(ex);
+                throw;
             }
+        };
+        updateGgStatsTimer.Enabled = true;
+        
+        (Timer, Func<Task>)[] timers = {(new Timer(), HltvNews.SendNewNews), (new Timer(), HltvResults.SendNewResults),
+            (new Timer(), HltvEvents.SendNewStartedEvents), (new Timer(), HltvEvents.SendNewPastEvents), (new Timer(), HltvMatches.UpdateMatches)};
+        foreach ((Timer timer, Func<Task> function) in timers)
+        {
+            await function();
             timer.Interval = _botConfig.CheckResultsTimeInterval;
             timer.Elapsed += async (s, e) =>
             {

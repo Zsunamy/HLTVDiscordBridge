@@ -106,7 +106,7 @@ public class FullTeam
         builder.AddField("\u200b", "\u200b", true);
 
         builder.WithCurrentTimestamp();
-        builder.WithFooter("The stats shown were collected during the last 3 months");
+        builder.WithFooter("Some of the stats shown were collected during the last 3 months.");
 
         return builder.Build();
     }
