@@ -23,11 +23,12 @@ internal class Program
     }
 
     private static Program _instance;
-    private readonly DiscordSocketClient _client;
+    public DiscordSocketClient Client { get; }
 
     private readonly BotConfig _botConfig;
     public static HttpClient DefaultHttpClient { get; } = new();
     private Task _bgTask;
+    public static MongoClient DbClient { get; } = new(BotConfig.GetBotConfig().DatabaseLink);
     public static readonly JsonSerializerOptions SerializeOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -37,18 +38,17 @@ internal class Program
     
     private Program()
     {
-        _client = new DiscordSocketClient( new DiscordSocketConfig
+        Client = new DiscordSocketClient( new DiscordSocketConfig
             { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites });
-        SlashCommands commands = new(_client);
         _botConfig = BotConfig.GetBotConfig();
             
-        _client.Log += Log;
-        _client.JoinedGuild += GuildJoined;
-        _client.LeftGuild += GuildLeft;
-        _client.ButtonExecuted += ButtonExecuted;
-        _client.Ready += Ready;
-        _client.SlashCommandExecuted += commands.SlashCommandHandler;
-        _client.SelectMenuExecuted += SelectMenuExecuted;
+        Client.Log += Log;
+        Client.JoinedGuild += GuildJoined;
+        Client.LeftGuild += GuildLeft;
+        Client.ButtonExecuted += ButtonExecuted;
+        Client.Ready += Ready;
+        Client.SlashCommandExecuted += SlashCommands.SlashCommandHandler;
+        Client.SelectMenuExecuted += SelectMenuExecuted;
     }
 
     public static Program GetInstance()
@@ -58,9 +58,9 @@ internal class Program
         
     private async Task Start()
     {
-        await _client.LoginAsync(TokenType.Bot, _botConfig.BotToken);
-        await _client.StartAsync();
-        await _client.SetGameAsync("/help");
+        await Client.LoginAsync(TokenType.Bot, _botConfig.BotToken);
+        await Client.StartAsync();
+        await Client.SetGameAsync("/help");
     }
 
     private static Task SelectMenuExecuted(SocketMessageComponent arg)
@@ -84,11 +84,11 @@ internal class Program
     {
         if (Environment.GetCommandLineArgs().Length > 1 && Environment.GetCommandLineArgs()[1] == "init")
         {
+            await SlashCommands.InitSlashCommands();
             WriteLog($"{DateTime.Now.ToLongTimeString()} Init\t\t successfully initialized all commands");
-            await new SlashCommands(_client).InitSlashCommands();
         }
         
-        await Config.ServerConfigStartUp(_client);
+        await Config.ServerConfigStartUp(Client);
         _bgTask ??= BgTask();
     }
 
@@ -123,52 +123,50 @@ internal class Program
     {
         IMongoCollection<ServerConfig> collection = Config.GetCollection();
         collection.DeleteOne(x => x.GuildID == arg.Id);
-        StatsUpdater.StatsTracker.Servercount = _client.Guilds.Count;
+        StatsUpdater.StatsTracker.Servercount = Client.Guilds.Count;
         StatsUpdater.UpdateStats();
         return Task.CompletedTask;
     }
 
     public async Task GuildJoined(SocketGuild guild)
     {
-        StatsUpdater.StatsTracker.Servercount = _client.Guilds.Count;
+        StatsUpdater.StatsTracker.Servercount = Client.Guilds.Count;
         StatsUpdater.UpdateStats();
         await Config.GuildJoined(guild);
     }
 
-    private async Task UpdateGgServerStats()
+    private async Task MiscellaneousBackground()
     {
-        if (_client.CurrentUser.Id == _botConfig.ProductionBotId)
+        if (Client.CurrentUser.Id == _botConfig.ProductionBotId)
         {
             //top.gg
             HttpClient client = new();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.TopGgApiKey);
-            HttpRequestMessage reqTop = new(HttpMethod.Post, $"https://top.gg/api/bots/${_client.CurrentUser.Id}/stats");
-            reqTop.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+            HttpRequestMessage reqTop = new(HttpMethod.Post, $"https://top.gg/api/bots/${Client.CurrentUser.Id}/stats");
+            reqTop.Content = new StringContent($"{{ \"server_count\": {Client.Guilds.Count} }}", Encoding.UTF8, "application/json");
             await DefaultHttpClient.SendAsync(reqTop);
             
             //bots.gg
             DefaultHttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.BotsGgApiKey);
-            HttpRequestMessage reqBots = new (HttpMethod.Post, $"https://discord.bots.gg/api/v1/bots/${_client.Guilds.Count}/stats");
-            reqBots.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+            HttpRequestMessage reqBots = new (HttpMethod.Post, $"https://discord.bots.gg/api/v1/bots/${Client.Guilds.Count}/stats");
+            reqBots.Content = new StringContent($"{{ \"guildCount\": {Client.Guilds.Count} }}", Encoding.UTF8, "application/json");
             await DefaultHttpClient.SendAsync(reqBots);
         }
-
-        //CacheCleaner
-        CacheCleaner.Clean();
         
-        //update ranking
+        CacheCleaner.Clean();
+        StatsUpdater.UpdateStats();
         await HltvRanking.UpdateTeamRanking();
     }
 
     private async Task BgTask()
     {
-        await UpdateGgServerStats();
+        await MiscellaneousBackground();
         Timer updateGgStatsTimer = new(1000 * 60 * 60);
         updateGgStatsTimer.Elapsed += async (sender, e) =>
         {
             try
             {
-                await UpdateGgServerStats();
+                await MiscellaneousBackground();
             }
             catch (Exception ex)
             {

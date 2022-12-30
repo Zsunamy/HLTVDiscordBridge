@@ -5,15 +5,25 @@ using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules
 {
-    public class SlashCommands
+    public static class SlashCommands
     {
-        private readonly DiscordSocketClient _client;
-        public SlashCommands (DiscordSocketClient client)
-        {
-            _client = client;
-        }
+        private static readonly DiscordSocketClient Client = Program.GetInstance().Client;
 
-        public async Task InitSlashCommands()
+        private static SlashCommandOptionBuilder AddTextChannels(SlashCommandOptionBuilder option)
+        {
+            ChannelType[] channelTypes = 
+            {
+                ChannelType.News, ChannelType.Forum, ChannelType.Group, ChannelType.Text, ChannelType.Store,
+                ChannelType.NewsThread, ChannelType.PrivateThread, ChannelType.PublicThread
+            };
+            foreach (ChannelType type in channelTypes)
+            {
+                option.AddChannelType(type);
+            }
+
+            return option;
+        }
+        public static async Task InitSlashCommands()
         {
             const ulong guildId = 792139588743331841;
 
@@ -99,17 +109,6 @@ namespace HLTVDiscordBridge.Modules
                     ).Build(),
 
                 new SlashCommandBuilder()
-                    .WithName("init")
-                    .WithDescription("Initializes the bot to the given Channel")
-                    .WithDefaultMemberPermissions(GuildPermission.ManageGuild)
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("channel")
-                        .WithDescription("the channel the bot will send the messages")
-                        .WithRequired(true)
-                        .WithType(ApplicationCommandOptionType.Channel)
-                    ).Build(),
-
-                new SlashCommandBuilder()
                     .WithName("set")
                     .WithDescription("sets options within the bot")
                     .WithDefaultMemberPermissions(GuildPermission.ManageGuild)
@@ -127,37 +126,35 @@ namespace HLTVDiscordBridge.Modules
                         )
                     )
                     .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("results")
-                        .WithDescription("toggles the result messages")
+                        .WithName("news")
+                        .WithDescription("sets the channel for news notifications")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption(new SlashCommandOptionBuilder()
-                            .WithName("enabled")
-                            .WithDescription("enables/disables result messages")
-                            .WithRequired(true)
-                            .WithType(ApplicationCommandOptionType.Boolean)
-                        )
+                        .AddOption(AddTextChannels(new SlashCommandOptionBuilder()
+                            .WithName("channel")
+                            .WithDescription("select a channel for the news notifications")
+                            .WithType(ApplicationCommandOptionType.Channel)
+                        ))
+                    )
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("results")
+                        .WithDescription("sets the channel for result notifications")
+                        .WithType(ApplicationCommandOptionType.SubCommand)
+                        .AddOption(AddTextChannels(new SlashCommandOptionBuilder()
+                            .WithName("channel")
+                            .WithDescription("select a channel for the result notifications")
+                            .WithType(ApplicationCommandOptionType.Channel)
+                        ))
                     )
                     .AddOption(new SlashCommandOptionBuilder()
                         .WithName("events")
-                        .WithDescription("toggles the event messages")
+                        .WithDescription("sets the channel for event notifications")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption(new SlashCommandOptionBuilder()
-                            .WithName("enabled")
-                            .WithDescription("enables/disables event messages")
-                            .WithRequired(true)
-                            .WithType(ApplicationCommandOptionType.Boolean)
-                        )
-                    )
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("news")
-                        .WithDescription("toggles the news messages")
-                        .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption(new SlashCommandOptionBuilder()
-                            .WithName("enabled")
-                            .WithDescription("enables/disables news messages")
-                            .WithRequired(true)
-                            .WithType(ApplicationCommandOptionType.Boolean)
-                        )
+                        .AddOption(AddTextChannels(new SlashCommandOptionBuilder()
+                            .WithName("channel")
+                            .WithDescription("select a channel for the event notifications")
+                            .WithType(ApplicationCommandOptionType.Channel)
+                        
+                        ))
                     )
                     .AddOption(new SlashCommandOptionBuilder()
                         .WithName("featuredeventsonly")
@@ -169,6 +166,20 @@ namespace HLTVDiscordBridge.Modules
                             .WithRequired(true)
                             .WithType(ApplicationCommandOptionType.Boolean)
                         )
+                    )
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("disable")
+                        .WithDescription("disables the selected notification")
+                        .WithType(ApplicationCommandOptionType.SubCommand)
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("notification")
+                            .WithDescription("select the notification to be disabled")
+                            .WithRequired(true)
+                            .WithType(ApplicationCommandOptionType.String)
+                            .AddChoice("news", "news")
+                            .AddChoice("results", "results")
+                            .AddChoice("events", "events")
+                        )
                     ).Build(),
 
                 new SlashCommandBuilder()
@@ -176,11 +187,11 @@ namespace HLTVDiscordBridge.Modules
                     .WithDescription("Dropdown of all ongoing events").Build(),
 
                 new SlashCommandBuilder()
-                    .WithName("upcomingevents")
+                    .WithName("upcoming-events")
                     .WithDescription("Dropdown of all upcoming events").Build(),
 
                 new SlashCommandBuilder()
-                    .WithName("upcomingmatches")
+                    .WithName("upcoming-matches")
                     .WithDescription("gets upcoming matches")
                     .AddOption(new SlashCommandOptionBuilder()
                         .WithName("team")
@@ -215,19 +226,20 @@ namespace HLTVDiscordBridge.Modules
                     .WithDescription("shows all live matches").Build(),
             };
 
-            await _client.GetGuild(guildId).BulkOverwriteApplicationCommandAsync(internalCommands);
-            await _client.BulkOverwriteGlobalApplicationCommandsAsync(commands);
+            await Client.GetGuild(guildId).BulkOverwriteApplicationCommandAsync(internalCommands);
+            await Client.BulkOverwriteGlobalApplicationCommandsAsync(commands);
         }
-        public Task SlashCommandHandler(SocketSlashCommand arg)
+        public static Task SlashCommandHandler(SocketSlashCommand arg)
         {
             _ = Task.Run(async () =>
             {
+                await arg.DeferAsync();
                 try
                 {
                     switch (arg.CommandName)
                     { 
                         case "servercount":
-                            await arg.RespondAsync(_client.Guilds.Count.ToString());
+                            await arg.ModifyOriginalResponseAsync( msg => msg.Content = Client.Guilds.Count.ToString());
                             break;
                         case "live":
                             await HltvMatches.SendLiveMatches(arg);
@@ -247,22 +259,19 @@ namespace HLTVDiscordBridge.Modules
                         case "help":
                             await Commands.SendHelpEmbed(arg);
                             break;
-                        case "init":
-                            await Config.InitTextChannel(arg);
-                            break;
                         case "set":
                             await Config.ChangeServerConfig(arg);
                             break;
                         case "events":
                             await HltvEvents.SendEvents(arg);
                             break;
-                        case "upcomingevents":
+                        case "upcoming-events":
                             await HltvEvents.SendUpcomingEvents(arg);
                             break;
                         case "update":
-                            await Developer.Update(arg, _client);
+                            await Developer.Update(arg);
                             break;
-                        case "upcomingmatches":
+                        case "upcoming-matches":
                             await HltvMatches.SendUpcomingMatches(arg);
                             break;
                         case "ranking":
@@ -270,9 +279,10 @@ namespace HLTVDiscordBridge.Modules
                             break;
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    await arg.RespondAsync("An error occured!");
+                    Console.WriteLine(ex);
+                    await arg.ModifyOriginalResponseAsync( msg => msg.Content = $"The following error occured:`{ex.Message}`");
                     throw;
                 }
                 

@@ -20,6 +20,6 @@ public static class SupportCommand
             .WithCurrentTimestamp();
         StatsUpdater.StatsTracker.MessagesSent += 1;
         StatsUpdater.UpdateStats();
-        await arg.RespondAsync(embed: builder.Build());
+        await arg.ModifyOriginalResponseAsync( msg => msg.Embed = builder.Build());
     }
 }

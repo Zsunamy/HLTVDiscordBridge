@@ -6,7 +6,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Discord.Webhook;
-using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
 using MongoDB.Driver;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -51,48 +50,34 @@ public static class Tools
         Expression<Func<ServerConfig, ulong?>> getId,
         Expression<Func<ServerConfig, string>> getToken, Embed embed, MessageComponent component = null)
     {
-        List<Webhook> webhooks = Config.GetCollection().FindSync(filter).ToList().Select(config =>
-            new Webhook{Id = getId.Compile()(config), Token = getToken.Compile()(config)}).ToList();
+        Webhook[] webhooks = Config.GetCollection().FindSync(filter).ToList().Select(config =>
+            new Webhook{Id = getId.Compile()(config), Token = getToken.Compile()(config)}).ToArray();
 
-        List<Task> status = webhooks.Select(webhook => Task.Run(() =>
+        IEnumerable<Task> status = webhooks.Select(webhook => Task.Run(() =>
         {
             DiscordWebhookClient webhookClient;
             try
             {
-                // ReSharper disable once PossibleInvalidOperationException
-                webhookClient = new DiscordWebhookClient((ulong)webhook.Id, webhook.Token);
+                webhookClient =  webhook.ToDiscordWebhookClient();
             }
             catch (Exception e)
             {
-                if (e is InvalidOperationException)
+                if (e is InvalidOperationException or InvalidCastException)
                 {
                     UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(getId, null)
                         .Set(getToken, "");
                     return Config.GetCollection().UpdateOneAsync(filter, update);
                 }
 
+                StatsUpdater.StatsTracker.MessagesSent -= 1;
                 throw;
             }
 
             return webhookClient.SendMessageAsync(embeds: new[] { embed }, components: component);
-        })).ToList();
-        StatsUpdater.StatsTracker.MessagesSent += webhooks.Count;
+        }));
+        StatsUpdater.StatsTracker.MessagesSent += webhooks.Length;
         StatsUpdater.UpdateStats();
         return Task.WhenAll(status);
-    }
-
-    public static async Task<Webhook> CheckChannelForWebhook(SocketTextChannel channel, ServerConfig config)
-    {
-        Webhook[] webhooks =
-        {
-            new Webhook{Id = config.ResultWebhookId, Token = config.ResultWebhookToken},
-            new Webhook{Id = config.NewsWebhookId, Token = config.NewsWebhookToken},
-            new Webhook{Id = config.EventWebhookId, Token = config.EventWebhookToken}
-        };
-        return (from webhook in await channel.GetWebhooksAsync()
-            select new Webhook { Id = webhook.Id, Token = webhook.Token }).FirstOrDefault(channelWebhook => 
-            webhooks.Aggregate(false, (b, currentWebhook) => 
-                (currentWebhook.Id == channelWebhook.Id && currentWebhook.Token == channelWebhook.Token) || b));
     }
 
     public static string GetFormatFromAcronym(string arg)

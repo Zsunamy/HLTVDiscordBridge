@@ -12,6 +12,7 @@ namespace HLTVDiscordBridge.Modules;
 public static class HltvRanking
 {
     private const string Path = "./cache/ranking.json";
+
     private static readonly string[] Months =
         { "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december" };
 
@@ -26,7 +27,6 @@ public static class HltvRanking
 
     public static async Task SendRanking(SocketSlashCommand cmd)
     {
-        await cmd.DeferAsync();
         Embed embed;
         DateTime date = DateTime.Now;
         try

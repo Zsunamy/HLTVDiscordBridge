@@ -36,14 +36,12 @@ public static class HltvPlayer
     private const string Path = "./cache/playercards";
     private static IMongoCollection<PlayerDocument> GetPlayerCollection()
     {
-        MongoClient dbClient = new(BotConfig.GetBotConfig().DatabaseLink);
-        IMongoDatabase db = dbClient.GetDatabase(BotConfig.GetBotConfig().Database);
+        IMongoDatabase db = Program.DbClient.GetDatabase(BotConfig.GetBotConfig().Database);
         return db.GetCollection<PlayerDocument>("players");
     }
         
     public static async Task SendPlayerCard(SocketSlashCommand arg)
     {
-        await arg.DeferAsync();
         string name = arg.Data.Options.First().Value.ToString()!.ToLower();
         FullPlayer player;
         PlayerStats stats;

@@ -24,14 +24,12 @@ public static class HltvMatches
     
     public static async Task SendLiveMatches(SocketSlashCommand cmd)
     {
-        await cmd.DeferAsync();
         Embed embed = GetLiveMatchesEmbed(Tools.ParseFromFile<List<MatchPreview>>(Path));
         await cmd.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
     }
 
     public static async Task SendUpcomingMatches(SocketSlashCommand cmd)
     {
-        await cmd.DeferAsync();
         Embed embed;
         GetMatches request = new();
         try

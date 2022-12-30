@@ -44,8 +44,7 @@ public static class HltvTeams
     private const string Path = "./cache/teamcards";
     private static IMongoCollection<TeamDocument> GetTeamCollection()
     {
-        MongoClient dbClient = new(BotConfig.GetBotConfig().DatabaseLink);
-        IMongoDatabase db = dbClient.GetDatabase(BotConfig.GetBotConfig().Database);
+        IMongoDatabase db = Program.DbClient.GetDatabase(BotConfig.GetBotConfig().Database);
         return db.GetCollection<TeamDocument>("teams");
     }
     
@@ -63,12 +62,9 @@ public static class HltvTeams
     
     public static async Task SendTeamCard(SocketSlashCommand arg)
     {
-        await arg.DeferAsync();
         string name = arg.Data.Options.First().Value.ToString()!.ToLower();
         HttpResponseMessage resp = null;
         FullTeam team = null;
-        FullTeamStats stats;
-        Result[] recentResults;
         Embed embed;
         bool isInDatabase = false;
         List<TeamDocument> query = (await GetTeamCollection().FindAsync(
@@ -84,7 +80,9 @@ public static class HltvTeams
             string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddMonths(-3));
             string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
             GetResults resultsRequest = new GetResults { StartDate = startDate, EndDate = endDate };
-            
+
+            Result[] recentResults;
+            FullTeamStats stats;
             if (Directory.Exists($"{Path}/{name}"))
             {
                 // Team is cached

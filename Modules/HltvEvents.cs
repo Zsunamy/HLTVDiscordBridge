@@ -107,10 +107,7 @@ public static class HltvEvents
 
     public static async Task SendEvents(SocketSlashCommand arg)
     {
-        await arg.DeferAsync();
-
         EmbedBuilder builder = new();
-
         List<EventPreview> ongoingEvents = Tools.ParseFromFile<List<EventPreview>>(OngoingEventsPath);
 
         builder.WithTitle("ONGOING EVENTS")
@@ -144,7 +141,6 @@ public static class HltvEvents
     }
     public static async Task SendUpcomingEvents(SocketSlashCommand arg)
     {
-        await arg.DeferAsync();
         List<EventPreview> upcomingEvents = Tools.ParseFromFile<List<EventPreview>>(CurrentEventsPath);
         
         EmbedBuilder builder = new();
@@ -230,7 +226,6 @@ public static class HltvEvents
     }
     public static async Task SendEvent(SocketSlashCommand arg)
     {
-        await arg.DeferAsync();
         Embed embed;
         GetEventByName request = new GetEventByName{Name = arg.Data.Options.First().Value.ToString()};
         try

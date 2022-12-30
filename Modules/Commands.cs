@@ -126,7 +126,6 @@ public static class Commands
                             .AddField("permissions:", "@everyone", true)
                             .AddField("\u200b", "\u200b", true);
                         break;
-                    case "general":
                     default:
                         builder.WithTitle("HELP")
                             .AddField("commands:", $"```/init\n/set\n/about\n/ranking\n/upcomingmatches\n/live\n/player\n/team\n/event\n/events\n/upcomingevents```", true)
@@ -140,6 +139,6 @@ public static class Commands
                 break;
                 
         }
-        await arg.RespondAsync(embed: builder.Build());
+        await arg.ModifyOriginalResponseAsync(msg => msg.Embed = builder.Build());
     }
 }

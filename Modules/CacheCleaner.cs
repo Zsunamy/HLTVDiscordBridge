@@ -49,15 +49,5 @@ public static class CacheCleaner
                 rankingDeleted = false;
                 break;
         }
-
-        //live matches
-        Directory.CreateDirectory("./cache/livematches");
-        foreach(string matchFile in Directory.GetFiles("./cache/livematches"))
-        {
-            if(File.GetCreationTimeUtc(matchFile).AddHours(12).CompareTo(DateTime.Now.ToUniversalTime()) < 0)
-            {
-                File.Delete(matchFile);
-            }
-        }
     }
 }

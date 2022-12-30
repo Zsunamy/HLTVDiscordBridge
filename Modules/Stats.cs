@@ -33,14 +33,14 @@ public class TeamReq
 public class StatsTracker
 {
     public ObjectId Id { get; set; } = new ObjectId("60941203bd1ee1cd03d32943");
-    public int Servercount { get; set; } = 0;
-    public int ApiRequest { get; set; } = 0;
+    public int Servercount { get; set; }
+    public int ApiRequest { get; set; }
     public int Commands { get; set; } = 0;
     public int LiveMatches { get; set; } = 0;
     public int OngoingEvents { get; set; } = 0;
     public int MatchesSent { get; set; } = 0;
     public int NewsSent { get; set; } = 0;
-    public int MessagesSent { get; set; } = 0;
+    public int MessagesSent { get; set; }
     public List<PlayerReq> Players { get; set; } = new ();
     public List<TeamReq> Teams { get; set; } = new ();
 }
@@ -53,7 +53,7 @@ public static class StatsUpdater
         MongoClient dbClient = new(BotConfig.GetBotConfig().DatabaseLink);
         return dbClient.GetDatabase(BotConfig.GetBotConfig().Database).GetCollection<StatsTracker>("stats");
     }
-    public static void InitStats()
+    private static void InitStats()
     {
         IMongoCollection<StatsTracker> collection = GetCollection();
         StatsTracker = collection.Find(x => x.Id == ObjectId.Parse("60941203bd1ee1cd03d32943")).FirstOrDefault();
