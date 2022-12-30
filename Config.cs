@@ -47,11 +47,11 @@ namespace HLTVDiscordBridge
                 try
                 {
                     IWebhook webhook = await channel.CreateWebhookAsync("HLTV", icon);
-                    updateWebhook = new Webhook(webhook.Id, webhook.Token);
+                    updateWebhook = new Webhook{Id = webhook.Id, Token = webhook.Token};
                 }
                 catch (Exception e)
                 {
-                    updateWebhook = new Webhook(null, "");
+                    updateWebhook = new Webhook{Id = null, Token = ""};
                     Console.WriteLine(e.ToString());
                     await channel.SendMessageAsync(
                         $"ERROR: Failed to create webhook with the following message {e.Message}\n" + 
@@ -88,31 +88,31 @@ namespace HLTVDiscordBridge
         {
             FilterDefinition<ServerConfig> configFilter = Builders<ServerConfig>.Filter.Eq(x => x.GuildID, guildId);
             ServerConfig config = GetCollection().FindSync(configFilter).ToList().First();
-            Webhook webhookInDatabase = new(filterId.Compile()(config), filterToken.Compile()(config));
+            Webhook webhookInDatabase = new Webhook{ Id = filterId.Compile()(config), Token = filterToken.Compile()(config)};
             Webhook newWebhook;
             if (enable)
             {
-                Webhook? multiWebhook = await Tools.CheckChannelForWebhook(channel, config);
-                if (!Tools.CheckIfWebhookIsUsed(webhookInDatabase, config))
+                Webhook multiWebhook = await Tools.CheckChannelForWebhook(channel, config);
+                if (webhookInDatabase.CheckIfWebhookIsUsed(config))
                 {
-                    await Tools.DeleteWebhook(webhookInDatabase);
+                    await webhookInDatabase.Delete();
                 }
                 if (multiWebhook == null)
                 {
                     IWebhook bufferWebhook = await channel.CreateWebhookAsync("HLTV", new FileStream("icon.png", FileMode.Open));
-                    newWebhook = new Webhook(bufferWebhook.Id, bufferWebhook.Token);
+                    newWebhook = new Webhook{Id = bufferWebhook.Id, Token = bufferWebhook.Token};
                 }
                 else {
-                    newWebhook = (Webhook)multiWebhook;
+                    newWebhook = multiWebhook;
                 }
             }
             else
             {
-                if (!Tools.CheckIfWebhookIsUsed(webhookInDatabase, config))
+                if (webhookInDatabase.CheckIfWebhookIsUsed(config))
                 {
-                    await Tools.DeleteWebhook(webhookInDatabase);
+                    await webhookInDatabase.Delete();
                 }
-                newWebhook = new Webhook(null, "");
+                newWebhook = new Webhook{Id = null, Token = ""};
             }
             
             return Builders<ServerConfig>.Update.Set(filterId, newWebhook.Id)
@@ -167,7 +167,7 @@ namespace HLTVDiscordBridge
             
             UpdateDefinition<ServerConfig> update = null;
 
-            if (!(arg.User as SocketGuildUser).GuildPermissions.ManageGuild)
+            if (!(arg.User as SocketGuildUser)!.GuildPermissions.ManageGuild)
             {
                 builder.WithTitle("error")
                     .WithColor(Color.Red)
@@ -183,7 +183,7 @@ namespace HLTVDiscordBridge
             switch (option.Name.ToLower())
             {
                 case "stars":
-                    update = Builders<ServerConfig>.Update.Set(x => x.MinimumStars, ushort.Parse(value));
+                    update = Builders<ServerConfig>.Update.Set(x => x.MinimumStars, ushort.Parse(value!));
                     builder.WithColor(Color.Green)
                         .WithTitle("SUCCESS")
                         .WithDescription($"You successfully changed the minimum stars to output a HLTV match to `{value}`")
@@ -191,7 +191,7 @@ namespace HLTVDiscordBridge
                         .WithFooter(Tools.GetRandomFooter());
                     break;
                 case "results":
-                    update = await SetWebhook(bool.Parse(value), x => x.ResultWebhookId, x => x.ResultWebhookToken,
+                    update = await SetWebhook(bool.Parse(value!), x => x.ResultWebhookId, x => x.ResultWebhookToken,
                         (SocketTextChannel)arg.Channel, arg.GuildId);
                     builder.WithColor(Color.Green)
                         .WithTitle("SUCCESS")
@@ -200,7 +200,7 @@ namespace HLTVDiscordBridge
                         .WithFooter(Tools.GetRandomFooter()); 
                     break;
                 case "events":
-                    update = await SetWebhook(bool.Parse(value), x => x.EventWebhookId, x => x.EventWebhookToken,
+                    update = await SetWebhook(bool.Parse(value!), x => x.EventWebhookId, x => x.EventWebhookToken,
                         (SocketTextChannel)arg.Channel, arg.GuildId);
                     builder.WithColor(Color.Green)
                         .WithTitle("SUCCESS")
@@ -209,7 +209,7 @@ namespace HLTVDiscordBridge
                         .WithFooter(Tools.GetRandomFooter());
                     break;
                 case "news":
-                    update = await SetWebhook(bool.Parse(value), x => x.NewsWebhookId, x => x.NewsWebhookToken,
+                    update = await SetWebhook(bool.Parse(value!), x => x.NewsWebhookId, x => x.NewsWebhookToken,
                         (SocketTextChannel)arg.Channel, arg.GuildId);
                     builder.WithColor(Color.Green)
                         .WithTitle("SUCCESS")
@@ -235,7 +235,7 @@ namespace HLTVDiscordBridge
         {
             IGuildChannel channel = arg.Data.Options.First().Value as IGuildChannel;
             EmbedBuilder builder = new();
-            if (channel.GetType() != typeof(SocketTextChannel))
+            if (channel!.GetType() != typeof(SocketTextChannel))
             {
                 builder.WithTitle("ERROR")
                     .WithDescription("Please select a valid channel!")

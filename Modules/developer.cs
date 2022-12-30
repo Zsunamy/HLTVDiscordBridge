@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HLTVDiscordBridge.Modules;
 
-public class Developer
+public static class Developer
 {
     public static async Task Update(SocketSlashCommand arg, DiscordSocketClient client)
     {

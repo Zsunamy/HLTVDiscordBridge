@@ -5,8 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Discord.Net;
-using Discord.Rest;
 using Discord.Webhook;
 using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
@@ -54,7 +52,7 @@ public static class Tools
         Expression<Func<ServerConfig, string>> getToken, Embed embed, MessageComponent component = null)
     {
         List<Webhook> webhooks = Config.GetCollection().FindSync(filter).ToList().Select(config =>
-            new Webhook(getId.Compile()(config), getToken.Compile()(config))).ToList();
+            new Webhook{Id = getId.Compile()(config), Token = getToken.Compile()(config)}).ToList();
 
         List<Task> status = webhooks.Select(webhook => Task.Run(() =>
         {
@@ -83,48 +81,18 @@ public static class Tools
         return Task.WhenAll(status);
     }
 
-    public static bool CheckIfWebhookIsUsed(Webhook webhook, ServerConfig config)
-    {
-        return new[] { config.ResultWebhookId, config.NewsWebhookId, config.EventWebhookId }
-            .GroupBy(x => x).Any(g => g.Count() > 1 && g.Key == webhook.Id);
-    }
-
-    public static async Task<Webhook?> CheckChannelForWebhook(SocketTextChannel channel, ServerConfig config)
+    public static async Task<Webhook> CheckChannelForWebhook(SocketTextChannel channel, ServerConfig config)
     {
         Webhook[] webhooks =
         {
-            new(config.ResultWebhookId, config.ResultWebhookToken),
-            new(config.NewsWebhookId, config.NewsWebhookToken), new(config.EventWebhookId, config.EventWebhookToken)
+            new Webhook{Id = config.ResultWebhookId, Token = config.ResultWebhookToken},
+            new Webhook{Id = config.NewsWebhookId, Token = config.NewsWebhookToken},
+            new Webhook{Id = config.EventWebhookId, Token = config.EventWebhookToken}
         };
-        foreach (RestWebhook webhook in await channel.GetWebhooksAsync())
-        {
-            Webhook channelWebhook = new(webhook.Id, webhook.Token);
-            if (webhooks.Aggregate(false, (b, currentWebhook) =>
-                    (currentWebhook.Id == channelWebhook.Id && currentWebhook.Token == channelWebhook.Token) || b))
-            {
-                return channelWebhook;
-            }
-        }
-
-        return null;
-    }
-
-    public static async Task DeleteWebhook(Webhook webhook)
-    {
-        if (webhook.Id != null)
-        {
-            try
-            {
-                DiscordWebhookClient client = new((ulong)webhook.Id, webhook.Token);
-                await client.DeleteWebhookAsync();
-            }
-            catch (HttpException)
-            {
-            }
-            catch (InvalidOperationException)
-            {
-            }
-        }
+        return (from webhook in await channel.GetWebhooksAsync()
+            select new Webhook { Id = webhook.Id, Token = webhook.Token }).FirstOrDefault(channelWebhook => 
+            webhooks.Aggregate(false, (b, currentWebhook) => 
+                (currentWebhook.Id == channelWebhook.Id && currentWebhook.Token == channelWebhook.Token) || b));
     }
 
     public static string GetFormatFromAcronym(string arg)
