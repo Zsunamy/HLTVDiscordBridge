@@ -10,7 +10,7 @@ namespace HLTVDiscordBridge.Modules;
 
 public static class HltvNews
 {
-    private const string Path = "./cache/news/news.json";
+    private const string Path = "./cache/news.json";
     private static async Task<IEnumerable<RssNews>> GetNewNews()
     {
         if (!await AutomatedMessageHelper.VerifyFile(Path, GetLatestNews))

@@ -82,7 +82,12 @@ internal class Program
 
     private async Task Ready()
     {
-        //await new SlashCommands(_client).InitSlashCommands();
+        if (Environment.GetCommandLineArgs().Length > 1 && Environment.GetCommandLineArgs()[1] == "init")
+        {
+            WriteLog($"{DateTime.Now.ToLongTimeString()} Init\t\t successfully initialized all commands");
+            await new SlashCommands(_client).InitSlashCommands();
+        }
+        
         await Config.ServerConfigStartUp(_client);
         _bgTask ??= BgTask();
     }

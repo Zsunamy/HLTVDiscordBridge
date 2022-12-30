@@ -48,6 +48,19 @@ public static class HltvTeams
         IMongoDatabase db = dbClient.GetDatabase(BotConfig.GetBotConfig().Database);
         return db.GetCollection<TeamDocument>("teams");
     }
+    
+    public static async Task<int?> GetIdFromDatabase(string name)
+    {
+        List<TeamDocument> query = (await GetTeamCollection().FindAsync(
+            elem => elem.Alias.Contains(name) || elem.Name.ToLower() == name)).ToList();
+        if (query.Any())
+        {
+            
+            return query.First().TeamId;
+        }
+        return null;
+    }
+    
     public static async Task SendTeamCard(SocketSlashCommand arg)
     {
         await arg.DeferAsync();

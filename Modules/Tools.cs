@@ -1,13 +1,9 @@
 ﻿using Discord;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Discord.Net;
 using Discord.Rest;
@@ -29,54 +25,6 @@ public static class Tools
         string footerString = footerStrings[random.Next(0, footerStrings.Length)];
         builder.Text = footerString;
         return builder;
-    }
-
-    public static async Task<JArray> RequestApiJArray(string endpoint, List<string> properties, List<string> values)
-    {
-        Uri uri = new($"{BotConfig.GetBotConfig().ApiLink}/api/{endpoint}");
-
-        StringBuilder sb = new();
-        StringWriter sw = new(sb);
-
-        using (JsonWriter writer = new JsonTextWriter(sw))
-        {
-            writer.Formatting = Formatting.Indented;
-
-            await writer.WriteStartObjectAsync();
-            await writer.WritePropertyNameAsync("delayBetweenPageRequests");
-            await writer.WriteValueAsync(300);
-            if (properties != null)
-            {
-                for (int i = 0; i < properties.Count; i++)
-                {
-                    await writer.WritePropertyNameAsync(properties[i]);
-                    await writer.WriteValueAsync(values[i]);
-                }
-            }
-
-            await writer.WriteEndObjectAsync();
-        }
-
-        HttpResponseMessage resp = await Program.DefaultHttpClient
-            .PostAsync(uri, new StringContent(sb.ToString(), Encoding.UTF8, "application/json"));
-        string res = await resp.Content.ReadAsStringAsync();
-        if (resp.IsSuccessStatusCode)
-        {
-            Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{endpoint} was successful");
-            StatsUpdater.StatsTracker.ApiRequest = +1;
-            StatsUpdater.UpdateStats();
-            return JArray.Parse(res);
-        }
-
-        try
-        {
-            JObject error = JObject.Parse(await resp.Content.ReadAsStringAsync());
-            throw new HltvApiExceptionLegacy(error);
-        }
-        catch (JsonReaderException)
-        {
-            throw new Exception("Deployment Error");
-        }
     }
 
     public static string GetHltvTimeFormat(DateTime date)

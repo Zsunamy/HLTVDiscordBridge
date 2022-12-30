@@ -11,7 +11,7 @@ namespace HLTVDiscordBridge.Modules;
 
 public static class HltvResults
 {
-    private const string Path = "./cache/results/results.json";
+    private const string Path = "./cache/results.json";
 
     private static async Task<Result[]> GetLatestResults()
     {
