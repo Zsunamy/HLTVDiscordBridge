@@ -1,7 +1,10 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Net;
+using Discord.Rest;
 using Discord.Webhook;
 
 namespace HLTVDiscordBridge.Shared;
@@ -39,5 +42,11 @@ public class Webhook
         }
 
         throw new InvalidCastException("Invalid Webhook Id provided!.");
+    }
+
+    public static async Task<Webhook> CreateWebhook(ITextChannel channel)
+    {
+        IWebhook webhook = await channel.CreateWebhookAsync("HLTV", new FileStream("icon.png", FileMode.Open));
+        return new Webhook { Id = webhook.Id, Token = webhook.Token };
     }
 }

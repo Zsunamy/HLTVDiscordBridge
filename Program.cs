@@ -65,7 +65,7 @@ internal class Program
 
     private static Task SelectMenuExecuted(SocketMessageComponent arg)
     {
-        Task handler = Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             switch (arg.Data.CustomId)
             {
@@ -77,7 +77,7 @@ internal class Program
                     break;
             }
         });
-        return handler;
+        return Task.CompletedTask;
     }
 
     private async Task Ready()
@@ -88,7 +88,7 @@ internal class Program
             WriteLog($"{DateTime.Now.ToLongTimeString()} Init\t\t successfully initialized all commands");
         }
         
-        await Config.ServerConfigStartUp(Client);
+        await Config.ServerConfigStartUp();
         _bgTask ??= BgTask();
     }
 
@@ -96,8 +96,8 @@ internal class Program
     {
         Task handler = Task.Run(async () =>
         {
-            string matchLink = "";
             await arg.DeferAsync();
+            string matchLink = "";
             foreach (Embed e in arg.Message.Embeds)
             {
                 matchLink = ((EmbedAuthor)e.Author!).Url;
@@ -119,20 +119,44 @@ internal class Program
         return handler;
     }
 
-    private Task GuildLeft(SocketGuild arg)
+    private Task GuildLeft(SocketGuild guild)
     {
         IMongoCollection<ServerConfig> collection = Config.GetCollection();
-        collection.DeleteOne(x => x.GuildID == arg.Id);
+        collection.DeleteOne(x => x.GuildID == guild.Id);
         StatsUpdater.StatsTracker.Servercount = Client.Guilds.Count;
-        StatsUpdater.UpdateStats();
         return Task.CompletedTask;
     }
 
-    public async Task GuildJoined(SocketGuild guild)
+    public Task GuildJoined(SocketGuild guild)
     {
-        StatsUpdater.StatsTracker.Servercount = Client.Guilds.Count;
-        StatsUpdater.UpdateStats();
-        await Config.GuildJoined(guild);
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Config.GuildJoined(guild);
+                StatsUpdater.StatsTracker.Servercount = Client.Guilds.Count;
+            }
+            catch (Exception ex)
+            {
+                if (ex is Discord.Net.HttpException)
+                {
+                    await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
+                        .WithDescription(
+                            "It looks like the bot has insufficient permissions (probably webhooks) on this" +
+                            "server. Please use the invite-link and grant all requested permissions.").Build());
+                    throw;
+                }
+                Console.WriteLine(ex);
+                await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
+                    .WithDescription(
+                        $"An {ex.Message} Exception occured while joining this server. Please report this bug ")
+                    .Build());
+                throw;
+            }
+            
+        });
+        return Task.CompletedTask;
+        
     }
 
     private async Task MiscellaneousBackground()
@@ -140,15 +164,14 @@ internal class Program
         if (Client.CurrentUser.Id == _botConfig.ProductionBotId)
         {
             //top.gg
-            HttpClient client = new();
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.TopGgApiKey);
             HttpRequestMessage reqTop = new(HttpMethod.Post, $"https://top.gg/api/bots/${Client.CurrentUser.Id}/stats");
+            reqTop.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.TopGgApiKey);
             reqTop.Content = new StringContent($"{{ \"server_count\": {Client.Guilds.Count} }}", Encoding.UTF8, "application/json");
             await DefaultHttpClient.SendAsync(reqTop);
             
             //bots.gg
-            DefaultHttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.BotsGgApiKey);
             HttpRequestMessage reqBots = new (HttpMethod.Post, $"https://discord.bots.gg/api/v1/bots/${Client.Guilds.Count}/stats");
+            reqBots.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.BotsGgApiKey);
             reqBots.Content = new StringContent($"{{ \"guildCount\": {Client.Guilds.Count} }}", Encoding.UTF8, "application/json");
             await DefaultHttpClient.SendAsync(reqBots);
         }
@@ -160,7 +183,14 @@ internal class Program
 
     private async Task BgTask()
     {
-        await MiscellaneousBackground();
+        try
+        {
+            await MiscellaneousBackground();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
         Timer updateGgStatsTimer = new(1000 * 60 * 60);
         updateGgStatsTimer.Elapsed += async (sender, e) =>
         {
@@ -171,7 +201,6 @@ internal class Program
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                throw;
             }
         };
         updateGgStatsTimer.Enabled = true;

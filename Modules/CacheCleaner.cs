@@ -22,32 +22,11 @@ public static class CacheCleaner
         Directory.CreateDirectory("./cache/teamcards");
         foreach (string dir in Directory.GetDirectories("./cache/teamcards"))
         {
-            if (dir == "./cache/teamcards\\zsunamy") { continue; }
             if (Directory.GetCreationTime(dir).AddDays(7).Date == DateTime.Now.Date)
             {
                 foreach (string file in Directory.GetFiles(dir)) { File.Delete(file); }
                 Directory.Delete(dir);
             }
-        }
-
-        //ranking
-        Directory.CreateDirectory("./cache/ranking");
-        bool rankingDeleted = false;
-        switch (DateTime.Now.DayOfWeek)
-        {
-            case DayOfWeek.Tuesday when !rankingDeleted:
-            {
-                rankingDeleted = true;
-                foreach(string file in Directory.GetFiles("./cache/ranking"))
-                {
-                    File.Delete(file);
-                }
-
-                break;
-            }
-            case DayOfWeek.Wednesday:
-                rankingDeleted = false;
-                break;
         }
     }
 }

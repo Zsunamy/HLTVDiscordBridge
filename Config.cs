@@ -41,6 +41,16 @@ public class ServerConfig
             new Webhook { Id = EventWebhookId, Token = EventWebhookToken }
         }.Where(webhook => webhook.Id != null);
     }
+
+    public void SetAllWebhooks(Webhook webhook)
+    {
+        NewsWebhookId = webhook.Id;
+        ResultWebhookId = webhook.Id;
+        EventWebhookId = webhook.Id;
+        NewsWebhookToken = webhook.Token;
+        ResultWebhookToken = webhook.Token;
+        EventWebhookToken = webhook.Token;
+    }
     
     public async Task<Webhook> CheckIfConfigUsesWebhookOfChannel(ITextChannel channel)
     {
@@ -158,7 +168,6 @@ public static class Config
 
     public static async Task ChangeServerConfig(SocketSlashCommand arg)
     {
-        Embed embed;
         if (arg.GuildId == null)
         {
             await arg.ModifyOriginalResponseAsync(msg => msg.Embed = new EmbedBuilder()
@@ -170,6 +179,7 @@ public static class Config
         }            
             
         UpdateDefinition<ServerConfig> update;
+        Embed embed;
 
         SocketSlashCommandDataOption option = arg.Data.Options.First();
         object value =  option.Options.Count != 0 ? option.Options.First().Value : null;
@@ -202,12 +212,12 @@ public static class Config
             case "results":
                 update = await SetWebhook(true, x => x.ResultWebhookId, x => x.ResultWebhookToken,
                     arg.GuildId, channel);
-                embed = GetSetEmbed($"You successfully changed the news notifications output to <#{channel!.Id}>.");
+                embed = GetSetEmbed($"You successfully changed the result notifications output to <#{channel!.Id}>.");
                 break;
             case "events":
                 update = await SetWebhook(true, x => x.EventWebhookId, x => x.EventWebhookToken,
                     arg.GuildId, channel);
-                embed = GetSetEmbed($"You successfully changed the news notifications output to <#{channel!.Id}>.");
+                embed = GetSetEmbed($"You successfully changed the event notifications output to <#{channel!.Id}>.");
                 break;
             case "featuredeventsonly":
                 update = Builders<ServerConfig>.Update.Set(x => x.OnlyFeaturedEvents, (bool)value!);
@@ -235,91 +245,76 @@ public static class Config
         await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
     }
 
-    /// <summary>
-    /// Creates channel and sets it as output for HLTVNews and HLTVMatches
-    /// </summary>
-    /// <param name="guild">Guild on which the Channel should be created</param>
-    /// <param name="channel">Sets a custom Channel. null = default channel on guild</param>
-    public static async Task GuildJoined(SocketGuild guild, SocketTextChannel channel = null)
+    public static async Task SendMessageAfterServerJoin(SocketGuild guild, Embed embed)
+    {
+        try
+        {
+            await guild.DefaultChannel.SendMessageAsync(embed: embed);
+            StatsUpdater.StatsTracker.MessagesSent += 1;
+        }
+        catch (Discord.Net.HttpException)
+        {
+            try
+            {
+                await guild.Owner.SendMessageAsync(embed: embed);
+                await guild.Owner.SendMessageAsync("It looks like the bot doesn't have permissions to send messages " +
+                                                   "in the default text-channel. Since most all notifications are handled " +
+                                                   "with webhooks, this shouldn't cause a problem. You can use the /set command " +
+                                                   "to change or disable notifications.");
+                StatsUpdater.StatsTracker.MessagesSent += 1;
+            }
+            catch (Discord.Net.HttpException) {}
+        }
+    }
+    
+    public static async Task GuildJoined(SocketGuild guild)
     {
         IMongoCollection<ServerConfig> collection = GetCollection();
-
-        EmbedBuilder builder = new();
-        if (channel == null)
-        {                
-            channel = guild.DefaultChannel;
-            string channelMention;
-            string guildName;
-            if (channel == null)
-            {
-                guildName = "n.A"; channelMention = "n.A";
-            }
-            else
-            {
-                guildName = guild.Name; channelMention = channel.Mention;
-            }
-            builder.WithTitle("Init")
-                .WithDescription($"Thanks for adding the HLTVDiscordBridge to {guildName}. {channelMention} is set as default output for HLTV-NEWS. " +
-                                 $"Type !help for more info about how to proceed. If there are any questions or issues feel free to contact us!\n" +
-                                 $"https://github.com/Zsunamy/HLTVDiscordBridge/issues \n<@248110264610848778>\n<@224037892387766272>\n<@255000770707980289>")
-                .WithCurrentTimestamp()
-                .WithColor(Color.DarkBlue);
-        }
-        else
-        {
-            builder.WithTitle("Init")
-                .WithDescription($"Success! You are now using the channel {channel.Mention} as default output for HLTV-NEWS")
-                .WithCurrentTimestamp()
-                .WithColor(Color.DarkBlue);
-        }
-
-        ServerConfig config = new ServerConfig{GuildID = guild.Id, MinimumStars = 0};
-                 
-        config.GuildID = guild.Id;
-        config.MinimumStars = 0;
-        config.OnlyFeaturedEvents = false;
+        Webhook webhook = new Webhook { Id = null, Token = "" };
+        ServerConfig config = new ServerConfig { GuildID = guild.Id, MinimumStars = 0, OnlyFeaturedEvents = false };
         config.EventOutput = true;
         config.NewsOutput = true;
         config.ResultOutput = true;
-
-        await collection.InsertOneAsync(config);
-
-        if (channel == null) {
-            builder.WithDescription($"Thanks for adding the HLTVDiscordBridge to {guild.Name}. By default all notifications are enabled. " +
-                                    "You can use the /set command to customize which notifications you want to receive. " +
-                                    "To disable them you need to use /set disable subcommand. " +
-                                    "Type /help for more information about all features this bot provides. " +
-                                    "If there are any questions or issues feel free to contact us!\n" +
-                                    "[GitHub](https://github.com/Zsunamy/HLTVDiscordBridge/issues) [discord](https://discord.gg/r2U23xu4z5)");
-            try
-            {
-                await guild.Owner.SendMessageAsync(embed: builder.Build());
-            }
-            catch (Exception)
-            {
-                //TODO send message to server owner.
-                throw new NotImplementedException();
-            }
-        }
-        else 
+        try
         {
-            await channel.SendMessageAsync(embed: builder.Build());
-            StatsUpdater.StatsTracker.MessagesSent += 1;
-            StatsUpdater.UpdateStats();
+            webhook = await Webhook.CreateWebhook(guild.DefaultChannel);
         }
-            
+        finally
+        {
+            config.SetAllWebhooks(webhook);
+            await collection.InsertOneAsync(config);
+        }
+
+        Embed embed = new EmbedBuilder().WithColor(Color.Green)
+            .WithDescription(
+                $"Thanks for adding the HLTVDiscordBridge to {guild.Name}. By default all notifications are enabled in the " +
+                $"channel <#{guild.DefaultChannel}> " +
+                "You can use the /set command to customize which notifications you want to receive and to select a different channel." +
+                "To disable them you need to use /set disable subcommand. " +
+                "Type /help for more information about all features this bot provides. " +
+                "If there are any questions or issues feel free to contact us!\n" +
+                "[GitHub](https://github.com/Zsunamy/HLTVDiscordBridge/issues) [discord](https://discord.gg/r2U23xu4z5)")
+            .Build();
+        await SendMessageAfterServerJoin(guild, embed);
     }
 
-    public static async Task ServerConfigStartUp(DiscordSocketClient client)
+    public static async Task ServerConfigStartUp()
     {
         IMongoCollection<ServerConfig> collection = GetCollection();
+        DiscordSocketClient client = Program.GetInstance().Client;
         foreach (SocketGuild guild in client.Guilds)
         {
-            if (await collection.Find(x => x.GuildID == guild.Id).CountDocumentsAsync() == 0)
+            if (await collection.FindSync(x => x.GuildID == guild.Id).AnyAsync())
             {
                 Console.WriteLine($"found guild {guild.Name} with no config. Creating default.");
                 await Program.GetInstance().GuildJoined(guild);
             }
+        }
+
+        foreach (ServerConfig config in GetCollection().Find( _ => true).ToList().Where(config => client.GetGuild(config.GuildID) == null))
+        {
+            Console.WriteLine("Found serverconfig but bot is not on server; Deleting");
+            // await GetCollection().DeleteOneAsync(x => x.GuildID == config.GuildID);
         }
     }
 }
