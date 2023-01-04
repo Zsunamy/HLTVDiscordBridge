@@ -50,11 +50,10 @@ public static class HltvTeams
     
     public static async Task<int?> GetIdFromDatabase(string name)
     {
-        List<TeamDocument> query = (await GetTeamCollection().FindAsync(
-            elem => elem.Alias.Contains(name) || elem.Name.ToLower() == name)).ToList();
-        if (query.Any())
+        IAsyncCursor<TeamDocument> query = GetTeamCollection().FindSync(
+            elem => elem.Alias.Contains(name) || elem.Name.ToLower() == name);
+        if (await query.AnyAsync())
         {
-            
             return query.First().TeamId;
         }
         return null;
@@ -67,13 +66,14 @@ public static class HltvTeams
         FullTeam team = null;
         Embed embed;
         bool isInDatabase = false;
-        List<TeamDocument> query = (await GetTeamCollection().FindAsync(
-            elem => elem.Alias.Contains(name) || elem.Name.ToLower() == name)).ToList();
-        if (query.Count != 0)
+        string name1 = name;
+        FindFluentBase<TeamDocument, TeamDocument> query = (FindFluentBase<TeamDocument, TeamDocument>)GetTeamCollection().Find(
+            elem => elem.Alias.Contains(name1) || elem.Name.ToLower() == name1);
+        if (await query.AnyAsync())
         {
             // Team is in Database
             isInDatabase = true;
-            name = query.First().Name;
+            name = query.First().Name.ToLower();
         }
         try
         {
@@ -83,10 +83,10 @@ public static class HltvTeams
 
             Result[] recentResults;
             FullTeamStats stats;
-            if (Directory.Exists($"{Path}/{name}"))
+            if (Directory.Exists($"{Path}/{name}/"))
             {
                 // Team is cached
-                team =  Tools.ParseFromFile<FullTeam>($"{Path}/{name}/player.json");
+                team =  Tools.ParseFromFile<FullTeam>($"{Path}/{name}/team.json");
                 stats = Tools.ParseFromFile<FullTeamStats>($"{Path}/{name}/stats.json");
                 resultsRequest.TeamIds = new[] { team.Id };
                 recentResults = await resultsRequest.SendRequest<Result[]>();
@@ -139,7 +139,7 @@ public static class HltvTeams
 
                 resp = await Program.DefaultHttpClient.GetAsync(new Uri(team.Logo));
                 resp.EnsureSuccessStatusCode();
-                team.LocalThumbnailPath = SavePng(await resp.Content.ReadAsByteArrayAsync(), team);
+                SavePng(await resp.Content.ReadAsByteArrayAsync(), team, $"{Path}/{team.FormattedName}/logo.png");
                 Tools.SaveToFile($"{Path}/{team.FormattedName}/team.json", team);
 
                 embed = team.ToEmbed(stats, recentResults);
@@ -164,14 +164,13 @@ public static class HltvTeams
             msg.Embed = embed;
             if (team != null)
             {
-                msg.Attachments = new FileAttachment[] {new (team.LocalThumbnailPath)};
+                msg.Attachments = new FileAttachment[] {new ($"{Path}/{team.FormattedName}/logo.png")};
             }
         });
     }
     
-    private static string SavePng(byte[] data, FullTeam team)
+    private static void SavePng(byte[] data, FullTeam team, string path)
     {
-        string path = $"{Path}/{team.FormattedName}/logo.png";
         try
         {
             File.WriteAllBytes($"{Path}/{team.FormattedName}/logo.svg", data);
@@ -197,6 +196,5 @@ public static class HltvTeams
             using Image image = Image.FromStream(new MemoryStream(data));
             image.Save(path, ImageFormat.Png);
         }
-        return path;
     }
 }

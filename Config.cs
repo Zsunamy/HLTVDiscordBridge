@@ -56,10 +56,23 @@ public class ServerConfig
     {
         Webhook[] webhooks =
         {
-            new Webhook{Id = ResultWebhookId, Token = ResultWebhookToken},
-            new Webhook{Id = NewsWebhookId, Token = NewsWebhookToken},
-            new Webhook{Id = EventWebhookId, Token = EventWebhookToken}
+            new Webhook{ Id = ResultWebhookId, Token = ResultWebhookToken },
+            new Webhook{ Id = NewsWebhookId, Token = NewsWebhookToken },
+            new Webhook{ Id = EventWebhookId, Token = EventWebhookToken }
         };
+        foreach (Webhook webhook in webhooks)
+        {
+            if (webhook.Id != null)
+            {
+                IWebhook cur = await channel.GetWebhookAsync((ulong)webhook.Id);
+                if (cur != null && cur.Channel.Id == channel.Id)
+                {
+                    return new Webhook { Id = cur.Id, Token = cur.Token };
+                }
+            }
+        }
+
+        return null;
         return (from webhook in await channel.GetWebhooksAsync()
             select new Webhook { Id = webhook.Id, Token = webhook.Token }).FirstOrDefault(channelWebhook => 
             webhooks.Aggregate(false, (b, currentWebhook) => 
@@ -120,7 +133,7 @@ public static class Config
         Expression<Func<ServerConfig, string>> filterToken , ulong? guildId, ITextChannel channel)
     {
         FilterDefinition<ServerConfig> configFilter = Builders<ServerConfig>.Filter.Eq(x => x.GuildID, guildId);
-        ServerConfig config = GetCollection().FindSync(configFilter).ToList().First();
+        ServerConfig config = GetCollection().FindSync(configFilter).First();
         Webhook webhookInDatabase = new Webhook{ Id = filterId.Compile()(config), Token = filterToken.Compile()(config)};
         Webhook newWebhook;
         if (enable)
@@ -132,8 +145,7 @@ public static class Config
             }
             if (multiWebhook == null)
             {
-                IWebhook bufferWebhook = await channel.CreateWebhookAsync("HLTV", new FileStream("icon.png", FileMode.Open));
-                newWebhook = new Webhook{Id = bufferWebhook.Id, Token = bufferWebhook.Token};
+                newWebhook = await Webhook.CreateWebhook(channel);
             }
             else {
                 newWebhook = multiWebhook;
@@ -300,11 +312,10 @@ public static class Config
 
     public static async Task ServerConfigStartUp()
     {
-        IMongoCollection<ServerConfig> collection = GetCollection();
         DiscordSocketClient client = Program.GetInstance().Client;
         foreach (SocketGuild guild in client.Guilds)
         {
-            if (await collection.FindSync(x => x.GuildID == guild.Id).AnyAsync())
+            if (!await GetCollection().FindSync(x => x.GuildID == guild.Id).AnyAsync())
             {
                 Console.WriteLine($"found guild {guild.Name} with no config. Creating default.");
                 await Program.GetInstance().GuildJoined(guild);

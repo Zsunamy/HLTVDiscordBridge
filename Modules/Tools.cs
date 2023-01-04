@@ -50,19 +50,19 @@ public static class Tools
         Expression<Func<ServerConfig, ulong?>> getId,
         Expression<Func<ServerConfig, string>> getToken, Embed embed, MessageComponent component = null)
     {
-        Webhook[] webhooks = Config.GetCollection().FindSync(filter).ToList().Select(config =>
+        Webhook[] webhooks = Config.GetCollection().Find(filter).ToList().Select(config =>
             new Webhook{Id = getId.Compile()(config), Token = getToken.Compile()(config)}).ToArray();
 
         IEnumerable<Task> status = webhooks.Select(webhook => Task.Run(() =>
         {
-            DiscordWebhookClient webhookClient;
             try
             {
-                webhookClient =  webhook.ToDiscordWebhookClient();
+                return webhook.ToDiscordWebhookClient().SendMessageAsync(embeds: new[] { embed }, components: component);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                if (e is InvalidOperationException or InvalidCastException)
+                Console.WriteLine(ex);
+                if (ex is InvalidOperationException or InvalidCastException)
                 {
                     UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(getId, null)
                         .Set(getToken, "");
@@ -72,8 +72,6 @@ public static class Tools
                 StatsUpdater.StatsTracker.MessagesSent -= 1;
                 throw;
             }
-
-            return webhookClient.SendMessageAsync(embeds: new[] { embed }, components: component);
         }));
         StatsUpdater.StatsTracker.MessagesSent += webhooks.Length;
         StatsUpdater.UpdateStats();

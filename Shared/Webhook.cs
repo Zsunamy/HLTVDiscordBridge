@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Net;
-using Discord.Rest;
 using Discord.Webhook;
 
 namespace HLTVDiscordBridge.Shared;
@@ -20,7 +19,7 @@ public class Webhook
             .GroupBy(x => x).Any(g => g.Count() > 1 && g.Key == Id);
     }
     
-    public async Task Delete()
+    public async Task<Webhook> Delete()
     {
         if (Id != null)
         {
@@ -32,6 +31,7 @@ public class Webhook
             catch (HttpException) {}
             catch (InvalidOperationException) {}
         }
+        return new Webhook { Id = null, Token = "" };
     }
 
     public DiscordWebhookClient ToDiscordWebhookClient()
@@ -41,7 +41,7 @@ public class Webhook
             return new DiscordWebhookClient((ulong)Id, Token);
         }
 
-        throw new InvalidCastException("Invalid Webhook Id provided!.");
+        throw new InvalidCastException("Invalid Webhook Id provided!");
     }
 
     public static async Task<Webhook> CreateWebhook(ITextChannel channel)

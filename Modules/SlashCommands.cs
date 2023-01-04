@@ -282,7 +282,7 @@ namespace HLTVDiscordBridge.Modules
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    await arg.ModifyOriginalResponseAsync( msg => msg.Content = $"The following error occured:`{ex.Message}`");
+                    await arg.ModifyOriginalResponseAsync( msg => msg.Content = $"The following error occured: `{ex.Message}`");
                     throw;
                 }
                 

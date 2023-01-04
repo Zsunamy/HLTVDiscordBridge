@@ -18,8 +18,7 @@ public class FullTeam
     public int[] RankingDevelopment { get; set; }
     public Article[] News { get; set; }
     public string Link { get; set; }
-    [JsonIgnore]
-    public string LocalThumbnailPath { get; set; } = "";
+    
     [JsonIgnore]
     public string FormattedName => Name.ToLower().Replace(" ", "-");
 

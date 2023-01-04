@@ -47,13 +47,14 @@ public static class HltvPlayer
         PlayerStats stats;
         Embed embed;
         bool isInDatabase = false;
-        List<PlayerDocument> query = (await GetPlayerCollection().FindAsync(
-            elem => elem.Alias.Contains(name) || elem.Name.ToLower() == name)).ToList();
-        if (query.Count != 0)
+        string name1 = name;
+        FindFluentBase<PlayerDocument, PlayerDocument> query = (FindFluentBase<PlayerDocument, PlayerDocument>)GetPlayerCollection().Find(
+            elem => elem.Alias.Contains(name1) || elem.Name.ToLower() == name1);
+        if (await query.AnyAsync())
         {
             // Player is in Database
             isInDatabase = true;
-            name = query.First().Name;
+            name = query.First().Name.ToLower();
         }
 
         if (Directory.Exists($"{Path}/{name.ToLower()}"))
