@@ -15,8 +15,8 @@ public class Webhook
     
     public bool CheckIfWebhookIsUsed(ServerConfig config)
     {
-        return new[] { config.ResultWebhookId, config.NewsWebhookId, config.EventWebhookId }
-            .GroupBy(x => x).Any(g => g.Count() > 1 && g.Key == Id);
+        return new[] { config.News, config.Results, config.Events }
+            .GroupBy(x => x.Id).Any(g => g.Count() > 1 && g.Key == Id);
     }
     
     public async Task<Webhook> Delete()

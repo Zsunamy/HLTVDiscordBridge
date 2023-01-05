@@ -44,8 +44,7 @@ public static class HltvResults
         {
             GetMatch request = new GetMatch{Id = result.Id};
             (Embed embed, MessageComponent component) = result.ToEmbedAndComponent(await request.SendRequest<Match>());
-            await Tools.SendMessagesWithWebhook(x => x.ResultWebhookId != null,
-                    x => x.ResultWebhookId, x=> x.ResultWebhookToken, embed, component);
+            await Tools.SendMessagesWithWebhook(x => x.Results != null, x => x.Results, embed, component);
         }
         Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
     }

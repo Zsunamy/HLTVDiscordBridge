@@ -117,8 +117,5 @@ public static class HltvPlayer
             }
         }
         await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
-            
-        StatsUpdater.StatsTracker.MessagesSent += 1;
-        StatsUpdater.UpdateStats();
     }
 }

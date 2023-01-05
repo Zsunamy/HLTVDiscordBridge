@@ -123,7 +123,7 @@ internal class Program
     {
         IMongoCollection<ServerConfig> collection = Config.GetCollection();
         collection.DeleteOne(x => x.GuildID == guild.Id);
-        StatsUpdater.StatsTracker.Servercount = Client.Guilds.Count;
+        StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
         return Task.CompletedTask;
     }
 
@@ -134,7 +134,7 @@ internal class Program
             try
             {
                 await Config.GuildJoined(guild);
-                StatsUpdater.StatsTracker.Servercount = Client.Guilds.Count;
+                StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
             }
             catch (Exception ex)
             {
@@ -177,7 +177,7 @@ internal class Program
         }
         
         CacheCleaner.Clean();
-        StatsUpdater.UpdateStats();
+        StatsTracker.GetStats().Update();
         await HltvRanking.UpdateTeamRanking();
     }
 

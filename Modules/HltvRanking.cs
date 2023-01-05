@@ -81,10 +81,7 @@ public static class HltvRanking
         {
             embed = ex.ToEmbed();
         }
-
-            
-        StatsUpdater.StatsTracker.MessagesSent += 1;
-        StatsUpdater.UpdateStats();
+        
         await cmd.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
     }
 

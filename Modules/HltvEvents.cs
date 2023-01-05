@@ -87,8 +87,8 @@ public static class HltvEvents
         Stopwatch watch = new(); watch.Start();
         foreach (GetEvent request in from startedEvent in await GetNewOngoingEvents() select new GetEvent{Id = startedEvent.Id})
         {
-            await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
-                x => x.EventWebhookId, x=> x.EventWebhookToken , (await request.SendRequest<FullEvent>()).ToStartedEmbed());
+            await Tools.SendMessagesWithWebhook(x => x.Events != null,
+                x => x.Events, (await request.SendRequest<FullEvent>()).ToStartedEmbed());
         }
         Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched started events ({watch.ElapsedMilliseconds}ms)");
     }
@@ -99,8 +99,8 @@ public static class HltvEvents
         IEnumerable<EventPreview> events = await GetNewEvents(PastEventsPath, GetPastEvents);
         foreach (GetEvent request in from startedEvent in events select new GetEvent{Id = startedEvent.Id})
         {
-            await Tools.SendMessagesWithWebhook(x => x.EventWebhookId != null,
-                x => x.EventWebhookId, x=> x.EventWebhookToken , (await request.SendRequest<FullEvent>()).ToPastEmbed());
+            await Tools.SendMessagesWithWebhook(x => x.Events != null,
+                x => x.Events, (await request.SendRequest<FullEvent>()).ToPastEmbed());
         }
         Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched past events ({watch.ElapsedMilliseconds}ms)");
     }

@@ -34,8 +34,7 @@ public static class HltvNews
         Stopwatch watch = new(); watch.Start();
         foreach (RssNews news in await GetNewNews())
         {
-            await Tools.SendMessagesWithWebhook(x => x.NewsWebhookId != null,
-                x => x.NewsWebhookId, x=> x.NewsWebhookToken , news.ToEmbed());
+            await Tools.SendMessagesWithWebhook(x => x.News.Id != null, x => x.News , news.ToEmbed());
         }
         Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)");
     }

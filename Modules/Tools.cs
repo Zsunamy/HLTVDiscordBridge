@@ -4,11 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.Json;
 using System.Threading.Tasks;
-using Discord.Webhook;
 using HLTVDiscordBridge.Shared;
 using MongoDB.Driver;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace HLTVDiscordBridge.Modules;
 
@@ -47,11 +46,9 @@ public static class Tools
     }
 
     public static Task SendMessagesWithWebhook(Expression<Func<ServerConfig, bool>> filter,
-        Expression<Func<ServerConfig, ulong?>> getId,
-        Expression<Func<ServerConfig, string>> getToken, Embed embed, MessageComponent component = null)
+        Expression<Func<ServerConfig, Webhook>> getWebhook, Embed embed, MessageComponent component = null)
     {
-        Webhook[] webhooks = Config.GetCollection().Find(filter).ToList().Select(config =>
-            new Webhook{Id = getId.Compile()(config), Token = getToken.Compile()(config)}).ToArray();
+        Webhook[] webhooks = Config.GetCollection().Find(filter).ToList().Select(config => getWebhook.Compile()(config)).ToArray();
 
         IEnumerable<Task> status = webhooks.Select(webhook => Task.Run(() =>
         {
@@ -61,20 +58,17 @@ public static class Tools
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
                 if (ex is InvalidOperationException or InvalidCastException)
                 {
-                    UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(getId, null)
-                        .Set(getToken, "");
+                    UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(getWebhook, null);
                     return Config.GetCollection().UpdateOneAsync(filter, update);
                 }
 
-                StatsUpdater.StatsTracker.MessagesSent -= 1;
+                StatsTracker.GetStats().MessagesSent -= 1;
                 throw;
             }
         }));
-        StatsUpdater.StatsTracker.MessagesSent += webhooks.Length;
-        StatsUpdater.UpdateStats();
+        StatsTracker.GetStats().MessagesSent += webhooks.Length;
         return Task.WhenAll(status);
     }
 

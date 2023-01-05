@@ -237,9 +237,9 @@ namespace HLTVDiscordBridge.Modules
                 try
                 {
                     switch (arg.CommandName)
-                    { 
+                    {
                         case "servercount":
-                            await arg.ModifyOriginalResponseAsync( msg => msg.Content = Client.Guilds.Count.ToString());
+                            await arg.ModifyOriginalResponseAsync(msg => msg.Content = Client.Guilds.Count.ToString());
                             break;
                         case "live":
                             await HltvMatches.SendLiveMatches(arg);
@@ -282,10 +282,15 @@ namespace HLTVDiscordBridge.Modules
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    await arg.ModifyOriginalResponseAsync( msg => msg.Content = $"The following error occured: `{ex.Message}`");
+                    await arg.ModifyOriginalResponseAsync(msg =>
+                        msg.Content = $"The following error occured: `{ex.Message}`");
                     throw;
                 }
-                
+                finally
+                {
+                    StatsTracker.GetStats().MessagesSent += 1;
+                }
+
             });
             return Task.CompletedTask;
         }

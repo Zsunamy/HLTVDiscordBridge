@@ -18,8 +18,6 @@ public static class SupportCommand
                              $"Another quick and easy way to show us your support is by [voting](https://top.gg/bot/807182830752628766/vote) for this bot on " +
                              $"[top.gg](https://top.gg/bot/807182830752628766) to increase awareness.")
             .WithCurrentTimestamp();
-        StatsUpdater.StatsTracker.MessagesSent += 1;
-        StatsUpdater.UpdateStats();
         await arg.ModifyOriginalResponseAsync( msg => msg.Embed = builder.Build());
     }
 }

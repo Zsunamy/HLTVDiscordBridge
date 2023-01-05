@@ -39,7 +39,6 @@ public static class Developer
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex);
-                        StatsUpdater.StatsTracker.MessagesSent -= 1;
                         if (ex is Discord.Net.HttpException)
                         {
                             Program.WriteLog($"not enough permission in channel {channel!.Name}");
@@ -55,7 +54,7 @@ public static class Developer
                     await webhook.ToDiscordWebhookClient().SendMessageAsync(embeds: new[] { embed });
                 }
             })).ToList();
-        StatsUpdater.StatsTracker.MessagesSent += status.ToList().Count;
+        StatsTracker.GetStats().MessagesSent += status.ToList().Count;
         await Task.WhenAll(status);
 
         await arg.ModifyOriginalResponseAsync(msg => msg.Content = "update sent!");

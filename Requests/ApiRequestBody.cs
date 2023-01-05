@@ -30,8 +30,7 @@ public abstract class ApiRequestBody<TChild> where TChild : ApiRequestBody<TChil
             throw new DeploymentException(resp);
         }
         Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{Endpoint} was successful");
-        StatsUpdater.StatsTracker.ApiRequest =+ 1;
-        StatsUpdater.UpdateStats();
+        StatsTracker.GetStats().ApiRequest =+ 1;
         return await resp.Content.ReadFromJsonAsync<T>(Program.SerializeOptions);
     }
 }

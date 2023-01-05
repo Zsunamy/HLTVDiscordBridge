@@ -84,21 +84,6 @@ public class FullPlayer
             builder.AddField("Achievements:", $"none");
         }
         builder.WithFooter(Tools.GetRandomFooter());
-
-        bool tracked = false;
-        foreach (PlayerReq plReq in StatsUpdater.StatsTracker.Players.Where(plReq => plReq.Name == stats.Ign))
-        {
-            StatsUpdater.StatsTracker.Players.Remove(plReq);
-            plReq.Reqs += 1;
-            StatsUpdater.StatsTracker.Players.Add(new PlayerReq(stats.Ign, stats.Id, plReq.Reqs));
-            tracked = true;
-            break;
-        }
-        if (!tracked)
-        {
-            StatsUpdater.StatsTracker.Players.Add(new PlayerReq(stats.Ign, stats.Id, 1));
-        }
-        StatsUpdater.UpdateStats();
         return builder.Build();
     }
 }
