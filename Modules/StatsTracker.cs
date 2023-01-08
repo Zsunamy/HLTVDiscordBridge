@@ -9,7 +9,7 @@ namespace HLTVDiscordBridge.Modules;
 public class StatsTracker
 {
     [BsonIgnore] private static StatsTracker Instance { get; set; }
-    private ObjectId Id { get; } = new("60941203bd1ee1cd03d32943");
+    public ObjectId Id { get; set; }
     public int ServerCount { get; set; }
     public int ApiRequest { get; set; }
     public int Commands { get; set; } = 0;
@@ -37,7 +37,6 @@ public class StatsTracker
     }
     public void Update()
     {
-        UpdateDefinition<StatsTracker> update = Builders<StatsTracker>.Update.Set(x => x, this);
-        GetStatsCollection().FindOneAndUpdate(x => x.Id == ObjectId.Parse("60941203bd1ee1cd03d32943"), update);
+        GetStatsCollection().FindOneAndReplace((x => x.Id == Id), this);
     }
 }

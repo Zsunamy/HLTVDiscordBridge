@@ -122,7 +122,7 @@ internal class Program
     private Task GuildLeft(SocketGuild guild)
     {
         IMongoCollection<ServerConfig> collection = Config.GetCollection();
-        collection.DeleteOne(x => x.GuildID == guild.Id);
+        collection.DeleteOne(x => x.GuildId == guild.Id);
         StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
         return Task.CompletedTask;
     }

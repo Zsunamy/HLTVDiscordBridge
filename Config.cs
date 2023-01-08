@@ -3,7 +3,6 @@ using Discord.WebSocket;
 using HLTVDiscordBridge.Modules;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -18,18 +17,12 @@ public class ServerConfig
 {
     [BsonId]
     public ObjectId Id { get; set; }
-    public ulong GuildID { get; set; }
+    public ulong GuildId { get; set; }
     public ulong NewsChannelID { get; set; }
     public Webhook News { get; set; }
     public Webhook Results { get; set; }
     public Webhook Events { get; set; }
-    public ulong? NewsWebhookId { get; set; }
-    public ulong? ResultWebhookId { get; set; }
-    public ulong? EventWebhookId { get; set; }
-    public string NewsWebhookToken { get; set; }
-    public string ResultWebhookToken { get; set; }
-    public string EventWebhookToken { get; set; }
-    public ushort MinimumStars { get; set; }
+    public int MinimumStars { get; set; }
     public bool OnlyFeaturedEvents { get; set; }
     public bool NewsOutput { get; set; }
     public bool ResultOutput { get; set; }
@@ -37,30 +30,19 @@ public class ServerConfig
 
     public IEnumerable<Webhook> GetWebhooks()
     {
-        return new[] { News, Results, Events }.Where(webhook => webhook.Id != null);
+        return new[] { News, Results, Events }.Where(webhook => webhook != null);
     }
 
-    public void SetAllWebhooks(Webhook webhook)
-    {
-        News = webhook;
-        Results = webhook;
-        Events = webhook;
-    }
-    
     public async Task<Webhook> CheckIfConfigUsesWebhookOfChannel(ITextChannel channel)
     {
-        foreach (Webhook webhook in new[] { News, Results, Events })
+        foreach (Webhook webhook in GetWebhooks())
         {
-            if (webhook.Id != null)
+            IWebhook cur = await channel.GetWebhookAsync(webhook.Id);
+            if (cur != null && cur.Channel.Id == channel.Id)
             {
-                IWebhook cur = await channel.GetWebhookAsync((ulong)webhook.Id);
-                if (cur != null && cur.Channel.Id == channel.Id)
-                {
-                    return new Webhook { Id = cur.Id, Token = cur.Token };
-                }
+                return new Webhook { Id = cur.Id, Token = cur.Token };
             }
         }
-
         return null;
         /*
         return (from webhook in await channel.GetWebhooksAsync()
@@ -78,40 +60,33 @@ public static class Config
         List<ServerConfig> configs = (await GetCollection().FindAsync(_ => true)).ToList();
         foreach (ServerConfig config in configs)
         {
-            Stream icon = new FileStream("icon.png", FileMode.Open);
-            Webhook updateWebhook;
             ITextChannel channel = (ITextChannel)client.GetChannel(config.NewsChannelID);
             try
             {
-                IWebhook webhook = await channel.CreateWebhookAsync("HLTV", icon);
-                updateWebhook = new Webhook{Id = webhook.Id, Token = webhook.Token};
+                Webhook updateWebhook = await Webhook.CreateWebhook(channel);
+                List<UpdateDefinition<ServerConfig>> updates = new();
+            
+                if (config.NewsOutput)
+                    updates.Add(Builders<ServerConfig>.Update.Set(x => x.News, updateWebhook));
+                
+                if (config.ResultOutput)
+                    updates.Add(Builders<ServerConfig>.Update.Set(x => x.Results, updateWebhook));
+                
+                if (config.EventOutput)
+                    updates.Add(Builders<ServerConfig>.Update.Set(x => x.Events, updateWebhook));
+                
+
+                UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Combine(updates);
+                await GetCollection().UpdateOneAsync(x => x.NewsChannelID == config.NewsChannelID, update);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                updateWebhook = new Webhook{Id = null, Token = ""};
-                Console.WriteLine(e.ToString());
+                Console.WriteLine(ex);
                 await channel.SendMessageAsync(
-                    $"ERROR: Failed to create webhook with the following message {e.Message}\n" + 
+                    $"ERROR: Failed to create webhook with the following message `{ex.Message}`\n" + 
                     "The Bot is probably missing permissions to manage webhooks.\n" +
                     "Please give the bot these permissions and then setup all channels manually using the /set command");
             }
-            List<UpdateDefinition<ServerConfig>> updates = new();
-            
-            if (config.NewsOutput)
-            {
-                updates.Add(Builders<ServerConfig>.Update.Set(x => x.News, updateWebhook));
-            }
-            if (config.ResultOutput)
-            {
-                updates.Add(Builders<ServerConfig>.Update.Set(x => x.Results, updateWebhook));
-            }
-            if (config.EventOutput)
-            {
-                updates.Add(Builders<ServerConfig>.Update.Set(x => x.Events, updateWebhook));
-            }
-
-            UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Combine(updates);
-            await GetCollection().UpdateOneAsync(x => x.NewsChannelID == config.NewsChannelID, update);
         }
         Console.WriteLine("Finished initializing all webhooks!");
     }
@@ -119,14 +94,14 @@ public static class Config
     private static async Task<UpdateDefinition<ServerConfig>> SetWebhook(bool enable, Expression<Func<ServerConfig, Webhook>> getWebhook,
         ulong? guildId, ITextChannel channel)
     {
-        FilterDefinition<ServerConfig> configFilter = Builders<ServerConfig>.Filter.Eq(x => x.GuildID, guildId);
+        FilterDefinition<ServerConfig> configFilter = Builders<ServerConfig>.Filter.Eq(x => x.GuildId, guildId);
         ServerConfig config = GetCollection().FindSync(configFilter).First();
         Webhook webhookInDatabase = getWebhook.Compile()(config);
         Webhook newWebhook;
         if (enable)
         {
             Webhook multiWebhook = await config.CheckIfConfigUsesWebhookOfChannel(channel);
-            if (webhookInDatabase != null && webhookInDatabase.CheckIfWebhookIsUsed(config))
+            if (webhookInDatabase != null && !webhookInDatabase.CheckIfWebhookIsUsed(config))
             {
                 await webhookInDatabase.Delete();
             }
@@ -134,7 +109,8 @@ public static class Config
             {
                 newWebhook = await Webhook.CreateWebhook(channel);
             }
-            else {
+            else
+            {
                 newWebhook = multiWebhook;
             }
         }
@@ -182,11 +158,11 @@ public static class Config
         SocketSlashCommandDataOption option = arg.Data.Options.First();
         object value =  option.Options.Count != 0 ? option.Options.First().Value : null;
         ITextChannel channel = null;
-        if (option.Options.Count != 0)
+        if (value != null)
         {
             try
             {
-                channel = (ITextChannel)option.Options.First().Value;
+                channel = (ITextChannel)value;
             }
             catch (InvalidCastException) {}
         }
@@ -194,8 +170,7 @@ public static class Config
         {
             channel = (ITextChannel)arg.Channel;
         }
-        
-            
+
         switch (option.Name.ToLower())
         {
             case "stars":
@@ -233,7 +208,7 @@ public static class Config
             default:
                 throw new ArgumentOutOfRangeException(nameof(arg), "Invalid Parameter. This is a Bug!");
         }
-        await GetCollection().UpdateOneAsync(x => x.GuildID == arg.GuildId, update);
+        await GetCollection().UpdateOneAsync(x => x.GuildId == arg.GuildId, update);
         await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
     }
 
@@ -261,9 +236,8 @@ public static class Config
     
     public static async Task GuildJoined(SocketGuild guild)
     {
-        IMongoCollection<ServerConfig> collection = GetCollection();
-        Webhook webhook = new Webhook { Id = null, Token = "" };
-        ServerConfig config = new ServerConfig { GuildID = guild.Id, MinimumStars = 0, OnlyFeaturedEvents = false };
+        Webhook webhook = null;
+        ServerConfig config = new ServerConfig { GuildId = guild.Id, MinimumStars = 0, OnlyFeaturedEvents = false };
         config.EventOutput = true;
         config.NewsOutput = true;
         config.ResultOutput = true;
@@ -273,8 +247,10 @@ public static class Config
         }
         finally
         {
-            config.SetAllWebhooks(webhook);
-            await collection.InsertOneAsync(config);
+            config.News = webhook;
+            config.Results = webhook;
+            config.Events = webhook;
+            await GetCollection().InsertOneAsync(config);
         }
 
         Embed embed = new EmbedBuilder().WithColor(Color.Green)
@@ -295,14 +271,14 @@ public static class Config
         DiscordSocketClient client = Program.GetInstance().Client;
         foreach (SocketGuild guild in client.Guilds)
         {
-            if (!await GetCollection().FindSync(x => x.GuildID == guild.Id).AnyAsync())
+            if (!await GetCollection().FindSync(x => x.GuildId == guild.Id).AnyAsync())
             {
                 Console.WriteLine($"found guild {guild.Name} with no config. Creating default.");
                 await Program.GetInstance().GuildJoined(guild);
             }
         }
 
-        foreach (ServerConfig config in GetCollection().Find( _ => true).ToList().Where(config => client.GetGuild(config.GuildID) == null))
+        foreach (ServerConfig config in GetCollection().Find( _ => true).ToList().Where(config => client.GetGuild(config.GuildId) == null))
         {
             Console.WriteLine("Found serverconfig but bot is not on server; Deleting");
             // await GetCollection().DeleteOneAsync(x => x.GuildID == config.GuildID);

@@ -33,7 +33,7 @@ public static class Developer
                     SocketTextChannel channel = null;
                     try
                     {
-                        channel = Program.GetInstance().Client.GetGuild(config.GuildID).DefaultChannel;
+                        channel = Program.GetInstance().Client.GetGuild(config.GuildId).DefaultChannel;
                         await channel.SendMessageAsync(embed: embed);
                     }
                     catch (Exception ex)

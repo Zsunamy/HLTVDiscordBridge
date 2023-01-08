@@ -10,38 +10,27 @@ namespace HLTVDiscordBridge.Shared;
 
 public class Webhook
 {
-    public ulong? Id { get; init; }
+    public ulong Id { get; init; }
     public string Token { get; init; }
     
     public bool CheckIfWebhookIsUsed(ServerConfig config)
     {
-        return new[] { config.News, config.Results, config.Events }
-            .GroupBy(x => x.Id).Any(g => g.Count() > 1 && g.Key == Id);
+        return config.GetWebhooks().GroupBy(x => x.Id).Any(g => g.Count() > 1 && g.Key == Id);
     }
     
-    public async Task<Webhook> Delete()
+    public async Task Delete()
     {
-        if (Id != null)
+        try
         {
-            try
-            {
-                DiscordWebhookClient client = new((ulong)Id, Token);
-                await client.DeleteWebhookAsync();
-            }
-            catch (HttpException) {}
-            catch (InvalidOperationException) {}
+            await ToDiscordWebhookClient().DeleteWebhookAsync();
         }
-        return new Webhook { Id = null, Token = "" };
+        catch (HttpException) {}
+        catch (InvalidOperationException) {}
     }
 
     public DiscordWebhookClient ToDiscordWebhookClient()
     {
-        if (Id != null)
-        {
-            return new DiscordWebhookClient((ulong)Id, Token);
-        }
-
-        throw new InvalidCastException("Invalid Webhook Id provided!");
+        return new DiscordWebhookClient(Id, Token);
     }
 
     public static async Task<Webhook> CreateWebhook(ITextChannel channel)
