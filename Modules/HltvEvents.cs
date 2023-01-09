@@ -58,6 +58,7 @@ namespace HLTVDiscordBridge.Modules
                             {
                                 try { await channel.SendMessageAsync(embed: GetEventEndedEmbed(fullEvent)); }
                                 catch (Discord.Net.HttpException) { Program.WriteLog($"not enough permission in channel {channel}"); continue; }
+                                catch (Exception ex) {Program.WriteLog(ex.ToString());}
                             }
                         }
                     }
