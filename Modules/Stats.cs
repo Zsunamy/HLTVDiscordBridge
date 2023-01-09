@@ -53,12 +53,7 @@ namespace HLTVDiscordBridge.Modules
         private static IMongoCollection<StatsTracker> GetCollection()
         {
             MongoClient dbClient = new(Config.LoadConfig().DatabaseLink);
-#if RELEASE
-            IMongoDatabase db = dbClient.GetDatabase("hltv");
-#endif
-#if DEBUG
-            IMongoDatabase db = dbClient.GetDatabase("hltv-dev");
-#endif
+            IMongoDatabase db = dbClient.GetDatabase(Config.LoadConfig().Database);
             return db.GetCollection<StatsTracker>("stats");
         }
         public static void InitStats()
