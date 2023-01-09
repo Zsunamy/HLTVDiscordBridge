@@ -23,10 +23,8 @@ public static class HltvResults
 
     private static async Task<IEnumerable<Result>> GetNewResults()
     {
-        if (!await AutomatedMessageHelper.VerifyFile(Path, GetLatestResults))
-        {
+        if (!await Tools.VerifyFile(Path, GetLatestResults))
             return new List<Result>();
-        }
 
         Result[] latestResults = await GetLatestResults();
         Result[] oldResults = Tools.ParseFromFile<Result[]>(Path);

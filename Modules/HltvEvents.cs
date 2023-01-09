@@ -37,10 +37,8 @@ public static class HltvEvents
     
     private static async Task<IEnumerable<EventPreview>> GetNewEvents(string path, Func<Task<EventPreview[]>> getEvents)
     {
-        if (!await AutomatedMessageHelper.VerifyFile(path, getEvents))
-        {
+        if (!await Tools.VerifyFile(path, getEvents))
             return Array.Empty<EventPreview>();
-        }
 
         EventPreview[] oldEvents = Tools.ParseFromFile<EventPreview[]>(path);
         EventPreview[] newEvents = await getEvents();
@@ -124,14 +122,12 @@ public static class HltvEvents
         {
             DateTime startDate = Tools.UnixTimeToDateTime(ongoingEvent.DateStart);
             DateTime endDate = Tools.UnixTimeToDateTime(ongoingEvent.DateEnd);
+            Emoji star = null;
             if (ongoingEvent.Featured)
-            {
-                menuBuilder.AddOption(ongoingEvent.Name, ongoingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}", new Emoji("⭐"));
-            }
-            else
-            {
-                menuBuilder.AddOption(ongoingEvent.Name, ongoingEvent.Id.ToString(), $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}");
-            }
+                star = new Emoji("⭐");
+
+            menuBuilder.AddOption(ongoingEvent.Name, ongoingEvent.Id.ToString(),
+                $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}", star);
         }
 
         ComponentBuilder compBuilder = new ComponentBuilder()
@@ -159,19 +155,15 @@ public static class HltvEvents
             DateTime startDate = Tools.UnixTimeToDateTime(upcomingEvent.DateStart);
             DateTime endDate = Tools.UnixTimeToDateTime(upcomingEvent.DateEnd);
             if(upcomingEvent.Featured)
-            {
                 menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
                     $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.Name}", new Emoji("⭐"));
-            } 
             else
-            {
                 menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
                     $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.Name}");
-            }
+            
             if(menuBuilder.Options.Count > 24)
-            {
                 break;
-            }
+            
         }
 
         ComponentBuilder compBuilder = new ComponentBuilder()

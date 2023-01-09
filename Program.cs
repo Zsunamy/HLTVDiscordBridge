@@ -67,15 +67,31 @@ internal class Program
     {
         _ = Task.Run(async () =>
         {
-            switch (arg.Data.CustomId)
+            await arg.DeferAsync();
+            try
             {
-                case "upcomingEventsMenu":
-                    await HltvEvents.SendEvent(arg);
-                    break;
-                case "ongoingEventsMenu":
-                    await HltvEvents.SendEvent(arg);
-                    break;
+                switch (arg.Data.CustomId)
+                {
+                    case "upcomingEventsMenu":
+                        await HltvEvents.SendEvent(arg);
+                        break;
+                    case "ongoingEventsMenu":
+                        await HltvEvents.SendEvent(arg);
+                        break;
+                }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                await arg.ModifyOriginalResponseAsync(msg =>
+                    msg.Content = $"The following error occured: `{ex.Message}`");
+                throw;
+            }
+            finally
+            {
+                StatsTracker.GetStats().MessagesSent += 1;
+            }
+            
         });
         return Task.CompletedTask;
     }
@@ -94,36 +110,64 @@ internal class Program
 
     private static Task ButtonExecuted(SocketMessageComponent arg)
     {
-        Task handler = Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             await arg.DeferAsync();
-            string matchLink = "";
-            foreach (Embed e in arg.Message.Embeds)
+            try
             {
-                matchLink = ((EmbedAuthor)e.Author!).Url;
-            }
-            GetMatch request = new GetMatch{ Id = Tools.GetIdFromUrl(matchLink)};
-            Match match = await request.SendRequest<Match>();
+                string matchLink = "";
+                foreach (Embed e in arg.Message.Embeds)
+                {
+                    matchLink = ((EmbedAuthor)e.Author!).Url;
+                }
 
-            if (arg.Data.CustomId == "overallstats_bo1")
-            {
-                GetMatchMapStats requestMapStats = new GetMatchMapStats{Id = match.Maps[0].StatsId};
-                await arg.Channel.SendMessageAsync(embed: (await requestMapStats.SendRequest<MatchMapStats>()).ToEmbed());
+                GetMatch request = new GetMatch { Id = Tools.GetIdFromUrl(matchLink) };
+                Match match = await request.SendRequest<Match>();
+
+                if (arg.Data.CustomId == "overallstats_bo1")
+                {
+                    GetMatchMapStats requestMapStats = new GetMatchMapStats { Id = match.Maps[0].StatsId };
+                    await arg.Channel.SendMessageAsync(embed: (await requestMapStats.SendRequest<MatchMapStats>())
+                        .ToEmbed());
+                }
+                else
+                {
+                    GetMatchStats requestMatchStats = new GetMatchStats { Id = match.StatsId };
+                    await arg.Channel.SendMessageAsync(embed: (await requestMatchStats.SendRequest<MatchStats>())
+                        .ToEmbed());
+                }
             }
-            else
+            catch (Exception ex)
             {
-                GetMatchStats requestMatchStats = new GetMatchStats{Id = match.StatsId};
-                await arg.Channel.SendMessageAsync(embed: (await requestMatchStats.SendRequest<MatchStats>()).ToEmbed());
+                Console.WriteLine(ex);
+                await arg.ModifyOriginalResponseAsync(msg =>
+                    msg.Content = $"The following error occured: `{ex.Message}`");
+                throw;
+            }
+            finally
+            {
+                StatsTracker.GetStats().MessagesSent += 1;
             }
         });
-        return handler;
+        return Task.CompletedTask;
     }
 
     private Task GuildLeft(SocketGuild guild)
     {
-        IMongoCollection<ServerConfig> collection = Config.GetCollection();
-        collection.DeleteOne(x => x.GuildId == guild.Id);
-        StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                Config.GetCollection().DeleteOne(x => x.GuildId == guild.Id);
+                StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
+            }
+        });
+        
         return Task.CompletedTask;
     }
 

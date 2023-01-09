@@ -35,21 +35,10 @@ public class ServerConfig
 
     public async Task<Webhook> CheckIfConfigUsesWebhookOfChannel(ITextChannel channel)
     {
-        foreach (Webhook webhook in GetWebhooks())
-        {
-            IWebhook cur = await channel.GetWebhookAsync(webhook.Id);
-            if (cur != null && cur.Channel.Id == channel.Id)
-            {
-                return new Webhook { Id = cur.Id, Token = cur.Token };
-            }
-        }
-        return null;
-        /*
         return (from webhook in await channel.GetWebhooksAsync()
             select new Webhook { Id = webhook.Id, Token = webhook.Token }).FirstOrDefault(channelWebhook => 
-            webhooks.Aggregate(false, (b, currentWebhook) => 
+            GetWebhooks().Aggregate(false, (b, currentWebhook) => 
                 (currentWebhook.Id == channelWebhook.Id && currentWebhook.Token == channelWebhook.Token) || b));
-        */
     }
 }
 
@@ -102,24 +91,18 @@ public static class Config
         {
             Webhook multiWebhook = await config.CheckIfConfigUsesWebhookOfChannel(channel);
             if (webhookInDatabase != null && !webhookInDatabase.CheckIfWebhookIsUsed(config))
-            {
                 await webhookInDatabase.Delete();
-            }
+            
             if (multiWebhook == null)
-            {
                 newWebhook = await Webhook.CreateWebhook(channel);
-            }
             else
-            {
                 newWebhook = multiWebhook;
-            }
         }
         else
         {
             if (webhookInDatabase != null && !webhookInDatabase.CheckIfWebhookIsUsed(config))
-            {
                 await webhookInDatabase.Delete();
-            }
+            
             newWebhook = null;
         }
             
@@ -280,6 +263,7 @@ public static class Config
 
         foreach (ServerConfig config in GetCollection().Find( _ => true).ToList().Where(config => client.GetGuild(config.GuildId) == null))
         {
+            //TODO Testing
             Console.WriteLine("Found serverconfig but bot is not on server; Deleting");
             // await GetCollection().DeleteOneAsync(x => x.GuildID == config.GuildID);
         }

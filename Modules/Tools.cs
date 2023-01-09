@@ -27,15 +27,9 @@ public static class Tools
     {
         string day = date.Day.ToString();
         string month = date.Month.ToString();
-        if (day.Length == 1)
-        {
-            day = $"0{day}";
-        }
 
-        if (month.Length == 1)
-        {
-            month = $"0{month}";
-        }
+        day = day.Length == 1 ? $"0{day}" : day;
+        month = month.Length == 1 ? $"0{month}" : month;
 
         return $"{date.Year.ToString()}-{month}-{day}";
     }
@@ -124,14 +118,28 @@ public static class Tools
     public static void SaveToFile(string path, object content)
     {
         if (!File.Exists(path))
-        {
             File.Create(path!).Dispose();
-        }
+        
         File.WriteAllText(path, JsonSerializer.Serialize(content, Program.SerializeOptions));
     }
     
     public static T ParseFromFile<T>(string path)
     {
         return JsonSerializer.Deserialize<T>(File.ReadAllText(path), Program.SerializeOptions);
+    }
+    
+    public static async Task<bool> VerifyFile<T>(string path, Func<Task<T>> getNewData)
+    {
+        if (File.Exists(path))
+        {
+            try
+            {
+                JsonDocument.Parse(await File.ReadAllTextAsync(path));
+                return true;
+            }
+            catch (JsonException) {}
+        }
+        SaveToFile(path, await getNewData());
+        return false;
     }
 }

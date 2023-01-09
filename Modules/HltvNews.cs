@@ -13,10 +13,9 @@ public static class HltvNews
     private const string Path = "./cache/news.json";
     private static async Task<IEnumerable<RssNews>> GetNewNews()
     {
-        if (!await AutomatedMessageHelper.VerifyFile(Path, GetLatestNews))
-        {
+        if (!await Tools.VerifyFile(Path, GetLatestNews))
             return Array.Empty<RssNews>();
-        }
+        
         RssNews[] latestNews = await GetLatestNews();
         RssNews[] oldNews = Tools.ParseFromFile<RssNews[]>(Path);
         Tools.SaveToFile(Path, latestNews);
