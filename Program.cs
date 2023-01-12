@@ -39,16 +39,18 @@ internal class Program
     private Program()
     {
         Client = new DiscordSocketClient( new DiscordSocketConfig
-            { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites });
+        {
+            GatewayIntents = GatewayIntents.AllUnprivileged & ~ GatewayIntents.GuildScheduledEvents & ~ GatewayIntents.GuildInvites
+        });
         _botConfig = BotConfig.GetBotConfig();
             
         Client.Log += Log;
         Client.JoinedGuild += GuildJoined;
         Client.LeftGuild += GuildLeft;
-        Client.ButtonExecuted += ButtonExecuted;
+        Client.ButtonExecuted += arg => Tools.RunCommandInBackground(arg, () => ButtonExecuted(arg));
         Client.Ready += Ready;
-        Client.SlashCommandExecuted += SlashCommands.SlashCommandHandler;
-        Client.SelectMenuExecuted += SelectMenuExecuted;
+        Client.SlashCommandExecuted += arg => Tools.RunCommandInBackground(arg, () => SlashCommands.SlashCommandHandler(arg));
+        Client.SelectMenuExecuted += arg => Tools.RunCommandInBackground(arg, () => SelectMenuExecuted(arg));
     }
 
     public static Program GetInstance()
@@ -63,39 +65,6 @@ internal class Program
         await Client.SetGameAsync("/help");
     }
 
-    private static Task SelectMenuExecuted(SocketMessageComponent arg)
-    {
-        _ = Task.Run(async () =>
-        {
-            await arg.DeferAsync();
-            try
-            {
-                switch (arg.Data.CustomId)
-                {
-                    case "upcomingEventsMenu":
-                        await HltvEvents.SendEvent(arg);
-                        break;
-                    case "ongoingEventsMenu":
-                        await HltvEvents.SendEvent(arg);
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                await arg.ModifyOriginalResponseAsync(msg =>
-                    msg.Content = $"The following error occured: `{ex.Message}`");
-                throw;
-            }
-            finally
-            {
-                StatsTracker.GetStats().MessagesSent += 1;
-            }
-            
-        });
-        return Task.CompletedTask;
-    }
-
     private async Task Ready()
     {
         if (Environment.GetCommandLineArgs().Length > 1 && Environment.GetCommandLineArgs()[1] == "init")
@@ -108,69 +77,45 @@ internal class Program
         _bgTask ??= BgTask();
     }
 
-    private static Task ButtonExecuted(SocketMessageComponent arg)
+    private static async Task ButtonExecuted(SocketMessageComponent arg)
     {
-        _ = Task.Run(async () =>
+        string matchLink = "";
+        foreach (Embed e in arg.Message.Embeds)
         {
-            await arg.DeferAsync();
-            try
-            {
-                string matchLink = "";
-                foreach (Embed e in arg.Message.Embeds)
-                {
-                    matchLink = ((EmbedAuthor)e.Author!).Url;
-                }
+            matchLink = ((EmbedAuthor)e.Author!).Url;
+        }
 
-                GetMatch request = new GetMatch { Id = Tools.GetIdFromUrl(matchLink) };
-                Match match = await request.SendRequest<Match>();
+        GetMatch request = new GetMatch { Id = Tools.GetIdFromUrl(matchLink) };
+        Match match = await request.SendRequest<Match>();
 
-                if (arg.Data.CustomId == "overallstats_bo1")
-                {
-                    GetMatchMapStats requestMapStats = new GetMatchMapStats { Id = match.Maps[0].StatsId };
-                    await arg.Channel.SendMessageAsync(embed: (await requestMapStats.SendRequest<MatchMapStats>())
-                        .ToEmbed());
-                }
-                else
-                {
-                    GetMatchStats requestMatchStats = new GetMatchStats { Id = match.StatsId };
-                    await arg.Channel.SendMessageAsync(embed: (await requestMatchStats.SendRequest<MatchStats>())
-                        .ToEmbed());
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                await arg.ModifyOriginalResponseAsync(msg =>
-                    msg.Content = $"The following error occured: `{ex.Message}`");
-                throw;
-            }
-            finally
-            {
-                StatsTracker.GetStats().MessagesSent += 1;
-            }
-        });
-        return Task.CompletedTask;
+        if (arg.Data.CustomId == "overallstats_bo1")
+        {
+            GetMatchMapStats requestMapStats = new GetMatchMapStats { Id = match.Maps[0].StatsId };
+            await arg.ModifyOriginalResponseAsync(msg =>
+                msg.Embed = requestMapStats.SendRequest<MatchMapStats>().Result.ToEmbed());
+        }
+        else
+        {
+            GetMatchStats requestMatchStats = new GetMatchStats { Id = match.StatsId };
+            await arg.ModifyOriginalResponseAsync(msg =>
+                msg.Embed = requestMatchStats.SendRequest<MatchStats>().Result.ToEmbed());
+        }
     }
-
-    private Task GuildLeft(SocketGuild guild)
+    
+    private static async Task SelectMenuExecuted(SocketMessageComponent arg)
     {
-        _ = Task.Run(() =>
+  
+        switch (arg.Data.CustomId) 
         {
-            try
-            {
-                Config.GetCollection().DeleteOne(x => x.GuildId == guild.Id);
-                StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                throw;
-            }
-        });
-        
-        return Task.CompletedTask;
+            case "upcomingEventsMenu":
+                await HltvEvents.SendEvent(arg);
+                break;
+            case "ongoingEventsMenu":
+                await HltvEvents.SendEvent(arg);
+                break;
+        }
     }
-
+    
     public Task GuildJoined(SocketGuild guild)
     {
         _ = Task.Run(async () =>
@@ -201,6 +146,25 @@ internal class Program
         });
         return Task.CompletedTask;
         
+    }
+
+    private Task GuildLeft(SocketGuild guild)
+    {
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                Config.GetCollection().DeleteOne(x => x.GuildId == guild.Id);
+                StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
+            }
+        });
+        
+        return Task.CompletedTask;
     }
 
     private async Task MiscellaneousBackground()

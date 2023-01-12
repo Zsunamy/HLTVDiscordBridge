@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
 using MongoDB.Driver;
 
@@ -141,5 +142,29 @@ public static class Tools
         }
         SaveToFile(path, await getNewData());
         return false;
+    }
+
+    public static Task RunCommandInBackground(IDiscordInteraction arg, Func<Task> function)
+    {
+        _ = Task.Run(async () =>
+        {
+            await arg.DeferAsync();
+            try
+            {
+                await function();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                await arg.ModifyOriginalResponseAsync(msg =>
+                    msg.Content = $"The following error occured: `{ex.Message}`");
+                throw;
+            }
+            finally
+            {
+                StatsTracker.GetStats().MessagesSent += 1;
+            }
+        });
+        return Task.CompletedTask;
     }
 }

@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.Text.Json.Serialization;
+using Discord;
 
 namespace HLTVDiscordBridge.Shared;
 
@@ -8,6 +9,7 @@ public class RssNews
     public string Description { get; set; }
     public string Link { get; set; }
     public long Date { get; set; }
+    [JsonIgnore] public int Id => int.Parse(Link.Split('/')[^2]);
     public Embed ToEmbed()
     {
         EmbedBuilder builder = new();

@@ -20,7 +20,7 @@ public static class HltvNews
         RssNews[] oldNews = Tools.ParseFromFile<RssNews[]>(Path);
         Tools.SaveToFile(Path, latestNews);
         return from newItem in latestNews 
-            where oldNews.All(oldItem => Tools.GetIdFromUrl(newItem.Link) != Tools.GetIdFromUrl(oldItem.Link))
+            where oldNews.All(oldItem => newItem.Id != oldItem.Id)
             select newItem;
     }
     private static async Task<RssNews[]> GetLatestNews()
