@@ -17,7 +17,7 @@ namespace HLTVDiscordBridge.Shared
             dateEnd = jObject.TryGetValue("dateEnd", out JToken dateEndTok) ? ulong.Parse(dateEndTok.ToString()) : 0;
             location = jObject.TryGetValue("location", out JToken locationTok) ? new Location(locationTok as JObject) : null;
             prizePool = jObject.TryGetValue("prizePool", out JToken prizePoolTok) ? prizePoolTok.ToString() : null;
-            numberOfTeams = jObject.TryGetValue("numberOfTeams", out JToken numberOfTeamsTok) ? uint.Parse(numberOfTeamsTok.ToString()) : 0;
+            numberOfTeams = jObject.TryGetValue("numberOfTeams", out JToken numberOfTeamsTok) ? numberOfTeamsTok.ToString() : null;
             featured = jObject.TryGetValue("featured", out JToken featuredTok) ? bool.Parse(featuredTok.ToString()) : false;
         }
 
@@ -27,7 +27,7 @@ namespace HLTVDiscordBridge.Shared
         public ulong dateEnd { get; set; }
         public Location location { get; set; }
         public string prizePool { get; set; }
-        public uint numberOfTeams { get; set; }
+        public string numberOfTeams { get; set; }
         public bool featured { get; set; }
 
         
