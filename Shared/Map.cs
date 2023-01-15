@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace HLTVDiscordBridge.Shared;
+﻿namespace HLTVDiscordBridge.Shared;
 
 public class Map
 {

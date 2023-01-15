@@ -9,7 +9,7 @@ public class MatchStats
     public int StatsId { get; set; }
     public int MatchId { get; set; }
     public int[] MapStatIds { get; set; }
-    public ulong Date { get; set; }
+    public long Date { get; set; }
     public Team Team1 { get; set; }
     public Team Team2 { get; set; }
     public Event Event { get; set; }

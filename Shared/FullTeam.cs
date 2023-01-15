@@ -13,7 +13,7 @@ public class FullTeam
     public string Logo { get; set; }
     public string Twitter { get; set; }
     public Country Country { get; set; }
-    public int Rank { get; set; }
+    public int? Rank { get; set; }
     public TeamPlayer[] Players { get; set; }
     public int[] RankingDevelopment { get; set; }
     public Article[] News { get; set; }
@@ -36,25 +36,18 @@ public class FullTeam
 
         //rank + development
         string rankDevString;
-        if (RankingDevelopment.Length < 2) { rankDevString = "n.A"; }
+        if (RankingDevelopment == null || RankingDevelopment.Length < 2)
+            rankDevString = "n.A";
         else
         {
             int development = RankingDevelopment[^1] - RankingDevelopment[^2];
-            Emoji emote;
-            string rank = "--";
-            if (Rank != 0) { rank = Rank.ToString(); }
-            switch (development)
+            string rank = Rank != 0 && Rank != null ? Rank.ToString() : "--";
+            rankDevString = development switch
             {
-                case < 0:
-                    emote = new Emoji("⬆️"); rankDevString = $"{rank} ({emote} {Math.Abs(development)})";
-                    break;
-                case 0:
-                    rankDevString = $"{rank} (⏺️ 0)";
-                    break;
-                default:
-                    emote = new Emoji("⬇️"); rankDevString = $"{rank} ({emote} {development})";
-                    break;
-            }
+                < 0 => $"{rank} (⬆️ {Math.Abs(development)})",
+                0 => $"{rank} (⏺️ 0)",
+                _ => $"{rank} (⬇️ {development})"
+            };
         }
         
         //stats
@@ -88,13 +81,11 @@ public class FullTeam
 
         //recent Results
         string recentResultsString = "";
-        if (recentResults.Length == 0)
-        {
+        if (!recentResults.Any())
             recentResultsString = "n.A";
-        }
         else
         {
-            foreach (Result matchResult in recentResults[..4])
+            foreach (Result matchResult in recentResults.Take(4))
             {
                 string opponentTeam = matchResult.Team1.Name == Name ? matchResult.Team2.Name : matchResult.Team1.Name;
                 recentResultsString += $"[vs. {opponentTeam}]({matchResult.Link})\n";;

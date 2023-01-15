@@ -7,5 +7,5 @@ public class EventHighlight
     public string Thumbnail { get; set; }
     public Team Team1 { get; set; }
     public Team Team2 { get; set; }
-    public uint Views { get; set; }
+    public int? Views { get; set; }
 }

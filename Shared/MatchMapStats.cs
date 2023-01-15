@@ -7,16 +7,16 @@ namespace HLTVDiscordBridge.Shared;
 
 public class MatchMapStats
 {
-    public uint Id { get; set; }
-    public uint MatchId { get; set; }
+    public int Id { get; set; }
+    public int? MatchId { get; set; }
     public MapResult Result { get; set; }
     public string Map { get; set; }
-    public ulong Date { get; set; }
+    public long? Date { get; set; }
     public Team Team1 { get; set; }
     public Team Team2 { get; set; }
-    public Event EventObj { get; set; }
-    public List<MatchMapStatsPlayer> Team1Stats { get; set; }
-    public List<MatchMapStatsPlayer> Team2Stats { get; set; }
+    public Event Event { get; set; }
+    public MatchMapStatsPlayer[] Team1Stats { get; set; }
+    public MatchMapStatsPlayer[] Team2Stats { get; set; }
     public string Link { get; set; }
     
     public Embed ToEmbed()
@@ -25,7 +25,6 @@ public class MatchMapStats
 
             builder.WithTitle($"PLAYERSTATS ({Team1.Name} vs. {Team2.Name})")
                 .WithColor(Color.Red);
-            Console.WriteLine(Team1Stats.Count);
             List<string> team1PlayerNames = new();
             List<string> team1Kad = new();
             List<string> team1Rating = new();

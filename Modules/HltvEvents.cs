@@ -137,20 +137,19 @@ public static class HltvEvents
     }
     public static async Task SendUpcomingEvents(SocketSlashCommand arg)
     {
-        List<EventPreview> upcomingEvents = Tools.ParseFromFile<List<EventPreview>>(CurrentEventsPath);
+        EventPreview[] upcomingEvents = Tools.ParseFromFile<EventPreview[]>(CurrentEventsPath);
         
-        EmbedBuilder builder = new();
-        builder.WithTitle("UPCOMING EVENTS")
+        Embed builder = new EmbedBuilder()
+            .WithTitle("UPCOMING EVENTS")
             .WithColor(Color.Gold)
-            .WithDescription("Please select an event for more information");
+            .WithDescription("Please select an event for more information").Build();
 
         SelectMenuBuilder menuBuilder = new SelectMenuBuilder()
             .WithPlaceholder("Select an event")
             .WithCustomId("upcomingEventsMenu")
             .WithMinValues(1)
             .WithMaxValues(1);
-
-        foreach(EventPreview upcomingEvent in upcomingEvents)
+        foreach(EventPreview upcomingEvent in upcomingEvents.Take(25))
         {
             DateTime startDate = Tools.UnixTimeToDateTime(upcomingEvent.DateStart);
             DateTime endDate = Tools.UnixTimeToDateTime(upcomingEvent.DateEnd);
@@ -160,42 +159,37 @@ public static class HltvEvents
             else
                 menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
                     $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.Name}");
-            
-            if(menuBuilder.Options.Count > 24)
-                break;
-            
         }
 
-        ComponentBuilder compBuilder = new ComponentBuilder()
-            .WithSelectMenu(menuBuilder);
+        MessageComponent compBuilder = new ComponentBuilder().WithSelectMenu(menuBuilder).Build();
 
-        await arg.ModifyOriginalResponseAsync(msg => { msg.Embed = builder.Build(); msg.Components = compBuilder.Build(); });
+        await arg.ModifyOriginalResponseAsync(msg =>
+        {
+            msg.Embed = builder;
+            msg.Components = compBuilder;
+        });
     }
     public static async Task SendEvent(SocketMessageComponent arg)
     {
-        await arg.DeferAsync();
-        FullEvent fullEvent;
-        List<Result> results;
+        Embed embed;
         try
         {
             GetEvent request = new GetEvent{Id = int.Parse(arg.Data.Values.First())};
-            fullEvent = await request.SendRequest<FullEvent>();
+            FullEvent fullEvent = await request.SendRequest<FullEvent>();
             GetResults requestResults = new GetResults { EventIds = new[] { fullEvent.Id } };
-            results = await requestResults.SendRequest<List<Result>>();
+            Result[] results = await requestResults.SendRequest<Result[]>();
+            embed = fullEvent.ToFullEmbed(results);
         }
         catch (ApiError ex)
         {
-            await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ex.ToEmbed());
-            return;
+            embed = ex.ToEmbed();
         }
         catch (DeploymentException ex)
         {
-            await arg.ModifyOriginalResponseAsync(msg => msg.Embed = ex.ToEmbed());
-            return;
+            embed = ex.ToEmbed();
         }
-        SocketUserMessage msg = arg.Message;
 
-        SelectMenuComponent menu = msg.Components.First().Components.First() as SelectMenuComponent;
+        SelectMenuComponent menu = arg.Message.Components.First().Components.First() as SelectMenuComponent;
         SelectMenuBuilder builder = menu!.ToBuilder();
 
         foreach (SelectMenuOptionBuilder option in builder.Options.Where(option => option.IsDefault == true))
@@ -210,10 +204,10 @@ public static class HltvEvents
         }
         ComponentBuilder compBuilder = new ComponentBuilder()
             .WithSelectMenu(builder);
-        await arg.ModifyOriginalResponseAsync(message =>
+        await arg.ModifyOriginalResponseAsync(msg =>
         {
-            message.Embed = fullEvent.ToFullEmbed(results);
-            message.Components = compBuilder.Build();
+            msg.Embed = embed;
+            msg.Components = compBuilder.Build();
         });
     }
     public static async Task SendEvent(SocketSlashCommand arg)
@@ -224,7 +218,7 @@ public static class HltvEvents
         {
             FullEvent myEvent = await request.SendRequest<FullEvent>();
             GetResults requestResults = new GetResults { EventIds = new[] { myEvent.Id } };
-            embed = myEvent.ToFullEmbed(await requestResults.SendRequest<List<Result>>());
+            embed = myEvent.ToFullEmbed(await requestResults.SendRequest<Result[]>());
         }
         catch (ApiError ex)
         {

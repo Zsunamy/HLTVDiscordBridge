@@ -14,11 +14,11 @@ public class FullEvent
     public long DateEnd { get; set; }
     public string PrizePool { get; set; }
     public Location Location { get; set; }
-    public int NumberOfTeams { get; set; }
-    public bool AllMatchesListed { get; set; }
+    public int? NumberOfTeams { get; set; }
+    public bool? AllMatchesListed { get; set; }
     public string Link { get; set; }
     public List<EventTeam> Teams { get; set; }
-    public List<Prize> PrizeDistribution { get; set; }
+    public Prize[] PrizeDistribution { get; set; }
     public Event[] RelatedEvents { get; set; }
     public EventFormat[] Formats { get; set; }
     public string[] MapPool { get; set; }
@@ -70,7 +70,7 @@ public class FullEvent
         {
             if(string.Join("\n", prizeList).Length > 600)
             {
-                prizeList.Add($"and {PrizeDistribution.Count - PrizeDistribution.IndexOf(prize)} more");
+                prizeList.Add($"and {PrizeDistribution.Length - Array.IndexOf(PrizeDistribution, prize) - 1} more");
                 break;
             }
             List<string> prizes = new();
@@ -95,7 +95,7 @@ public class FullEvent
         return builder.Build();
     }
         
-    public Embed ToFullEmbed(List<Result> results)
+    public Embed ToFullEmbed(Result[] results)
     {
         EmbedBuilder builder = new();
         builder.WithTitle($"{Name}")
@@ -140,7 +140,7 @@ public class FullEvent
             {
                 if (string.Join("\n", matchResultString).Length > 700)
                 {
-                    matchResultString.Add($"and {results.Count - results.IndexOf(result)} more");
+                    matchResultString.Add($"and {results.Length - Array.IndexOf(results, result) - 1} more");
                     break;
                 }
                 matchResultString.Add($"[{result.Team1.Name} vs. {result.Team2.Name}]({result.Link})");
@@ -155,7 +155,7 @@ public class FullEvent
             {
                 if (string.Join("\n", prizeList).Length > 600)
                 {
-                    prizeList.Add($"and {PrizeDistribution.Count - PrizeDistribution.IndexOf(prize)} more");
+                    prizeList.Add($"and {PrizeDistribution.Length - Array.IndexOf(PrizeDistribution, prize) - 1} more");
                     break;
                 }
                 List<string> prizes = new();

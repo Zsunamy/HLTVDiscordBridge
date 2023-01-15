@@ -6,7 +6,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
 using MongoDB.Driver;
 

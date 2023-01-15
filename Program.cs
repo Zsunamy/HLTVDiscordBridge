@@ -104,7 +104,6 @@ internal class Program
     
     private static async Task SelectMenuExecuted(SocketMessageComponent arg)
     {
-  
         switch (arg.Data.CustomId) 
         {
             case "upcomingEventsMenu":
@@ -217,7 +216,14 @@ internal class Program
             (new Timer(), HltvEvents.SendNewStartedEvents), (new Timer(), HltvEvents.SendNewPastEvents), (new Timer(), HltvMatches.UpdateMatches)};
         foreach ((Timer timer, Func<Task> function) in timers)
         {
-            await function();
+            try
+            {
+                await function();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
             timer.Interval = _botConfig.CheckResultsTimeInterval;
             timer.Elapsed += async (s, e) =>
             {

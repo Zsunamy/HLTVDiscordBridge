@@ -8,7 +8,7 @@ public class EventPreview
     public long DateEnd { get; set; }
     public Location Location { get; set; }
     public string PrizePool { get; set; }
-    public uint NumberOfTeams { get; set; }
+    public int NumberOfTeams { get; set; }
     public bool Featured { get; set; }
 
         

@@ -10,7 +10,7 @@ public class Match
     public Team Team1 { get; set; }
     public Team Team2 { get; set; }
     public Team WinnerTeam { get; set; }
-    public long Date { get; set; }
+    public long? Date { get; set; }
     public Format Format { get; set; }
     public Event Event { get; set; }
     public Map[] Maps { get; set; }
