@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Discord;
 using HLTVDiscordBridge.Modules;
 
@@ -17,8 +18,8 @@ public class FullEvent
     public int? NumberOfTeams { get; set; }
     public bool? AllMatchesListed { get; set; }
     public string Link { get; set; }
-    public List<EventTeam> Teams { get; set; }
-    public Prize[] PrizeDistribution { get; set; }
+    public EventTeam[] Teams { get; set; }
+    public Prize[] PrizeDistribution { get; set; } = Array.Empty<Prize>();
     public Event[] RelatedEvents { get; set; }
     public EventFormat[] Formats { get; set; }
     public string[] MapPool { get; set; }
@@ -27,44 +28,47 @@ public class FullEvent
         
     public Embed ToStartedEmbed()
     {
-        EmbedBuilder builder = new();
-        builder.WithTitle($"{Name} just started!");
-        builder.AddField("startDate:", Tools.UnixTimeToDateTime(DateStart).ToShortDateString(), true);
-        builder.AddField("endDate:", Tools.UnixTimeToDateTime(DateEnd).ToShortDateString(), true);
-        builder.AddField("\u200b", "\u200b", true);
-        builder.AddField("prize pool:", PrizePool, true);
-        builder.AddField("location:", Location.Name, true);
-        builder.AddField("\u200b", "\u200b", true);
+        EmbedBuilder builder = new EmbedBuilder()
+            .WithTitle($"{Name} just started!")
+            .AddField("startDate:", Tools.UnixTimeToDateTime(DateStart).ToShortDateString(), true)
+            .AddField("endDate:", Tools.UnixTimeToDateTime(DateEnd).ToShortDateString(), true)
+            .AddField("\u200b", "\u200b", true)
+            .AddField("prize pool:", PrizePool, true)
+            .AddField("location:", Location.Name, true)
+            .AddField("\u200b", "\u200b", true);
+        
         List<string> teams = new();
         foreach (EventTeam team in Teams)
         {
             if (string.Join("\n", teams).Length > 600)
             {
-                teams.Add($"and {Teams.Count - Teams.IndexOf(team)} more");
+                teams.Add($"and {Teams.Length - Array.IndexOf(Teams, team)} more");
                 break;
             }
             teams.Add($"[{team.Name}]({team.Link})");
         }
-        if(teams.Count > 0)
-            builder.AddField("teams:", string.Join("\n", teams));
-        builder.WithColor(Color.Gold);
-        builder.WithThumbnailUrl(Logo);
-        builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", Link);
-        builder.WithCurrentTimestamp();
-        return builder.Build();
+        if(!teams.Any())
+            builder.AddField("teams:", teams);
+        
+        return builder.WithColor(Color.Gold)
+            .WithThumbnailUrl(Logo)
+            .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", Link)
+            .WithCurrentTimestamp()
+            .Build();
     }
 
     public Embed ToPastEmbed()
     {
-        EmbedBuilder builder = new();
-        builder.WithTitle($"{Name} just ended!");
-        builder.AddField("startDate:", Tools.UnixTimeToDateTime(DateStart).ToShortDateString(), true);
-        builder.AddField("endDate:", Tools.UnixTimeToDateTime(DateEnd).ToShortDateString(), true);
-        builder.AddField("\u200b", "\u200b", true);
-        builder.AddField("prize pool:", PrizePool, true);
-        builder.AddField("location:", Location.Name, true);
-        builder.AddField("\u200b", "\u200b", true);
+        EmbedBuilder builder = new EmbedBuilder()
+            .WithTitle($"{Name} just ended!")
+            .AddField("startDate:", Tools.UnixTimeToDateTime(DateStart).ToShortDateString(), true)
+            .AddField("endDate:", Tools.UnixTimeToDateTime(DateEnd).ToShortDateString(), true)
+            .AddField("\u200b", "\u200b", true)
+            .AddField("prize pool:", PrizePool, true)
+            .AddField("location:", Location.Name, true)
+            .AddField("\u200b", "\u200b", true);
         
+        Console.WriteLine(Id);
         List<string> prizeList = new();
         foreach (Prize prize in PrizeDistribution)
         {
@@ -75,24 +79,24 @@ public class FullEvent
             }
             List<string> prizes = new();
             if(prize.PrizePrize != null)
-                prizes.Add($"wins: {prize.PrizePrize}"); 
+                prizes.Add($"wins: {prize.PrizePrize}");
+            
             if(prize.QualifiesFor != null)
-                prizes.Add($"qualifies for: [{prize.QualifiesFor.Name}]({prize.QualifiesFor.Link})"); 
+                prizes.Add($"qualifies for: [{prize.QualifiesFor.Name}]({prize.QualifiesFor.Link})");
+            
             if(prize.OtherPrize != null)
                 prizes.Add($"qualifies for: {prize.OtherPrize}");
-
-            prizeList.Add($"{prize.Place} [{prize.Team.Name}]({prize.Team.Link}) {string.Join(" & ", prizes)}");
+            if (prize.Team != null)
+                prizeList.Add($"{prize.Place} [{prize.Team.Name}]({prize.Team.Link}) {string.Join(" & ", prizes)}");
         }
-        if(prizeList.Count > 0)
-        {
+        if(string.Join("\n", prizeList).Length > 0)
             builder.AddField("results:", string.Join("\n", prizeList));
-        }
-            
-        builder.WithColor(Color.Gold);
-        builder.WithThumbnailUrl(Logo);
-        builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", Link);
-        builder.WithCurrentTimestamp();
-        return builder.Build();
+
+        return builder.WithColor(Color.Gold)
+            .WithThumbnailUrl(Logo)
+            .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", Link)
+            .WithCurrentTimestamp()
+            .Build();
     }
         
     public Embed ToFullEmbed(Result[] results)
@@ -106,8 +110,8 @@ public class FullEvent
             .WithCurrentTimestamp();
         DateTime startDate = Tools.UnixTimeToDateTime(DateStart);
         DateTime endDate = Tools.UnixTimeToDateTime(DateEnd);
-        string start = startDate > DateTime.UtcNow ? "starting" : "started";
-        string end = endDate > DateTime.UtcNow ? "ending" : "ended";
+        string start = startDate > DateTime.Now ? "starting" : "started";
+        string end = endDate > DateTime.Now ? "ending" : "ended";
         builder.AddField(start, startDate.ToShortDateString(), true)
             .AddField(end, endDate.ToShortDateString(), true)
             .AddField("\u200b", "\u200b", true)
@@ -120,20 +124,17 @@ public class FullEvent
         {
             if (string.Join("\n", teams).Length > 600)
             {
-                teams.Add($"and {Teams.Count - Teams.IndexOf(team)} more");
+                teams.Add($"and {Teams.Length - Array.IndexOf(Teams, team)} more");
                 break;
             }
             teams.Add($"[{team.Name}]({team.Link})");
         }
-        if (teams.Count > 0)
+        if (teams.Count != 0)
             builder.AddField("teams:", string.Join("\n", teams));
-
-        if (startDate > DateTime.Now && endDate > DateTime.Now)
+        
+        if (startDate < DateTime.Now && endDate > DateTime.Now)
         {
-            //upcoming                
-        } 
-        else if(startDate < DateTime.Now && endDate > DateTime.Now)
-        {
+            // live
             List<string> matchResultString = new();
 
             foreach (Result result in results)
@@ -145,19 +146,22 @@ public class FullEvent
                 }
                 matchResultString.Add($"[{result.Team1.Name} vs. {result.Team2.Name}]({result.Link})");
             }
+
             builder.AddField("latest results:", string.Join("\n", matchResultString), true);
-            //live
-        } 
-        else
+        }
+        else if (startDate < DateTime.Now && endDate < DateTime.Now)
         {
+            // past
             List<string> prizeList = new();
             foreach (Prize prize in PrizeDistribution)
             {
                 if (string.Join("\n", prizeList).Length > 600)
                 {
-                    prizeList.Add($"and {PrizeDistribution.Length - Array.IndexOf(PrizeDistribution, prize) - 1} more");
+                    prizeList.Add(
+                        $"and {PrizeDistribution.Length - Array.IndexOf(PrizeDistribution, prize) - 1} more");
                     break;
                 }
+
                 List<string> prizes = new();
                 if (prize != null)
                 {
@@ -166,14 +170,15 @@ public class FullEvent
                         prizes.Add($"qualifies for: [{prize.QualifiesFor.Name}]({prize.QualifiesFor.Link})");
                     if (prize.OtherPrize != null)
                         prizes.Add($"qualifies for: {prize.OtherPrize}");
-                    prizeList.Add($"{prize.Place} [{prize.Team.Name}]({prize.Team.Link}) {string.Join(" & ", prizes)}");
+                    prizeList.Add(
+                        $"{prize.Place} [{prize.Team.Name}]({prize.Team.Link}) {string.Join(" & ", prizes)}");
                 }
             }
+
             if (prizeList.Count > 0)
             {
                 builder.AddField("results:", string.Join("\n", prizeList));
             }
-            //past
         }
 
         return builder.Build();

@@ -50,7 +50,7 @@ public static class HltvTeams
     
     public static async Task<int?> GetIdFromDatabase(string name)
     {
-        IAsyncCursor<TeamDocument> query = GetTeamCollection().FindSync(
+        IFindFluent<TeamDocument, TeamDocument> query = GetTeamCollection().Find(
             elem => elem.Alias.Contains(name) || elem.Name.ToLower() == name);
         if (await query.AnyAsync())
         {

@@ -67,7 +67,7 @@ public static class HltvEvents
         else
         {
             Tools.SaveToFile(OngoingEventsPath, (await GetEvents()).Where(obj => obj.DateStart < DateTimeOffset.Now.ToUnixTimeMilliseconds()));
-            return new List<EventPreview>();
+            return Array.Empty<EventPreview>();
         }
 
         EventPreview[] events = await GetEvents();
@@ -153,7 +153,9 @@ public static class HltvEvents
         {
             DateTime startDate = Tools.UnixTimeToDateTime(upcomingEvent.DateStart);
             DateTime endDate = Tools.UnixTimeToDateTime(upcomingEvent.DateEnd);
-            if(upcomingEvent.Featured)
+            upcomingEvent.Location ??= new Location() { Name = "" };
+            
+            if (upcomingEvent.Featured)
                 menuBuilder.AddOption(upcomingEvent.Name, upcomingEvent.Id.ToString(),
                     $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()} | {upcomingEvent.Location.Name}", new Emoji("⭐"));
             else
