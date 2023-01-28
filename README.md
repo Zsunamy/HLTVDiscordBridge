@@ -11,9 +11,9 @@ We also provide commands which search HLTV and provide you with information abou
 | Command | Parameters | Description |
 |:-:|:-:|:-:|
 | /init | [#channel] | Sets the current or specified channel as the default channel for news and results. |
-| /set stars | [number between <br /> 0 and 5] | If a completed match has less than the specified stars, then it won't send a message on your server. <br /> The number of stars depends on the ranking of both teams and which event at which stage the match is. <br /> We are not resposible for the amount of stars a match recieves. |
+| /set stars | [number between <br /> 0 and 5] | If a completed match has less than the specified stars, then it won't send a message on your server. <br /> The number of stars depends on the ranking of both teams and which event at which stage the match is. <br /> We are not responsible for the amount of stars a match recieves. |
 | /set featuredevents | [true or false] | If set true, the bot will only send a message if a featured event just stared/ended. |
-| /set news | [true or false] | Disables/Enables autmoated messages about recent news.|
+| /set news | [true or false] | Disables/Enables automated messages about recent news.|
 | /set results | [true or false] | Disables/Enables automated messages about the last completed match.|
 | /set events | [true or false] | Disables/Enables automated messages started/ended events.|
 ### Usage
