@@ -30,6 +30,6 @@ We also provide commands which search HLTV and provide you with information abou
 | /help | [command (optional)] | Like any other help command, this will send you a similar help like this. |
 | /about | --- | About us |
 ## About us
-We are a team of three developers who have been working on this bot during the last three months.
+We are a team of three developers who have been working on this bot since early 2021.
 If you have any questions issues about this bot, message us on discord (Revilum#9569, Marcoooo
 #0492 or \~𝕷𝖆𝖍𝖚𝖘𝖆~#0699) or write us an [issue](https://github.com/Zsunamy/HLTVDiscordBridge/issues) on Github. If you want to support us, vote for our bot on top.gg or send us a donation on [patreon](https://www.patreon.com/zsunamy).
