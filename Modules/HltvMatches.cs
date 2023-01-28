@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,7 +23,7 @@ public static class HltvMatches
     
     public static async Task SendLiveMatches(SocketSlashCommand cmd)
     {
-        Embed embed = GetLiveMatchesEmbed(Tools.ParseFromFile<List<MatchPreview>>(Path));
+        Embed embed = GetLiveMatchesEmbed(Tools.ParseFromFile<MatchPreview[]>(Path).Where(x => x.Live).ToArray());
         await cmd.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
     }
 
@@ -86,53 +85,47 @@ public static class HltvMatches
 
         foreach (MatchPreview match in matches.Take(3))
         {
-            builder.AddField("match:", $"[{match.Team1.Name}]({match.Team1.Link}) vs. [{match.Team2.Name}]({match.Team2.Link})", true);
-            builder.AddField("time:", $"{Tools.UnixTimeToDateTime(match.Date).ToShortDateString()} UTC", true);
-            builder.AddField("\u200b", "\u200b", true);
-            builder.AddField("event:", $"[{match.Event.Name}]({match.Event.Link})", true);
-            builder.AddField("format:", Tools.GetFormatFromAcronym(match.Format), true);
-            builder.AddField("\u200b", "\u200b", true);
-            builder.AddField("details:", $"[click here for more details]({match.Link})");
+            builder.AddField("match:", $"[{match.Team1.Name}]({match.Team1.Link}) vs. [{match.Team2.Name}]({match.Team2.Link})", true)
+                .AddField("time:", $"{Tools.UnixTimeToDateTime(match.Date).ToShortDateString()} UTC", true)
+                .AddField("\u200b", "\u200b", true)
+                .AddField("event:", $"[{match.Event.Name}]({match.Event.Link})", true)
+                .AddField("format:", Tools.GetFormatFromAcronym(match.Format), true)
+                .AddField("\u200b", "\u200b", true)
+                .AddField("details:", $"[click here for more details]({match.Link})");
             
             if (Array.IndexOf(matches, match) != 2 && Array.IndexOf(matches, match) != matches.Length - 1)
-            {
                 builder.AddField("\u200b", "\u200b");
-            }
         }
         
         if (matches.Length > 3)
-        {
             builder.WithFooter($"and {matches.Length - 3} more");
-        }
         else
-        {
             builder.WithFooter(Tools.GetRandomFooter());
-        }
-        
+
         builder.WithCurrentTimestamp().WithColor(Color.Blue);
         return builder.Build();
     }
-    private static Embed GetLiveMatchesEmbed(List<MatchPreview> matches)
+    private static Embed GetLiveMatchesEmbed(MatchPreview[] matches)
     {
         EmbedBuilder builder = new();
-        if (matches.Count == 0)
-        {
-            builder.WithColor(Color.Red)
+        if (matches.Length == 0)
+            return builder.WithColor(Color.Red)
                 .WithTitle($"LIVE MATCHES")
                 .WithDescription("There are no live matches available right now")
-                .WithCurrentTimestamp();
-            return builder.Build();
-        }
+                .WithCurrentTimestamp()
+                .Build();
+        
         builder.WithTitle("LIVE MATCHES")
             .WithColor(Color.Blue)
             .WithCurrentTimestamp();
-        foreach (MatchPreview match in matches)
+        foreach (MatchPreview match in matches.Take(25))
         {
-            Emoji emote = new(matches.IndexOf(match) + 1 + "️⃣");
+            Emoji emote = new(Array.IndexOf(matches, match) + 1 + "️⃣");
             builder.AddField($"{emote} {match.Team1.Name} vs. {match.Team2.Name}",
-                $"[matchpage]({match.Link})\n" +
+                $"[match]({match.Link})\n" +
                 $"event: [{match.Event.Name}]({match.Event.Link})\n");
         }
-        return builder.Build();
+
+        return builder.WithFooter(Tools.GetRandomFooter()).Build();
     }
 }

@@ -68,7 +68,6 @@ public class FullEvent
             .AddField("location:", Location.Name, true)
             .AddField("\u200b", "\u200b", true);
         
-        Console.WriteLine(Id);
         List<string> prizeList = new();
         foreach (Prize prize in PrizeDistribution)
         {
