@@ -35,12 +35,15 @@ public class TeamMapsStats
     
     [JsonPropertyName("de_tuscan")]
     public TeamMapStats DeTuscan { get; set; }
+    
+    [JsonPropertyName("de_anubis")]
+    public TeamMapStats DeAnubis { get; set; }
 
     public IEnumerable<(string, TeamMapStats)> GetMostPlayedMaps()
     {
         return new[] { ("de_dust2", DeDust2), ("de_mirage", DeMirage), ("de_inferno", DeInferno),
             ("de_nuke", DeNuke), ("de_overpass", DeOverpass), ("de_train", DeTrain), ("de_cache", DeCache), ("de_cbble", DeCbble),
-            ("de_ancient", DeAncient), ("de_tuscan", DeTuscan)}.Where(elem => elem.Item2 != null)
+            ("de_ancient", DeAncient), ("de_tuscan", DeTuscan), ("de_anubis", DeAnubis)}.Where(elem => elem.Item2 != null)
             .OrderByDescending(elem => elem.Item2.Wins);
     }
 }
