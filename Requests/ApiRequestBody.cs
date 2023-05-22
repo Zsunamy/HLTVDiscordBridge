@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Discord;
 using HLTVDiscordBridge.Modules;
 using HLTVDiscordBridge.Shared;
 
@@ -30,7 +31,8 @@ public abstract class ApiRequestBody<TChild> where TChild : ApiRequestBody<TChil
             }
             throw new DeploymentException(resp);
         }
-        Program.WriteLog($"{DateTime.Now.ToLongTimeString()} API\t\t{Endpoint} was successful");
+
+        await Program.Log(new LogMessage(LogSeverity.Verbose, ((TChild)this).GetType().Name, "was successful"));
         StatsTracker.GetStats().ApiRequest =+ 1;
         return await resp.Content.ReadFromJsonAsync<T>(Program.SerializeOptions);
     }

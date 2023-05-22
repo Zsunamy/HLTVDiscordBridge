@@ -15,6 +15,7 @@ public class BotConfig
     public string ApiLink { get; set; }
     public string DatabaseLink { get; set; }
     public string Database { get; set; }
+    public ulong DeveloperServer { get; set; }
     [NonSerialized]
     private static BotConfig _instance;
     private BotConfig() {}

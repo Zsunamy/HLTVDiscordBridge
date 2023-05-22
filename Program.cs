@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Timers;
+using Discord.Net;
 using HLTVDiscordBridge.Requests;
 
 namespace HLTVDiscordBridge;
@@ -40,7 +41,8 @@ internal class Program
     {
         Client = new DiscordSocketClient( new DiscordSocketConfig
         {
-            GatewayIntents = GatewayIntents.AllUnprivileged & ~ GatewayIntents.GuildScheduledEvents & ~ GatewayIntents.GuildInvites
+            //GatewayIntents = (GatewayIntents)536930304
+            GatewayIntents = GatewayIntents.GuildMessages | GatewayIntents.GuildWebhooks | GatewayIntents.DirectMessageTyping
         });
         _botConfig = BotConfig.GetBotConfig();
             
@@ -70,7 +72,7 @@ internal class Program
         if (Environment.GetCommandLineArgs().Length > 1 && Environment.GetCommandLineArgs()[1] == "init")
         {
             await SlashCommands.InitSlashCommands();
-            WriteLog($"{DateTime.Now.ToLongTimeString()} Init\t\t successfully initialized all commands");
+            await Log(new LogMessage(LogSeverity.Info, nameof(Program), "successfully initialized all commands"));
         }
         
         await Config.ServerConfigStartUp();
@@ -126,7 +128,7 @@ internal class Program
             }
             catch (Exception ex)
             {
-                if (ex is Discord.Net.HttpException)
+                if (ex is HttpException)
                 {
                     await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
                         .WithDescription(
@@ -134,10 +136,11 @@ internal class Program
                             "server. Please use the invite-link and grant all requested permissions.").Build());
                     throw;
                 }
-                Console.WriteLine(ex);
+
+                await Log(new LogMessage(LogSeverity.Error, "GuildJoined", ex.Message, ex));
                 await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
                     .WithDescription(
-                        $"An {ex.Message} Exception occured while joining this server. Please report this bug ")
+                        $"An {ex.Message} Exception occured while joining this server. Please report this bug!")
                     .Build());
                 throw;
             }
@@ -149,16 +152,16 @@ internal class Program
 
     private Task GuildLeft(SocketGuild guild)
     {
-        _ = Task.Run(() =>
+        _ = Task.Run(async () =>
         {
             try
             {
-                Config.GetCollection().DeleteOne(x => x.GuildId == guild.Id);
+                await Config.GetCollection().DeleteOneAsync(x => x.GuildId == guild.Id);
                 StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                await Log(new LogMessage(LogSeverity.Critical, "GuildLeft", ex.Message, ex));
                 throw;
             }
         });
@@ -196,10 +199,10 @@ internal class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            await Log(new LogMessage(LogSeverity.Critical, "Background-Task", ex.Message, ex));
         }
         Timer updateGgStatsTimer = new(1000 * 60 * 60);
-        updateGgStatsTimer.Elapsed += async (sender, e) =>
+        updateGgStatsTimer.Elapsed += async (_, _) =>
         {
             try
             {
@@ -207,7 +210,7 @@ internal class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                await Log(new LogMessage(LogSeverity.Critical, "Background-Task", ex.Message, ex));
             }
         };
         updateGgStatsTimer.Enabled = true;
@@ -222,7 +225,7 @@ internal class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                await Log(new LogMessage(LogSeverity.Critical, "Background-Task", ex.Message, ex));
             }
             timer.Interval = _botConfig.CheckResultsTimeInterval;
             timer.Elapsed += async (s, e) =>
@@ -233,7 +236,7 @@ internal class Program
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    await Log(new LogMessage(LogSeverity.Critical, "Background-Task", ex.Message, ex));
                     throw;
                 }
             };
@@ -241,14 +244,25 @@ internal class Program
             await Task.Delay(_botConfig.CheckResultsTimeInterval / timers.Length);
         }
     }
+    
+    public static async Task Log(LogMessage message)
+    {
+        if (message.Severity == LogSeverity.Critical)
+            await Developer.NotifyCriticalError(message);
+        switch (message.Exception)
+        {
+            case HttpException httpException:
+                Console.WriteLine($"[Discord/{message.Severity}] {httpException.Message}"
+                                  + $" {httpException.Reason}.");
+                Console.WriteLine(httpException);
+                break;
+            case { } ex:
+                Console.WriteLine($"[General/{message.Severity}] {ex.Message} {ex.Source}");
+                break;
+            default:
+                Console.WriteLine($"[General/{message.Severity}] {message}");
+                break;
+        }
+    }
 
-    public static void WriteLog(string arg)
-    {
-        Console.WriteLine(arg);
-    }
-    private static Task Log(LogMessage arg)
-    {
-        WriteLog(arg.ToString().Split("     ")[0] + "\t" + arg.ToString().Split("     ")[1]);
-        return Task.CompletedTask;
-    }
 }

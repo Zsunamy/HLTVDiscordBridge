@@ -70,14 +70,16 @@ public static class Config
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                await Program.Log(new LogMessage(LogSeverity.Warning, nameof(Config), ex.Message, ex));
                 await channel.SendMessageAsync(
                     $"ERROR: Failed to create webhook with the following message `{ex.Message}`\n" + 
                     "The Bot is probably missing permissions to manage webhooks.\n" +
                     "Please give the bot these permissions and then setup all channels manually using the /set command");
             }
         }
-        Console.WriteLine("Finished initializing all webhooks!");
+
+        await Program.Log(new LogMessage(LogSeverity.Info, "Initialization of Webhooks",
+            "Finished initializing all webhooks!"));
     }
 
     private static async Task<UpdateDefinition<ServerConfig>> SetWebhook(bool enable, Expression<Func<ServerConfig, Webhook>> getWebhook,
@@ -256,7 +258,8 @@ public static class Config
         {
             if (!await GetCollection().FindSync(x => x.GuildId == guild.Id).AnyAsync())
             {
-                Console.WriteLine($"found guild {guild.Name} with no config. Creating default.");
+                await Program.Log(new LogMessage(LogSeverity.Info, nameof(Config),
+                    $"found guild {guild.Name} with no config. Creating default."));
                 await Program.GetInstance().GuildJoined(guild);
             }
         }
@@ -264,7 +267,8 @@ public static class Config
         foreach (ServerConfig config in GetCollection().Find( _ => true).ToList().Where(config => client.GetGuild(config.GuildId) == null))
         {
             //TODO Testing
-            Console.WriteLine("Found serverconfig but bot is not on server; Deleting");
+            await Program.Log(new LogMessage(LogSeverity.Info, nameof(Config),
+                "Found server-configuration but bot is not on server; Deleting"));
             // await GetCollection().DeleteOneAsync(x => x.GuildID == config.GuildID);
         }
     }

@@ -18,7 +18,8 @@ public static class HltvMatches
         Stopwatch watch = new(); watch.Start();
         GetMatches request = new();
         Tools.SaveToFile(Path, await request.SendRequest<MatchPreview[]>());
-        Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched matches ({watch.ElapsedMilliseconds}ms)");
+        await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvMatches),
+            $"fetched matches ({watch.ElapsedMilliseconds}ms)"));
     }
     
     public static async Task SendLiveMatches(SocketSlashCommand cmd)

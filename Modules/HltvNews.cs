@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using HLTVDiscordBridge.Requests;
 using HLTVDiscordBridge.Shared;
 
@@ -35,6 +36,8 @@ public static class HltvNews
         {
             await Tools.SendMessagesWithWebhook(x => x.News != null, x => x.News , news.ToEmbed());
         }
-        Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)");
+        
+        await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvNews),
+            $"fetched news ({watch.ElapsedMilliseconds}ms)"));
     }
 }

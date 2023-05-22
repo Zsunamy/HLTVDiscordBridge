@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Discord;
 using HLTVDiscordBridge.Requests;
@@ -44,6 +45,8 @@ public static class HltvResults
             (Embed embed, MessageComponent component) = result.ToEmbedAndComponent(await request.SendRequest<Match>());
             await Tools.SendMessagesWithWebhook(x => x.Results != null, x => x.Results, embed, component);
         }
-        Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
+
+        await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvResults),
+            $"fetched results ({watch.ElapsedMilliseconds}ms)"));
     }
 }

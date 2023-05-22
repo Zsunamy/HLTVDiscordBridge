@@ -154,7 +154,7 @@ public static class Tools
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                await Program.Log(new LogMessage(LogSeverity.Error, "RunCommandInBackground", ex.Message, ex));
                 await arg.ModifyOriginalResponseAsync(msg =>
                     msg.Content = $"The following error occured: `{ex.Message}`");
                 throw;

@@ -11,6 +11,17 @@ namespace HLTVDiscordBridge.Modules;
 
 public static class Developer
 {
+    public static async Task NotifyCriticalError(LogMessage log)
+    {
+        BotConfig config = BotConfig.GetBotConfig();
+        await Program.GetInstance().Client.GetGuild(config.DeveloperServer).DefaultChannel.SendMessageAsync(
+            embed: new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithTitle("A critical Error occured")
+                .WithDescription($"{log.Message}\nWith the following Exception-message: {log.Exception.Message}" +
+                                 $"\n{log.Exception}")
+                .Build());
+    } 
     public static async Task Update(SocketSlashCommand arg)
     {
         Embed embed = new EmbedBuilder()
@@ -41,7 +52,7 @@ public static class Developer
                         Console.WriteLine(ex);
                         if (ex is Discord.Net.HttpException)
                         {
-                            Program.WriteLog($"not enough permission in channel {channel!.Name}");
+                            await Program.Log(new LogMessage(LogSeverity.Warning, nameof(Developer), $"not enough permission in channel {channel!.Name}", ex));
                         }
                         else
                         {

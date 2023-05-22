@@ -88,7 +88,9 @@ public static class HltvEvents
             await Tools.SendMessagesWithWebhook(x => x.Events != null,
                 x => x.Events, (await request.SendRequest<FullEvent>()).ToStartedEmbed());
         }
-        Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched started events ({watch.ElapsedMilliseconds}ms)");
+        
+        await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvEvents),
+            $"fetched started events ({watch.ElapsedMilliseconds}ms)"));
     }
 
     public static async Task SendNewPastEvents()
@@ -100,7 +102,9 @@ public static class HltvEvents
             await Tools.SendMessagesWithWebhook(x => x.Events != null,
                 x => x.Events, (await request.SendRequest<FullEvent>()).ToPastEmbed());
         }
-        Program.WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched past events ({watch.ElapsedMilliseconds}ms)");
+        
+        await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvEvents),
+            $"fetched  past events ({watch.ElapsedMilliseconds}ms)"));
     }
 
     public static async Task SendEvents(SocketSlashCommand arg)
