@@ -49,13 +49,13 @@ public static class Developer
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex);
                         if (ex is Discord.Net.HttpException)
                         {
                             await Program.Log(new LogMessage(LogSeverity.Warning, nameof(Developer), $"not enough permission in channel {channel!.Name}", ex));
                         }
                         else
                         {
+                            await Program.Log(new LogMessage(LogSeverity.Error, nameof(Developer), ex.Message, ex));
                             throw;
                         }
                     }

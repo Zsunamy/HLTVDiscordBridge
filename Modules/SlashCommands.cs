@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using System.Threading.Tasks;
+using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge.Modules;
 
@@ -25,8 +26,6 @@ public static class SlashCommands
 
     public static async Task InitSlashCommands()
     {
-        const ulong guildId = 792139588743331841;
-
         ApplicationCommandProperties[] internalCommands =
         {
             new SlashCommandBuilder()
@@ -225,7 +224,7 @@ public static class SlashCommands
                 .WithDescription("shows all live matches").Build(),
         };
 
-        await Client.GetGuild(guildId).BulkOverwriteApplicationCommandAsync(internalCommands);
+        await Client.GetGuild(BotConfig.GetBotConfig().DeveloperServer).BulkOverwriteApplicationCommandAsync(internalCommands);
         await Client.BulkOverwriteGlobalApplicationCommandsAsync(commands);
     }
 

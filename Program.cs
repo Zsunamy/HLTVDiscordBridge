@@ -130,40 +130,35 @@ internal class Program
             {
                 if (ex is HttpException)
                 {
+                    await Log(new LogMessage(LogSeverity.Warning, "GuildJoined", ex.Message, ex));
                     await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
                         .WithDescription(
                             "It looks like the bot has insufficient permissions (probably webhooks) on this" +
                             "server. Please use the invite-link and grant all requested permissions.").Build());
-                    throw;
                 }
-
-                await Log(new LogMessage(LogSeverity.Error, "GuildJoined", ex.Message, ex));
-                await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
-                    .WithDescription(
-                        $"An {ex.Message} Exception occured while joining this server. Please report this bug!")
-                    .Build());
+                else
+                {
+                    await Log(new LogMessage(LogSeverity.Error, "GuildJoined", ex.Message, ex));
+                    await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
+                        .WithDescription(
+                            $"An {ex.Message} Exception occured while joining this server. Please report this bug!")
+                        .Build());
+                }
                 throw;
             }
-            
         });
         return Task.CompletedTask;
-        
     }
 
     private Task GuildLeft(SocketGuild guild)
     {
         _ = Task.Run(async () =>
         {
-            try
+            await Tools.ExceptionHandler(async () =>
             {
                 await Config.GetCollection().DeleteOneAsync(x => x.GuildId == guild.Id);
                 StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
-            }
-            catch (Exception ex)
-            {
-                await Log(new LogMessage(LogSeverity.Critical, "GuildLeft", ex.Message, ex));
-                throw;
-            }
+            }, new LogMessage(LogSeverity.Critical, "GuildLeft", ""));
         });
         
         return Task.CompletedTask;
@@ -193,25 +188,14 @@ internal class Program
 
     private async Task BgTask()
     {
-        try
-        {
-            await MiscellaneousBackground();
-        }
-        catch (Exception ex)
-        {
-            await Log(new LogMessage(LogSeverity.Critical, "Background-Task", ex.Message, ex));
-        }
+        await Tools.ExceptionHandler(MiscellaneousBackground,
+            new LogMessage(LogSeverity.Warning, "Background-Task", ""));
+        
         Timer updateGgStatsTimer = new(1000 * 60 * 60);
         updateGgStatsTimer.Elapsed += async (_, _) =>
         {
-            try
-            {
-                await MiscellaneousBackground();
-            }
-            catch (Exception ex)
-            {
-                await Log(new LogMessage(LogSeverity.Critical, "Background-Task", ex.Message, ex));
-            }
+            await Tools.ExceptionHandler(MiscellaneousBackground,
+                new LogMessage(LogSeverity.Warning, "Background-Task", ""));
         };
         updateGgStatsTimer.Enabled = true;
         
@@ -219,26 +203,11 @@ internal class Program
             (new Timer(), HltvEvents.SendNewStartedEvents), (new Timer(), HltvEvents.SendNewPastEvents), (new Timer(), HltvMatches.UpdateMatches)};
         foreach ((Timer timer, Func<Task> function) in timers)
         {
-            try
-            {
-                await function();
-            }
-            catch (Exception ex)
-            {
-                await Log(new LogMessage(LogSeverity.Critical, "Background-Task", ex.Message, ex));
-            }
+            await Tools.ExceptionHandler(function, new LogMessage(LogSeverity.Critical, "Background-Task", ""));
             timer.Interval = _botConfig.CheckResultsTimeInterval;
-            timer.Elapsed += async (s, e) =>
+            timer.Elapsed += async (_, _) =>
             {
-                try
-                {
-                    await function();
-                }
-                catch (Exception ex)
-                {
-                    await Log(new LogMessage(LogSeverity.Critical, "Background-Task", ex.Message, ex));
-                    throw;
-                }
+                await Tools.ExceptionHandler(function, new LogMessage(LogSeverity.Critical, "Background-Task", ""));
             };
             timer.Enabled = true;
             await Task.Delay(_botConfig.CheckResultsTimeInterval / timers.Length);
@@ -254,7 +223,6 @@ internal class Program
             case HttpException httpException:
                 Console.WriteLine($"[Discord/{message.Severity}] {httpException.Message}"
                                   + $" {httpException.Reason}.");
-                Console.WriteLine(httpException);
                 break;
             case { } ex:
                 Console.WriteLine($"[General/{message.Severity}] {ex.Message} {ex.Source}");

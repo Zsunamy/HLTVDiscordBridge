@@ -150,11 +150,11 @@ public static class Tools
             await arg.DeferAsync();
             try
             {
-                await function();
+                await ExceptionHandler(function,
+                    new LogMessage(LogSeverity.Error, "RunCommandInBackground", ""));
             }
             catch (Exception ex)
             {
-                await Program.Log(new LogMessage(LogSeverity.Error, "RunCommandInBackground", ex.Message, ex));
                 await arg.ModifyOriginalResponseAsync(msg =>
                     msg.Content = $"The following error occured: `{ex.Message}`");
                 throw;
@@ -165,5 +165,18 @@ public static class Tools
             }
         });
         return Task.CompletedTask;
+    }
+
+    public static async Task ExceptionHandler(Func<Task> func, LogMessage log)
+    {
+        try
+        {
+            await func();
+        }
+        catch (Exception ex)
+        {
+            await Program.Log(new LogMessage(log.Severity, log.Source, ex.Message, ex));
+            throw;
+        }
     }
 }
