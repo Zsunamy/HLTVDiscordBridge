@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Net;
 using Discord.Webhook;
+using HLTVDiscordBridge.Modules;
 
 namespace HLTVDiscordBridge.Shared;
 

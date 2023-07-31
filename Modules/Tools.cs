@@ -3,11 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
-using HLTVDiscordBridge.Shared;
-using MongoDB.Driver;
 
 namespace HLTVDiscordBridge.Modules;
 
@@ -38,34 +35,7 @@ public static class Tools
     {
         return int.Parse(url.Split('/')[^2]);
     }
-
-    public static Task SendMessagesWithWebhook(Expression<Func<ServerConfig, bool>> filter,
-        Expression<Func<ServerConfig, Webhook>> getWebhook, Embed embed, MessageComponent component = null)
-    {
-        Webhook[] webhooks = Config.GetCollection().Find(filter).ToList().Select(config => getWebhook.Compile()(config)).ToArray();
-
-        IEnumerable<Task> status = webhooks.Select(webhook => Task.Run(() =>
-        {
-            try
-            {
-                return webhook.ToDiscordWebhookClient().SendMessageAsync(embeds: new[] { embed }, components: component);
-            }
-            catch (Exception ex)
-            {
-                if (ex is InvalidOperationException or InvalidCastException)
-                {
-                    UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(getWebhook, null);
-                    return Config.GetCollection().UpdateOneAsync(filter, update);
-                }
-
-                StatsTracker.GetStats().MessagesSent -= 1;
-                throw;
-            }
-        }));
-        StatsTracker.GetStats().MessagesSent += webhooks.Length;
-        return Task.WhenAll(status);
-    }
-
+    
     public static string GetFormatFromAcronym(string arg)
     {
         return arg switch

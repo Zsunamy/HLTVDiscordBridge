@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using HLTVDiscordBridge.Notifications;
 using HLTVDiscordBridge.Requests;
 using HLTVDiscordBridge.Shared;
 
@@ -34,7 +35,7 @@ public static class HltvNews
         Stopwatch watch = new(); watch.Start();
         foreach (RssNews news in await GetNewNews())
         {
-            await Tools.SendMessagesWithWebhook(x => x.News != null, x => x.News , news.ToEmbed());
+            await NewsNotifier.Instance.NotifyAll(news.ToEmbed());
         }
         
         await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvNews),

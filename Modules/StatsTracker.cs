@@ -17,6 +17,8 @@ public class StatsTracker
     public int OngoingEvents { get; set; } = 0;
     public int MatchesSent { get; set; } = 0;
     public int NewsSent { get; set; } = 0;
+    public int EventsSent { get; set; } = 0;
+    public int ResultsSent { get; set; } = 0;
     public int MessagesSent { get; set; }
     
     private StatsTracker() {}

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Discord;
+using HLTVDiscordBridge.Notifications;
 using HLTVDiscordBridge.Requests;
 using HLTVDiscordBridge.Shared;
 
@@ -43,7 +44,7 @@ public static class HltvResults
         {
             GetMatch request = new GetMatch{Id = result.Id};
             (Embed embed, MessageComponent component) = result.ToEmbedAndComponent(await request.SendRequest<Match>());
-            await Tools.SendMessagesWithWebhook(x => x.Results != null, x => x.Results, embed, component);
+            await ResultNotifier.Instance.NotifyAll(embed, component);
         }
 
         await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvResults),

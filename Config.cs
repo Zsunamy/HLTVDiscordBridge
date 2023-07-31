@@ -4,43 +4,13 @@ using HLTVDiscordBridge.Modules;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MongoDB.Bson;
 using MongoDB.Driver;
-using MongoDB.Bson.Serialization.Attributes;
 using System.Linq;
 using System.Linq.Expressions;
+using HLTVDiscordBridge.Notifications;
 using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge;
-
-public class ServerConfig
-{
-    [BsonId]
-    public ObjectId Id { get; set; }
-    public ulong GuildId { get; set; }
-    public ulong NewsChannelID { get; set; }
-    public Webhook News { get; set; }
-    public Webhook Results { get; set; }
-    public Webhook Events { get; set; }
-    public int MinimumStars { get; set; }
-    public bool OnlyFeaturedEvents { get; set; }
-    public bool NewsOutput { get; set; }
-    public bool ResultOutput { get; set; }
-    public bool EventOutput { get; set; }
-
-    public IEnumerable<Webhook> GetWebhooks()
-    {
-        return new[] { News, Results, Events }.Where(webhook => webhook != null);
-    }
-
-    public async Task<Webhook> CheckIfConfigUsesWebhookOfChannel(ITextChannel channel)
-    {
-        return (from webhook in await channel.GetWebhooksAsync()
-            select new Webhook { Id = webhook.Id, Token = webhook.Token }).FirstOrDefault(channelWebhook => 
-            GetWebhooks().Aggregate(false, (b, currentWebhook) => 
-                (currentWebhook.Id == channelWebhook.Id && currentWebhook.Token == channelWebhook.Token) || b));
-    }
-}
 
 public static class Config
 {
@@ -73,7 +43,7 @@ public static class Config
                 await Program.Log(new LogMessage(LogSeverity.Warning, nameof(Config), ex.Message, ex));
                 await channel.SendMessageAsync(
                     $"ERROR: Failed to create webhook with the following message `{ex.Message}`\n" + 
-                    "The Bot is probably missing permissions to manage webhooks.\n" +
+                    "The Bot probably doesn't have the required permissions to manage webhooks.\n" +
                     "Please give the bot these permissions and then setup all channels manually using the /set command");
             }
         }
@@ -81,35 +51,7 @@ public static class Config
         await Program.Log(new LogMessage(LogSeverity.Info, "Initialization of Webhooks",
             "Finished initializing all webhooks!"));
     }
-
-    private static async Task<UpdateDefinition<ServerConfig>> SetWebhook(bool enable, Expression<Func<ServerConfig, Webhook>> getWebhook,
-        ulong? guildId, ITextChannel channel)
-    {
-        FilterDefinition<ServerConfig> configFilter = Builders<ServerConfig>.Filter.Eq(x => x.GuildId, guildId);
-        ServerConfig config = GetCollection().FindSync(configFilter).First();
-        Webhook webhookInDatabase = getWebhook.Compile()(config);
-        Webhook newWebhook;
-        if (enable)
-        {
-            Webhook multiWebhook = await config.CheckIfConfigUsesWebhookOfChannel(channel);
-            if (webhookInDatabase != null && !webhookInDatabase.CheckIfWebhookIsUsed(config))
-                await webhookInDatabase.Delete();
-            
-            if (multiWebhook == null)
-                newWebhook = await Webhook.CreateWebhook(channel);
-            else
-                newWebhook = multiWebhook;
-        }
-        else
-        {
-            if (webhookInDatabase != null && !webhookInDatabase.CheckIfWebhookIsUsed(config))
-                await webhookInDatabase.Delete();
-            
-            newWebhook = null;
-        }
-            
-        return Builders<ServerConfig>.Update.Set(getWebhook, newWebhook);
-    }
+    
     public static IMongoCollection<ServerConfig> GetCollection()
     {
         IMongoDatabase db = Program.DbClient.GetDatabase(BotConfig.GetBotConfig().Database);
@@ -137,7 +79,7 @@ public static class Config
             return;
         }            
             
-        UpdateDefinition<ServerConfig> update;
+        UpdateDefinition<ServerConfig> update = null;
         Embed embed;
 
         SocketSlashCommandDataOption option = arg.Data.Options.First();
@@ -163,15 +105,16 @@ public static class Config
                 embed = GetSetEmbed($"You successfully changed the minimum stars to receive a result notification to `{value}`.");
                 break;
             case "news":
-                update = await SetWebhook(true, x => x.News, arg.GuildId, channel);
+                await NewsNotifier.Instance.Enroll(ServerConfig.GetFromGuildId((ulong)arg.GuildId), channel);
                 embed = GetSetEmbed($"You successfully changed the news notifications output to <#{channel!.Id}>.");
                 break;
             case "results":
-                update = await SetWebhook(true, x => x.Results, arg.GuildId, channel);
+                await ResultNotifier.Instance.Enroll(ServerConfig.GetFromGuildId((ulong)arg.GuildId), channel);
+                //update = await SetWebhook(true, x => x.Results, arg.GuildId, channel);
                 embed = GetSetEmbed($"You successfully changed the result notifications output to <#{channel!.Id}>.");
                 break;
             case "events":
-                update = await SetWebhook(true, x => x.Events, arg.GuildId, channel);
+                await EventNotifier.Instance.Enroll(ServerConfig.GetFromGuildId((ulong)arg.GuildId), channel);
                 embed = GetSetEmbed($"You successfully changed the event notifications output to <#{channel!.Id}>.");
                 break;
             case "featuredeventsonly":
@@ -180,20 +123,29 @@ public static class Config
                 embed = GetSetEmbed($"From now on you will only receive event notifications for {featured}.");
                 break;
             case "disable":
-                update = value switch
+                switch (option.Options.First().Name)
                 {
-                    "news" => await SetWebhook(false, x => x.News, arg.GuildId, null),
-                    "results" => await SetWebhook(false, x => x.Results, arg.GuildId, null),
-                    "events" => await SetWebhook(false, x => x.Events, arg.GuildId, null),
-                    _ => throw new ArgumentOutOfRangeException(nameof(arg), "Invalid Parameter. This is a Bug!")
-                };
-
+                    case "news":
+                        await NewsNotifier.Instance.Cancel(ServerConfig.GetFromGuildId((ulong)arg.GuildId));
+                        break;
+                    case "results":
+                        await ResultNotifier.Instance.Cancel(ServerConfig.GetFromGuildId((ulong)arg.GuildId));
+                        break;
+                    case "events":
+                        await EventNotifier.Instance.Cancel(ServerConfig.GetFromGuildId((ulong)arg.GuildId));
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(arg), "Invalid Parameter. This is a Bug!");
+                }
+                
                 embed = GetSetEmbed($"You successfully disabled all notifications about `{value}`.");
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(arg), "Invalid Parameter. This is a Bug!");
         }
-        await GetCollection().UpdateOneAsync(x => x.GuildId == arg.GuildId, update);
+        if (update != null)
+            await GetCollection().UpdateOneAsync(x => x.GuildId == arg.GuildId, update);
+        
         await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
     }
 
@@ -222,10 +174,13 @@ public static class Config
     public static async Task GuildJoined(SocketGuild guild)
     {
         Webhook webhook = null;
-        ServerConfig config = new ServerConfig { GuildId = guild.Id, MinimumStars = 0, OnlyFeaturedEvents = false };
-        config.EventOutput = true;
-        config.NewsOutput = true;
-        config.ResultOutput = true;
+        ServerConfig config = new ServerConfig
+        {
+            GuildId = guild.Id, MinimumStars = 0, OnlyFeaturedEvents = false,
+            EventOutput = true,
+            NewsOutput = true,
+            ResultOutput = true
+        };
         try
         {
             webhook = await Webhook.CreateWebhook(guild.DefaultChannel);

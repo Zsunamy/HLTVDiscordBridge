@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Discord;
+using HLTVDiscordBridge.Notifications;
 using HLTVDiscordBridge.Requests;
 
 namespace HLTVDiscordBridge.Modules;
@@ -85,8 +86,7 @@ public static class HltvEvents
         Stopwatch watch = new(); watch.Start();
         foreach (GetEvent request in from startedEvent in await GetNewOngoingEvents() select new GetEvent{Id = startedEvent.Id})
         {
-            await Tools.SendMessagesWithWebhook(x => x.Events != null,
-                x => x.Events, (await request.SendRequest<FullEvent>()).ToStartedEmbed());
+            await EventNotifier.Instance.NotifyAll((await request.SendRequest<FullEvent>()).ToStartedEmbed());
         }
         
         await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvEvents),
@@ -99,8 +99,7 @@ public static class HltvEvents
         IEnumerable<EventPreview> events = await GetNewEvents(PastEventsPath, GetPastEvents);
         foreach (GetEvent request in from startedEvent in events select new GetEvent{Id = startedEvent.Id})
         {
-            await Tools.SendMessagesWithWebhook(x => x.Events != null,
-                x => x.Events, (await request.SendRequest<FullEvent>()).ToPastEmbed());
+            await EventNotifier.Instance.NotifyAll((await request.SendRequest<FullEvent>()).ToPastEmbed());
         }
         
         await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvEvents),
