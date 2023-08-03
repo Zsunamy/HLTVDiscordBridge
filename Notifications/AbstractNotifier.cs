@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Discord;
 using HLTVDiscordBridge.Modules;
@@ -11,11 +12,12 @@ namespace HLTVDiscordBridge.Notifications;
 
 public abstract class AbstractNotifier
 {
-    protected Dictionary<ulong, ServerConfig> Subscribers { get; } = new();
-    
+    private ServerConfig[] Subscribers => Config.GetCollection().Find(GetFilter()).ToEnumerable().ToArray();
+
     protected abstract Webhook GetWebhook(ServerConfig config);
     protected abstract void SetWebhook(ServerConfig config, Webhook webhook);
     protected abstract void IncStats(int count);
+    protected abstract Expression<Func<ServerConfig, bool>> GetFilter();
 
     public async Task Enroll(ServerConfig config, ITextChannel channel)
     {
@@ -33,8 +35,6 @@ public abstract class AbstractNotifier
         SetWebhook(config, newWebhook);
         UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(x => GetWebhook(x), newWebhook);
         await Config.GetCollection().UpdateOneAsync(config.GetFilter(), update);
-        
-        Subscribers.Add(config.GuildId, config);
     }
 
     public async Task Cancel(ServerConfig config)
@@ -46,35 +46,32 @@ public abstract class AbstractNotifier
         SetWebhook(config, null);
         UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(x => GetWebhook(x), null);
         await Config.GetCollection().UpdateOneAsync(config.GetFilter(), update);
-        
-        Subscribers.Remove(config.GuildId);
     }
 
     public async Task NotifyAll(Embed embed, MessageComponent component = null)
     {
-        ServerConfig[] subscriberList = Subscribers.Select(pair => pair.Value).ToArray();
-
-            IEnumerable<Task> status = subscriberList.Select(config => Task.Run(async () =>
+        ServerConfig[] subBuffer = Subscribers;
+        IEnumerable<Task> status = subBuffer.Select(config => Task.Run(async () =>
+        {
+            try
             {
-                try
+                await config.News.ToDiscordWebhookClient().SendMessageAsync(embeds: new[] { embed }, components: component);
+            }
+            catch (Exception ex)
+            {
+                if (ex is InvalidOperationException or InvalidCastException)
                 {
-                    await config.News.ToDiscordWebhookClient().SendMessageAsync(embeds: new[] { embed }, components: component);
+                    await Cancel(config);
                 }
-                catch (Exception ex)
-                {
-                    if (ex is InvalidOperationException or InvalidCastException)
-                    {
-                        await Cancel(config);
-                    }
 
-                    StatsTracker.GetStats().MessagesSent -= 1;
-                    IncStats(-1);
-                    throw;
-                }
+                StatsTracker.GetStats().MessagesSent -= 1;
+                IncStats(-1);
+                throw;
+            }
         }));
             
-        StatsTracker.GetStats().MessagesSent += subscriberList.Length;
-        IncStats(subscriberList.Length);
+        StatsTracker.GetStats().MessagesSent += subBuffer.Length;
+        IncStats(subBuffer.Length);
 
         await Task.WhenAll(status);
     }

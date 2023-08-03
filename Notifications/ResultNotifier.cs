@@ -1,6 +1,7 @@
+using System;
+using System.Linq.Expressions;
 using HLTVDiscordBridge.Modules;
 using HLTVDiscordBridge.Shared;
-using MongoDB.Driver;
 
 namespace HLTVDiscordBridge.Notifications;
 
@@ -9,13 +10,7 @@ public class ResultNotifier : AbstractNotifier
     
     public static readonly AbstractNotifier Instance = new ResultNotifier();
 
-    private ResultNotifier()
-    {
-        foreach (ServerConfig config in Config.GetCollection().Find(x => x.Results != null).ToEnumerable())
-        {
-            Subscribers.Add(config.GuildId, config);
-        }
-    }
+    private ResultNotifier() {}
     protected override Webhook GetWebhook(ServerConfig config)
     {
         return config.Results;
@@ -29,5 +24,10 @@ public class ResultNotifier : AbstractNotifier
     protected override void IncStats(int count)
     {
         StatsTracker.GetStats().ResultsSent += count;
+    }
+
+    protected override Expression<Func<ServerConfig, bool>> GetFilter()
+    {
+        return config => config.Results != null;
     }
 }
