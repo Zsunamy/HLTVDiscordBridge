@@ -20,42 +20,42 @@ public class MatchMapStats
     public string Link { get; set; }
     
     public Embed ToEmbed()
-        {
-            EmbedBuilder builder = new();
-
-            builder.WithTitle($"PLAYERSTATS ({Team1.Name} vs. {Team2.Name})")
+    {
+        EmbedBuilder builder = new();
+        
+        builder.WithTitle($"PLAYERSTATS ({Team1.Name} vs. {Team2.Name})")
                 .WithColor(Color.Red);
-            List<string> team1PlayerNames = new();
-            List<string> team1Kad = new();
-            List<string> team1Rating = new();
-            foreach (MatchMapStatsPlayer playerStats in Team1Stats)
-            {
-                string playerLink = $"https://hltv.org/player/{playerStats.Player.Id}/{playerStats.Player.Name.ToLower().Replace(' ', '-')}";
-                team1PlayerNames.Add($"[{playerStats.Player.Name}]({playerLink})");
-                team1Kad.Add($"{playerStats.Kills}/{playerStats.Assists}/{playerStats.Deaths}");
-                team1Rating.Add(playerStats.Rating1.ToString(CultureInfo.CurrentCulture));
-            }
-            builder.AddField($"players ({Team1.Name}):", string.Join("\n", team1PlayerNames), true);
-            builder.AddField("K/A/D", string.Join("\n", team1Kad), true);
-            builder.AddField("rating", string.Join("\n", team1Rating), true);
-
-            List<string> team2PlayerNames = new();
-            List<string> team2Kad = new();
-            List<string> team2Rating = new();
-            foreach (MatchMapStatsPlayer playerStats in Team2Stats)
-            {
-                string playerLink = $"https://hltv.org/player/{playerStats.Player.Id}/{playerStats.Player.Name.ToLower().Replace(' ', '-')}";
-                team2PlayerNames.Add($"[{playerStats.Player.Name}]({playerLink})");
-                team2Kad.Add($"{playerStats.Kills}/{playerStats.Assists}/{playerStats.Deaths}");
-                team2Rating.Add(playerStats.Rating1.ToString(CultureInfo.CurrentCulture));
-            }
-            builder.AddField($"players ({Team2.Name}):", string.Join("\n", team2PlayerNames), true);
-            builder.AddField("K/A/D", string.Join("\n", team2Kad), true);
-            builder.AddField("rating", string.Join("\n", team2Rating), true);
-
-            builder.WithAuthor("full stats on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", Link);
-            builder.WithCurrentTimestamp();
-
-            return builder.Build();
+        List<string> team1PlayerNames = new();
+        List<string> team1Kad = new();
+        List<string> team1Rating = new();
+        foreach (MatchMapStatsPlayer playerStats in Team1Stats)
+        {
+            string playerLink = $"https://hltv.org/player/{playerStats.Player.Id}/{playerStats.Player.Name.ToLower().Replace(' ', '-')}";
+            team1PlayerNames.Add($"[{playerStats.Player.Name}]({playerLink})");
+            team1Kad.Add($"{playerStats.Kills}/{playerStats.Assists}/{playerStats.Deaths}");
+            team1Rating.Add(playerStats.Rating1.ToString(CultureInfo.CurrentCulture));
         }
+        builder.AddField($"players ({Team1.Name}):", string.Join("\n", team1PlayerNames), true);
+        builder.AddField("K/A/D", string.Join("\n", team1Kad), true);
+        builder.AddField("rating", string.Join("\n", team1Rating), true);
+
+        List<string> team2PlayerNames = new();
+        List<string> team2Kad = new();
+        List<string> team2Rating = new();
+        foreach (MatchMapStatsPlayer playerStats in Team2Stats)
+        {
+            string playerLink = $"https://hltv.org/player/{playerStats.Player.Id}/{playerStats.Player.Name.ToLower().Replace(' ', '-')}";
+            team2PlayerNames.Add($"[{playerStats.Player.Name}]({playerLink})");
+            team2Kad.Add($"{playerStats.Kills}/{playerStats.Assists}/{playerStats.Deaths}");
+            team2Rating.Add(playerStats.Rating1.ToString(CultureInfo.CurrentCulture));
+        }
+        builder.AddField($"players ({Team2.Name}):", string.Join("\n", team2PlayerNames), true);
+        builder.AddField("K/A/D", string.Join("\n", team2Kad), true);
+        builder.AddField("rating", string.Join("\n", team2Rating), true);
+
+        builder.WithAuthor("full stats on hltv.org", "https://www.hltv.org/img/static/TopLogoDark2x.png", Link);
+        builder.WithCurrentTimestamp();
+
+        return builder.Build();
+    }
 }
