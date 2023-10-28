@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using HLTVDiscordBridge.Repository;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using HLTVDiscordBridge.Shared;
@@ -23,22 +24,14 @@ public class StatsTracker
     
     private StatsTracker() {}
     
-    private static IMongoCollection<StatsTracker> GetStatsCollection()
-    {
-        return Program.DbClient.GetDatabase(BotConfig.GetBotConfig().Database).GetCollection<StatsTracker>("stats");
-    }
     public static StatsTracker GetStats()
     {
-        Instance ??= GetStatsCollection().FindSync(x => x.Id == ObjectId.Parse("60941203bd1ee1cd03d32943")).FirstOrDefault();
+        Instance ??= StatsRepository.GetStats();
         if (Instance == null)
         {
             throw new NoNullAllowedException("Stats not found");
         }
 
         return Instance;
-    }
-    public void Update()
-    {
-        GetStatsCollection().FindOneAndReplace(x => x.Id == Id, this);
     }
 }

@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HLTVDiscordBridge.Repository;
 using HLTVDiscordBridge.Shared;
 using MongoDB.Driver;
 
@@ -35,8 +36,7 @@ public static class Developer
             .WithColor(Color.Green)
             .WithCurrentTimestamp().Build();
         
-        List<ServerConfig> configs = Config.GetCollection().FindSync(_ => true).ToList();
-        List<Task> status = configs.Select(config => Task.Run(async () =>
+        List<Task> status = (await ServerConfigRepository.GetAll()).Select(config => Task.Run(async () =>
             {
                 Webhook webhook = config.GetWebhooks().FirstOrDefault();
                 if (webhook == null)

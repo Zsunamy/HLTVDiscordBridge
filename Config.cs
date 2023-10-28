@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using MongoDB.Driver;
 using System.Linq;
-using System.Linq.Expressions;
 using HLTVDiscordBridge.Notifications;
+using HLTVDiscordBridge.Repository;
 using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge;
@@ -16,7 +16,7 @@ public static class Config
 {
     public static async Task InitAllWebhooks(DiscordSocketClient client)
     {
-        List<ServerConfig> configs = (await GetCollection().FindAsync(_ => true)).ToList();
+        List<ServerConfig> configs = await ServerConfigRepository.GetAll();
         foreach (ServerConfig config in configs)
         {
             ITextChannel channel = (ITextChannel)client.GetChannel(config.NewsChannelID);
@@ -78,8 +78,8 @@ public static class Config
                 .WithCurrentTimestamp().Build());
             return;
         }            
-            
-        UpdateDefinition<ServerConfig> update = null;
+        
+        ServerConfig config = await ServerConfigRepository.GetConfigOrNull((ulong)arg.GuildId);
         Embed embed;
 
         SocketSlashCommandDataOption option = arg.Data.Options.First();
@@ -101,24 +101,23 @@ public static class Config
         switch (option.Name.ToLower())
         {
             case "stars":
-                update = Builders<ServerConfig>.Update.Set(x => x.MinimumStars, (int)value!);
+                config.MinimumStars = (int)value!;
                 embed = GetSetEmbed($"You successfully changed the minimum stars to receive a result notification to `{value}`.");
                 break;
             case "news":
-                await NewsNotifier.Instance.Enroll(ServerConfig.GetFromGuildId((ulong)arg.GuildId), channel);
+                await NewsNotifier.Instance.Enroll(await ServerConfigRepository.GetConfigOrNull((ulong)arg.GuildId), channel);
                 embed = GetSetEmbed($"You successfully changed the news notifications output to <#{channel!.Id}>.");
                 break;
             case "results":
-                await ResultNotifier.Instance.Enroll(ServerConfig.GetFromGuildId((ulong)arg.GuildId), channel);
-                //update = await SetWebhook(true, x => x.Results, arg.GuildId, channel);
+                await ResultNotifier.Instance.Enroll(await ServerConfigRepository.GetConfigOrNull((ulong)arg.GuildId), channel);
                 embed = GetSetEmbed($"You successfully changed the result notifications output to <#{channel!.Id}>.");
                 break;
             case "events":
-                await EventNotifier.Instance.Enroll(ServerConfig.GetFromGuildId((ulong)arg.GuildId), channel);
+                await EventNotifier.Instance.Enroll(await ServerConfigRepository.GetConfigOrNull((ulong)arg.GuildId), channel);
                 embed = GetSetEmbed($"You successfully changed the event notifications output to <#{channel!.Id}>.");
                 break;
             case "featuredeventsonly":
-                update = Builders<ServerConfig>.Update.Set(x => x.OnlyFeaturedEvents, (bool)value!);
+                config.OnlyFeaturedEvents = (bool)value!;
                 string featured = (bool)value ? "only featured events" : "all events";
                 embed = GetSetEmbed($"From now on you will only receive event notifications for {featured}.");
                 break;
@@ -126,13 +125,13 @@ public static class Config
                 switch (option.Options.First().Name)
                 {
                     case "news":
-                        await NewsNotifier.Instance.Cancel(ServerConfig.GetFromGuildId((ulong)arg.GuildId));
+                        await NewsNotifier.Instance.Cancel(await ServerConfigRepository.GetConfigOrNull((ulong)arg.GuildId));
                         break;
                     case "results":
-                        await ResultNotifier.Instance.Cancel(ServerConfig.GetFromGuildId((ulong)arg.GuildId));
+                        await ResultNotifier.Instance.Cancel(await ServerConfigRepository.GetConfigOrNull((ulong)arg.GuildId));
                         break;
                     case "events":
-                        await EventNotifier.Instance.Cancel(ServerConfig.GetFromGuildId((ulong)arg.GuildId));
+                        await EventNotifier.Instance.Cancel(await ServerConfigRepository.GetConfigOrNull((ulong)arg.GuildId));
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(arg), "Invalid Parameter. This is a Bug!");
@@ -143,9 +142,8 @@ public static class Config
             default:
                 throw new ArgumentOutOfRangeException(nameof(arg), "Invalid Parameter. This is a Bug!");
         }
-        if (update != null)
-            await GetCollection().UpdateOneAsync(x => x.GuildId == arg.GuildId, update);
-        
+
+        await ServerConfigRepository.Update(config);
         await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
     }
 
@@ -190,7 +188,7 @@ public static class Config
             config.News = webhook;
             config.Results = webhook;
             config.Events = webhook;
-            await GetCollection().InsertOneAsync(config);
+            await ServerConfigRepository.Insert(config);
         }
 
         Embed embed = new EmbedBuilder().WithColor(Color.Green)
@@ -211,7 +209,7 @@ public static class Config
         DiscordSocketClient client = Program.GetInstance().Client;
         foreach (SocketGuild guild in client.Guilds)
         {
-            if (!await GetCollection().FindSync(x => x.GuildId == guild.Id).AnyAsync())
+            if (!await ServerConfigRepository.Exists(guild.Id))
             {
                 await Program.Log(new LogMessage(LogSeverity.Info, nameof(Config),
                     $"found guild {guild.Name} with no config. Creating default."));
@@ -219,7 +217,7 @@ public static class Config
             }
         }
 
-        foreach (ServerConfig config in GetCollection().Find( _ => true).ToList().Where(config => client.GetGuild(config.GuildId) == null))
+        foreach (ServerConfig config in (await ServerConfigRepository.GetAll()).Where(config => client.GetGuild(config.GuildId) == null))
         {
             //TODO Testing
             await Program.Log(new LogMessage(LogSeverity.Info, nameof(Config),

@@ -1,6 +1,7 @@
 using System;
 using System.Linq.Expressions;
 using HLTVDiscordBridge.Modules;
+using HLTVDiscordBridge.Repository;
 using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge.Notifications;

@@ -5,14 +5,14 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Discord;
 using HLTVDiscordBridge.Modules;
+using HLTVDiscordBridge.Repository;
 using HLTVDiscordBridge.Shared;
-using MongoDB.Driver;
 
 namespace HLTVDiscordBridge.Notifications;
 
 public abstract class AbstractNotifier
 {
-    private ServerConfig[] Subscribers => Config.GetCollection().Find(GetFilter()).ToEnumerable().ToArray();
+    private ServerConfig[] Subscribers => ServerConfigRepository.GetByFilter(GetFilter());
 
     protected abstract Webhook GetWebhook(ServerConfig config);
     protected abstract void SetWebhook(ServerConfig config, Webhook webhook);
@@ -33,8 +33,7 @@ public abstract class AbstractNotifier
             newWebhook = multiWebhook;
         
         SetWebhook(config, newWebhook);
-        UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(x => GetWebhook(x), newWebhook);
-        await Config.GetCollection().UpdateOneAsync(config.GetFilter(), update);
+        await ServerConfigRepository.Update(config);
     }
 
     public async Task Cancel(ServerConfig config)
@@ -44,8 +43,7 @@ public abstract class AbstractNotifier
             await webhook.Delete();
         
         SetWebhook(config, null);
-        UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Set(x => GetWebhook(x), null);
-        await Config.GetCollection().UpdateOneAsync(config.GetFilter(), update);
+        await ServerConfigRepository.Update(config);
     }
 
     public async Task NotifyAll(Embed embed, MessageComponent component = null)

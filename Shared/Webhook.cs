@@ -6,6 +6,7 @@ using Discord;
 using Discord.Net;
 using Discord.Webhook;
 using HLTVDiscordBridge.Modules;
+using HLTVDiscordBridge.Repository;
 
 namespace HLTVDiscordBridge.Shared;
 

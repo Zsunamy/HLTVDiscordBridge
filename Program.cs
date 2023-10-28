@@ -11,6 +11,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Timers;
 using Discord.Net;
+using HLTVDiscordBridge.Repository;
 using HLTVDiscordBridge.Requests;
 
 namespace HLTVDiscordBridge;
@@ -29,6 +30,8 @@ internal class Program
     private readonly BotConfig _botConfig;
     public static HttpClient DefaultHttpClient { get; } = new();
     private Task _bgTask;
+    
+    //TODO after updating to v4 this needs to be deleted since it's required for the webhook migration.
     public static MongoClient DbClient { get; } = new(BotConfig.GetBotConfig().DatabaseLink);
     public static readonly JsonSerializerOptions SerializeOptions = new JsonSerializerOptions
     {
@@ -156,9 +159,9 @@ internal class Program
         {
             await Tools.ExceptionHandler(async () =>
             {
-                await Config.GetCollection().DeleteOneAsync(x => x.GuildId == guild.Id);
+                await ServerConfigRepository.Delete(guild.Id);
                 StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
-            }, new LogMessage(LogSeverity.Critical, "GuildLeft", ""));
+            }, new LogMessage(LogSeverity.Info, "GuildLeft", ""));
         });
         
         return Task.CompletedTask;
@@ -182,7 +185,7 @@ internal class Program
         }
         
         CacheCleaner.Clean();
-        StatsTracker.GetStats().Update();
+        StatsRepository.Update(StatsTracker.GetStats());
         await HltvRanking.UpdateTeamRanking();
     }
 
@@ -206,9 +209,8 @@ internal class Program
             await Tools.ExceptionHandler(function, new LogMessage(LogSeverity.Critical, "Background-Task", ""));
             timer.Interval = _botConfig.CheckResultsTimeInterval;
             timer.Elapsed += async (_, _) =>
-            {
                 await Tools.ExceptionHandler(function, new LogMessage(LogSeverity.Critical, "Background-Task", ""));
-            };
+            
             timer.Enabled = true;
             await Task.Delay(_botConfig.CheckResultsTimeInterval / timers.Length);
         }

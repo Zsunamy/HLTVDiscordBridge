@@ -31,5 +31,5 @@ We also provide commands which search HLTV and provide you with information abou
 | /about | --- | About us |
 ## About us
 We are a team of three developers who have been working on this bot during the last three months.
-If you have any questions issues about this bot, message us on discord (Revilum#9569, Marcoooo
-#0492 or \~𝕷𝖆𝖍𝖚𝖘𝖆~#0699) or write us an [issue](https://github.com/Zsunamy/HLTVDiscordBridge/issues) on Github. If you want to support us, vote for our bot on top.gg or send us a donation on [patreon](https://www.patreon.com/zsunamy).
+If you have any questions issues about this bot, message us on discord (revilum, marco.pstr
+ or lahusa) or write us an [issue](https://github.com/Zsunamy/HLTVDiscordBridge/issues) on Github. If you want to support us, vote for our bot on top.gg or send us a donation on [patreon](https://www.patreon.com/zsunamy).

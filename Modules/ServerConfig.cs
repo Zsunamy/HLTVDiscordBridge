@@ -11,8 +11,7 @@ namespace HLTVDiscordBridge.Modules;
 
 public class ServerConfig
 {
-    [BsonId]
-    public ObjectId Id { get; set; }
+    [BsonId] public ObjectId Id { get; set; } = new();
     public ulong GuildId { get; set; }
     public ulong NewsChannelID { get; set; }
     public Webhook News { get; set; }
@@ -35,13 +34,6 @@ public class ServerConfig
             select new Webhook { Id = webhook.Id, Token = webhook.Token }).FirstOrDefault(channelWebhook => 
             GetWebhooks().Aggregate(false, (b, currentWebhook) => 
                 (currentWebhook.Id == channelWebhook.Id && currentWebhook.Token == channelWebhook.Token) || b));
-    }
-
-    public static ServerConfig GetFromGuildId(ulong guildId)
-    {
-        FilterDefinition<ServerConfig> filter = Builders<ServerConfig>.Filter
-            .Eq(restaurant => restaurant.GuildId, guildId);
-        return Config.GetCollection().Find(filter).FirstOrDefault();
     }
     
     public FilterDefinition<ServerConfig> GetFilter()
