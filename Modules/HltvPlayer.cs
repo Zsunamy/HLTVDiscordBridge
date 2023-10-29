@@ -3,16 +3,16 @@ using Discord.WebSocket;
 using HLTVDiscordBridge.Shared;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using MongoDB.Driver;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using HLTVDiscordBridge.Repository;
 using HLTVDiscordBridge.Requests;
 
 namespace HLTVDiscordBridge.Modules;
 
-internal class PlayerDocument
+public class PlayerDocument
 {
     public PlayerDocument(FullPlayer player)
     {
@@ -34,11 +34,6 @@ internal class PlayerDocument
 public static class HltvPlayer
 {
     private const string Path = "./cache/playercards";
-    private static IMongoCollection<PlayerDocument> GetPlayerCollection()
-    {
-        IMongoDatabase db = Program.DbClient.GetDatabase(BotConfig.GetBotConfig().Database);
-        return db.GetCollection<PlayerDocument>("players");
-    }
         
     public static async Task SendPlayerCard(SocketSlashCommand arg)
     {
@@ -46,15 +41,12 @@ public static class HltvPlayer
         FullPlayer player;
         PlayerStats stats;
         Embed embed;
-        bool isInDatabase = false;
-        string name1 = name;
-        FindFluentBase<PlayerDocument, PlayerDocument> query = (FindFluentBase<PlayerDocument, PlayerDocument>)GetPlayerCollection().Find(
-            elem => elem.Alias.Contains(name1) || elem.Name.ToLower() == name1);
-        if (await query.AnyAsync())
+        PlayerDocument query = await PlayerRepository.FindByName(name);
+        bool isInDatabase = query != null;
+        if (query != null)
         {
             // Player is in Database
-            isInDatabase = true;
-            name = query.First().Name.ToLower();
+            name = query.Name;
         }
 
         if (Directory.Exists($"{Path}/{name.ToLower()}"))
@@ -71,24 +63,23 @@ public static class HltvPlayer
             {
                 if (isInDatabase)
                 {
-                    GetPlayer request = new GetPlayer{Id = query.First().PlayerId};
+                    GetPlayer request = new GetPlayer{Id = query.PlayerId};
                     player = await request.SendRequest<FullPlayer>();
                 }
                 else
                 {
                     GetPlayerByName request = new GetPlayerByName{Name = name};
                     player = await request.SendRequest<FullPlayer>();
-                    List<PlayerDocument> alias = (await GetPlayerCollection().FindAsync(elem => elem.Name == player.Ign)).ToList();
+                    PlayerDocument alias = await PlayerRepository.FindByName(player.Ign);
                     // check if provided name is another nickname for the player and add them to the alias
-                    if (alias.Count != 0 && !alias.First().Name.ToLower().Contains(name))
+                    if (alias != null && !alias.Name.ToLower().Contains(name))
                     {
-                        alias.First().Alias.Add(name);
-                        UpdateDefinition<PlayerDocument> update = Builders<PlayerDocument>.Update.Set(x => x.Alias, alias.First().Alias);
-                        await GetPlayerCollection().UpdateOneAsync(x => x.Id == alias.First().Id, update);
+                        alias.Alias.Add(name);
+                        await PlayerRepository.UpdateByPlayerId(alias.PlayerId, alias);
                     }
-                    else if (alias.Count == 0)
+                    else if (alias != null)
                     {
-                        await GetPlayerCollection().InsertOneAsync(new PlayerDocument(player));
+                        await PlayerRepository.Insert(new PlayerDocument(player));
                     }
                 }
                 // check again if player is cached because provided name could have been an unknown nickname
