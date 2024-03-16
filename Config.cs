@@ -101,7 +101,7 @@ public static class Config
         switch (option.Name.ToLower())
         {
             case "stars":
-                config.MinimumStars = (int)value!;
+                config.MinimumStars = Convert.ToInt32(value!);
                 embed = GetSetEmbed($"You successfully changed the minimum stars to receive a result notification to `{value}`.");
                 break;
             case "news":
@@ -174,7 +174,12 @@ public static class Config
         Webhook webhook = null;
         ServerConfig config = new ServerConfig
         {
-            GuildId = guild.Id, MinimumStars = 0, OnlyFeaturedEvents = false,
+            GuildId = guild.Id,
+            MinimumStars = 0,
+            OnlyFeaturedEvents = false,
+            News = null,
+            Events = null,
+            Results = null,
             EventOutput = true,
             NewsOutput = true,
             ResultOutput = true
@@ -222,6 +227,7 @@ public static class Config
             //TODO Testing
             await Program.Log(new LogMessage(LogSeverity.Info, nameof(Config),
                 "Found server-configuration but bot is not on server; Deleting"));
+            //TODO needs testing and more safety
             // await GetCollection().DeleteOneAsync(x => x.GuildID == config.GuildID);
         }
     }

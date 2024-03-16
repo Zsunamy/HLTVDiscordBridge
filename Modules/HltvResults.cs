@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Discord;
 using HLTVDiscordBridge.Notifications;
@@ -31,10 +30,32 @@ public static class HltvResults
         Result[] latestResults = await GetLatestResults();
         Result[] oldResults = Tools.ParseFromFile<Result[]>(Path);
         Tools.SaveToFile(Path, latestResults);
+        
+        //TODO for-Schleife zum debuggen
 
-        return from latestResult in latestResults
-            let found = oldResults.Any(oldResult => latestResult.Id == oldResult.Id)
-            where !found select latestResult;
+        List<Result> buf = new();
+
+        foreach (Result newR in latestResults)
+        {
+            bool found = false;
+            foreach (Result oldR in oldResults)
+            {
+                if (newR.Id == oldR.Id)
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found)
+            {
+                buf.Add(newR);
+            }
+
+            return buf;
+        }
+
+        return latestResults.Where(newR => Array.Find(oldResults, oldR => newR.Id == oldR.Id) == null);
     }
 
     public static async Task SendNewResults()

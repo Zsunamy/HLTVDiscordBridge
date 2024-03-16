@@ -45,7 +45,10 @@ internal class Program
         Client = new DiscordSocketClient( new DiscordSocketConfig
         {
             //GatewayIntents = (GatewayIntents)536930304
-            GatewayIntents = GatewayIntents.GuildMessages | GatewayIntents.GuildWebhooks | GatewayIntents.DirectMessageTyping
+            GatewayIntents = GatewayIntents.GuildMessages
+                             | GatewayIntents.GuildWebhooks
+                             | GatewayIntents.DirectMessageTyping
+                             | GatewayIntents.Guilds
         });
         _botConfig = BotConfig.GetBotConfig();
             
@@ -53,7 +56,7 @@ internal class Program
         Client.JoinedGuild += GuildJoined;
         Client.LeftGuild += GuildLeft;
         Client.ButtonExecuted += arg => Tools.RunCommandInBackground(arg, () => ButtonExecuted(arg));
-        Client.Ready += Ready;
+        Client.Ready += () => Tools.ExceptionHandler(Ready, new LogMessage(LogSeverity.Critical, "Ready", ""));
         Client.SlashCommandExecuted += arg => Tools.RunCommandInBackground(arg, () => SlashCommands.SlashCommandHandler(arg));
         Client.SelectMenuExecuted += arg => Tools.RunCommandInBackground(arg, () => SelectMenuExecuted(arg));
     }
@@ -136,8 +139,8 @@ internal class Program
                     await Log(new LogMessage(LogSeverity.Warning, "GuildJoined", ex.Message, ex));
                     await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
                         .WithDescription(
-                            "It looks like the bot has insufficient permissions (probably webhooks) on this" +
-                            "server. Please use the invite-link and grant all requested permissions.").Build());
+                            "It looks like the bot has insufficient permissions (probably webhooks) on this server" +
+                            ". Please use the invite-link and grant all requested permissions.").Build());
                 }
                 else
                 {
@@ -227,7 +230,7 @@ internal class Program
                                   + $" {httpException.Reason}.");
                 break;
             case { } ex:
-                Console.WriteLine($"[General/{message.Severity}] {ex.Message} {ex.Source}");
+                Console.WriteLine($"[General/{message.Severity}] {ex.Message} {message.Source}");
                 break;
             default:
                 Console.WriteLine($"[General/{message.Severity}] {message}");

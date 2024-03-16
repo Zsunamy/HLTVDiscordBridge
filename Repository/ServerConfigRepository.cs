@@ -35,7 +35,7 @@ public class ServerConfigRepository
 
     public static async Task<List<ServerConfig>> GetAll()
     {
-        return await Collection.Find(_ => true).ToListAsync();
+        return await Collection.Find(x => true).ToListAsync();
     }
 
     public static ServerConfig[] GetByFilter(Expression<Func<ServerConfig, bool>> filter)

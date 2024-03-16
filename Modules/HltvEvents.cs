@@ -103,7 +103,7 @@ public static class HltvEvents
         }
         
         await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvEvents),
-            $"fetched  past events ({watch.ElapsedMilliseconds}ms)"));
+            $"fetched past events ({watch.ElapsedMilliseconds}ms)"));
     }
 
     public static async Task SendEvents(SocketSlashCommand arg)
