@@ -364,9 +364,9 @@ namespace HLTVDiscordBridge
 
         public static async Task InitTextChannel(SocketSlashCommand arg)
         {
-            IGuildChannel channel = arg.Data.Options.First().Value as IGuildChannel;
+            ITextChannel channel = arg.Data.Options.First().Value as ITextChannel;
             EmbedBuilder builder = new();
-            if (channel.GetType() != typeof(SocketTextChannel))
+            if (channel!.GetType() == typeof(IVoiceChannel))
             {
                 builder.WithTitle("ERROR")
                     .WithDescription("Please select a valid channel!")
