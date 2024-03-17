@@ -5,6 +5,7 @@ using HLTVDiscordBridge.Shared;
 using MongoDB.Driver;
 using System;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -56,7 +57,7 @@ internal class Program
         Client.JoinedGuild += GuildJoined;
         Client.LeftGuild += GuildLeft;
         Client.ButtonExecuted += arg => Tools.RunCommandInBackground(arg, () => ButtonExecuted(arg));
-        Client.Ready += () => Tools.ExceptionHandler(Ready, new LogMessage(LogSeverity.Critical, "Ready", ""));
+        Client.Ready += () => Tools.ExceptionHandler(Ready, LogSeverity.Critical, "Ready");
         Client.SlashCommandExecuted += arg => Tools.RunCommandInBackground(arg, () => SlashCommands.SlashCommandHandler(arg));
         Client.SelectMenuExecuted += arg => Tools.RunCommandInBackground(arg, () => SelectMenuExecuted(arg));
     }
@@ -164,7 +165,7 @@ internal class Program
             {
                 await ServerConfigRepository.Delete(guild.Id);
                 StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
-            }, new LogMessage(LogSeverity.Info, "GuildLeft", ""));
+            }, LogSeverity.Error, "GuildLeft");
         });
         
         return Task.CompletedTask;
@@ -194,14 +195,12 @@ internal class Program
 
     private async Task BgTask()
     {
-        await Tools.ExceptionHandler(MiscellaneousBackground,
-            new LogMessage(LogSeverity.Warning, "Background-Task", ""));
+        await Tools.ExceptionHandler(MiscellaneousBackground, LogSeverity.Warning, "Misc-Background", true);
         
-        Timer updateGgStatsTimer = new(1000 * 60 * 60);
+        Timer updateGgStatsTimer = new(1000 * 60 * 60); // 1h interval
         updateGgStatsTimer.Elapsed += async (_, _) =>
         {
-            await Tools.ExceptionHandler(MiscellaneousBackground,
-                new LogMessage(LogSeverity.Warning, "Background-Task", ""));
+            await Tools.ExceptionHandler(MiscellaneousBackground, LogSeverity.Warning, "Background-Task", true);
         };
         updateGgStatsTimer.Enabled = true;
         
@@ -209,10 +208,10 @@ internal class Program
             (new Timer(), HltvEvents.SendNewStartedEvents), (new Timer(), HltvEvents.SendNewPastEvents), (new Timer(), HltvMatches.UpdateMatches)};
         foreach ((Timer timer, Func<Task> function) in timers)
         {
-            await Tools.ExceptionHandler(function, new LogMessage(LogSeverity.Critical, "Background-Task", ""));
+            await Tools.ExceptionHandler(function, LogSeverity.Error, function.GetMethodInfo().Name, true);
             timer.Interval = _botConfig.CheckResultsTimeInterval;
             timer.Elapsed += async (_, _) =>
-                await Tools.ExceptionHandler(function, new LogMessage(LogSeverity.Critical, "Background-Task", ""));
+                await Tools.ExceptionHandler(function, LogSeverity.Error, function.GetMethodInfo().Name, true);
             
             timer.Enabled = true;
             await Task.Delay(_botConfig.CheckResultsTimeInterval / timers.Length);
@@ -230,7 +229,11 @@ internal class Program
                                   + $" {httpException.Reason}.");
                 break;
             case { } ex:
-                Console.WriteLine($"[General/{message.Severity}] {ex.Message} {message.Source}");
+                if (ex is ApiError)
+                {
+                    Console.WriteLine($"[HltvApi/{message.Severity}] {message.Source} caused: {ex.Message}");
+                }
+                Console.WriteLine($"[General/{message.Severity}] {message.Source} caused: {ex.Message}");
                 break;
             default:
                 Console.WriteLine($"[General/{message.Severity}] {message}");

@@ -120,8 +120,7 @@ public static class Tools
             await arg.DeferAsync();
             try
             {
-                await ExceptionHandler(function,
-                    new LogMessage(LogSeverity.Error, "RunCommandInBackground", ""));
+                await ExceptionHandler(function, LogSeverity.Error, function.GetType().FullName);
             }
             catch (Exception ex)
             {
@@ -137,7 +136,7 @@ public static class Tools
         return Task.CompletedTask;
     }
 
-    public static async Task ExceptionHandler(Func<Task> func, LogMessage log)
+    public static async Task ExceptionHandler(Func<Task> func, LogSeverity severity, string source, bool cont = false)
     {
         try
         {
@@ -145,8 +144,9 @@ public static class Tools
         }
         catch (Exception ex)
         {
-            await Program.Log(new LogMessage(log.Severity, log.Source, ex.Message, ex));
-            throw;
+            await Program.Log(new LogMessage(severity, source, ex.Message, ex));
+            if (!cont)
+                throw;
         }
     }
 }
