@@ -102,6 +102,7 @@ public static class Config
         {
             case "stars":
                 config.MinimumStars = Convert.ToInt32(value!);
+                await ServerConfigRepository.Update(config);
                 embed = GetSetEmbed($"You successfully changed the minimum stars to receive a result notification to `{value}`.");
                 break;
             case "news":
@@ -118,11 +119,12 @@ public static class Config
                 break;
             case "featuredeventsonly":
                 config.OnlyFeaturedEvents = (bool)value!;
+                await ServerConfigRepository.Update(config);
                 string featured = (bool)value ? "only featured events" : "all events";
                 embed = GetSetEmbed($"From now on you will only receive event notifications for {featured}.");
                 break;
             case "disable":
-                switch (option.Options.First().Name)
+                switch (option.Options.First().Value)
                 {
                     case "news":
                         await NewsNotifier.Instance.Cancel(await ServerConfigRepository.GetConfigOrNull((ulong)arg.GuildId));
@@ -142,8 +144,7 @@ public static class Config
             default:
                 throw new ArgumentOutOfRangeException(nameof(arg), "Invalid Parameter. This is a Bug!");
         }
-
-        await ServerConfigRepository.Update(config);
+        
         await arg.ModifyOriginalResponseAsync(msg => msg.Embed = embed);
     }
 

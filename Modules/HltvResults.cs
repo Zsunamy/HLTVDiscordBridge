@@ -30,30 +30,6 @@ public static class HltvResults
         Result[] latestResults = await GetLatestResults();
         Result[] oldResults = Tools.ParseFromFile<Result[]>(Path);
         Tools.SaveToFile(Path, latestResults);
-        
-        //TODO for-Schleife zum debuggen
-
-        List<Result> buf = new();
-
-        foreach (Result newR in latestResults)
-        {
-            bool found = false;
-            foreach (Result oldR in oldResults)
-            {
-                if (newR.Id == oldR.Id)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found)
-            {
-                buf.Add(newR);
-            }
-
-            return buf;
-        }
 
         return latestResults.Where(newR => Array.Find(oldResults, oldR => newR.Id == oldR.Id) == null);
     }

@@ -24,7 +24,7 @@ public abstract class AbstractNotifier
         Webhook webhook = GetWebhook(config);
         Webhook newWebhook;
         Webhook multiWebhook = await config.CheckIfConfigUsesWebhookOfChannel(channel);
-        if (webhook != null && !webhook.CheckIfWebhookIsUsed(config))
+        if (webhook != null && webhook.CheckIfWebhookIsUsed(config))
             await webhook.Delete();
             
         if (multiWebhook == null)
@@ -53,7 +53,7 @@ public abstract class AbstractNotifier
         {
             try
             {
-                await config.News.ToDiscordWebhookClient().SendMessageAsync(embeds: new[] { embed }, components: component);
+                await GetWebhook(config).ToDiscordWebhookClient().SendMessageAsync(embeds: new[] { embed }, components: component);
             }
             catch (Exception ex)
             {
