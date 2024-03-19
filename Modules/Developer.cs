@@ -43,25 +43,15 @@ public static class Developer
             Webhook webhook = config.GetWebhooks().FirstOrDefault();
             if (webhook == null)
             {
-                SocketTextChannel channel = null;
                 try
                 {
-                    channel = Program.GetInstance().Client.GetGuild(config.GuildId).DefaultChannel;
+                    SocketTextChannel channel = Program.GetInstance().Client.GetGuild(config.GuildId).DefaultChannel;
                     await channel.SendMessageAsync(embed: embed);
                 }
                 catch (Exception ex)
                 {
                     StatsTracker.GetStats().MessagesSent -= 1;
-                    if (ex is Discord.Net.HttpException)
-                    {
-                        await Program.Log(new LogMessage(LogSeverity.Warning, nameof(Developer),
-                            $"not enough permission in channel {channel!.Name}", ex));
-                    }
-                    else
-                    {
-                        await Program.Log(new LogMessage(LogSeverity.Error, nameof(Developer), ex.Message, ex));
-                        throw;
-                    }
+                    await Program.Log(new LogMessage(LogSeverity.Error, nameof(Developer), ex.Message, ex));
                 }
             }
             else
