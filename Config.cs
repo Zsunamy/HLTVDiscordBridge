@@ -4,8 +4,8 @@ using HLTVDiscordBridge.Modules;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MongoDB.Driver;
 using System.Linq;
+using Discord.Net;
 using HLTVDiscordBridge.Notifications;
 using HLTVDiscordBridge.Repository;
 using HLTVDiscordBridge.Shared;
@@ -14,50 +14,6 @@ namespace HLTVDiscordBridge;
 
 public static class Config
 {
-    public static async Task InitAllWebhooks(DiscordSocketClient client)
-    {
-        List<ServerConfig> configs = await ServerConfigRepository.GetAll();
-        foreach (ServerConfig config in configs)
-        {
-            ITextChannel channel = (ITextChannel)client.GetChannel(config.NewsChannelID);
-            try
-            {
-                Webhook updateWebhook = await Webhook.CreateWebhook(channel);
-                List<UpdateDefinition<ServerConfig>> updates = new();
-            
-                if (config.NewsOutput)
-                    updates.Add(Builders<ServerConfig>.Update.Set(x => x.News, updateWebhook));
-                
-                if (config.ResultOutput)
-                    updates.Add(Builders<ServerConfig>.Update.Set(x => x.Results, updateWebhook));
-                
-                if (config.EventOutput)
-                    updates.Add(Builders<ServerConfig>.Update.Set(x => x.Events, updateWebhook));
-                
-
-                UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Combine(updates);
-                await GetCollection().UpdateOneAsync(x => x.NewsChannelID == config.NewsChannelID, update);
-                await Program.Log(new LogMessage(LogSeverity.Info, "created all Webhooks", "InitAllWebhooks"));
-            }
-            catch (Exception ex)
-            {
-                await Program.Log(new LogMessage(LogSeverity.Warning, nameof(Config), ex.Message, ex));
-                await channel.SendMessageAsync(
-                    $"ERROR: Failed to create webhook with the following message `{ex.Message}`\n" + 
-                    "The Bot probably doesn't have the required permissions to manage webhooks.\n" +
-                    "Please give the bot these permissions and then setup all channels manually using the /set command");
-            }
-        }
-
-        await Program.Log(new LogMessage(LogSeverity.Info, "Initialization of Webhooks",
-            "Finished initializing all webhooks!"));
-    }
-    
-    public static IMongoCollection<ServerConfig> GetCollection()
-    {
-        IMongoDatabase db = Program.DbClient.GetDatabase(BotConfig.GetBotConfig().Database);
-        return db.GetCollection<ServerConfig>("serverconfig");
-    }
 
     private static Embed GetSetEmbed(string description)
     {
@@ -156,7 +112,7 @@ public static class Config
             await guild.DefaultChannel.SendMessageAsync(embed: embed);
             StatsTracker.GetStats().MessagesSent += 1;
         }
-        catch (Discord.Net.HttpException)
+        catch (HttpException)
         {
             try
             {
@@ -167,7 +123,7 @@ public static class Config
                                                    "to change or disable notifications.");
                 StatsTracker.GetStats().MessagesSent += 1;
             }
-            catch (Discord.Net.HttpException) {}
+            catch (HttpException) {}
         }
     }
     
@@ -224,13 +180,20 @@ public static class Config
             }
         }
 
-        foreach (ServerConfig config in (await ServerConfigRepository.GetAll()).Where(config => client.GetGuild(config.GuildId) == null))
-        {
-            //TODO Testing
-            await Program.Log(new LogMessage(LogSeverity.Info, nameof(Config),
-                "Found server-configuration but bot is not on server; Deleting"));
-            //TODO needs testing and more safety
-            // await GetCollection().DeleteOneAsync(x => x.GuildID == config.GuildID);
-        }
+        List<ServerConfig> allConfigs = await ServerConfigRepository.GetAll();
+
+        List<ServerConfig> toDelete = allConfigs.Where(config => client.GetGuild(config.GuildId) == null).ToList();
+
+        if (allConfigs.Count - toDelete.Count -1 != client.Guilds.Count)
+            await Program.Log(new LogMessage(LogSeverity.Warning,
+                "found incorrect amount of server configs to be deleted. This is probably because of a mal configured config.xml",
+                "ServerConfigStartUp"));
+        else
+            foreach (ServerConfig config in toDelete)
+            {
+                await Program.Log(new LogMessage(LogSeverity.Info, nameof(Config),
+                    "Found server configuration but bot is not on server; Deleting"));
+                await ServerConfigRepository.Delete(config.GuildId);
+            }
     }
 }

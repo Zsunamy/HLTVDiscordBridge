@@ -80,8 +80,6 @@ internal class Program
         {
             await SlashCommands.InitSlashCommands();
             await Log(new LogMessage(LogSeverity.Info, nameof(Program), "successfully initialized all commands"));
-            await Config.InitAllWebhooks(Client);
-            await Log(new LogMessage(LogSeverity.Info, "converted all settings to webhooks", "InitAllWebhooks"));
         }
         
         await Config.ServerConfigStartUp();

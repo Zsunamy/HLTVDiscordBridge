@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System.Collections.Generic;
+using System.Data;
 using HLTVDiscordBridge.Repository;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -21,6 +22,7 @@ public class StatsTracker
     public int EventsSent { get; set; } = 0;
     public int ResultsSent { get; set; } = 0;
     public int MessagesSent { get; set; }
+    
     
     private StatsTracker() {}
     
