@@ -1,114 +1,185 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Discord;
+using HLTVDiscordBridge.Modules;
 
-namespace HLTVDiscordBridge.Shared
+namespace HLTVDiscordBridge.Shared;
+
+public class FullEvent
 {
-    public class FullEvent
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Logo { get; set; }
+    public long DateStart { get; set; }
+    public long DateEnd { get; set; }
+    public string PrizePool { get; set; }
+    public Location Location { get; set; }
+    public int? NumberOfTeams { get; set; }
+    public bool? AllMatchesListed { get; set; }
+    public string Link { get; set; }
+    public EventTeam[] Teams { get; set; }
+    public Prize[] PrizeDistribution { get; set; } = Array.Empty<Prize>();
+    public Event[] RelatedEvents { get; set; }
+    public EventFormat[] Formats { get; set; }
+    public string[] MapPool { get; set; }
+    public EventHighlight[] Highlights { get; set; } 
+    public Article[] News { get; set; }
+        
+    public Embed ToStartedEmbed()
     {
-        public FullEvent(JObject jObject)
+        EmbedBuilder builder = new EmbedBuilder()
+            .WithTitle($"{Name} just started!")
+            .AddField("startDate:", Tools.UnixTimeToDateTime(DateStart).ToShortDateString(), true)
+            .AddField("endDate:", Tools.UnixTimeToDateTime(DateEnd).ToShortDateString(), true)
+            .AddField("\u200b", "\u200b", true)
+            .AddField("prize pool:", PrizePool, true)
+            .AddField("location:", Location.Name, true)
+            .AddField("\u200b", "\u200b", true);
+        
+        List<string> teams = new();
+        foreach (EventTeam team in Teams)
         {
-            id = jObject.TryGetValue("id", out JToken idTok) ? uint.Parse(idTok.ToString()) : 0;
-            name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;
-            if (jObject.TryGetValue("logo", out JToken logoTok))
+            if (string.Join("\n", teams).Length > 600)
             {
-                string logoLink = logoTok.ToString();
-                if (!logoLink.Contains("http"))
-                {
-                    logo = "https://www.hltv.org" + logoLink;
-                }
-                else { logo = logoLink; }
+                teams.Add($"and {Teams.Length - Array.IndexOf(Teams, team)} more");
+                break;
             }
-            dateStart = jObject.TryGetValue("dateStart", out JToken dateStartTok) ? ulong.Parse(dateStartTok.ToString()) : 0;
-            dateEnd = jObject.TryGetValue("dateEnd", out JToken dateEndTok) ? ulong.Parse(dateEndTok.ToString()) : 0;
-            prizePool = jObject.TryGetValue("prizePool", out JToken prizePoolTok) ? prizePoolTok.ToString() : null;
-            location = jObject.TryGetValue("location", out JToken locationTok) ? new Location(locationTok as JObject) : null;
-            numberOfTeams = jObject.TryGetValue("numberOfTeams", out JToken numberOfTeamsTok) ? ushort.Parse(numberOfTeamsTok.ToString()) : (ushort)0;
-            allMatchesListed = jObject.TryGetValue("allMatchesListed", out JToken allMatchesListedTok) ? bool.Parse(allMatchesListedTok.ToString()) : false;
-            link = id != 0 && name != null ? $"https://www.hltv.org/events/{id}/{name.ToLower().Replace(' ', '-')}" : null;
-            List<EventTeam> teams = new();
-            if(jObject.TryGetValue("teams", out JToken teamsTok))
+            teams.Add($"[{team.Name}]({team.Link})");
+        }
+        if(!teams.Any())
+            builder.AddField("teams:", teams);
+        
+        return builder.WithColor(Color.Gold)
+            .WithThumbnailUrl(Logo)
+            .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", Link)
+            .WithCurrentTimestamp()
+            .Build();
+    }
+
+    public Embed ToPastEmbed()
+    {
+        EmbedBuilder builder = new EmbedBuilder()
+            .WithTitle($"{Name} just ended!")
+            .AddField("startDate:", Tools.UnixTimeToDateTime(DateStart).ToShortDateString(), true)
+            .AddField("endDate:", Tools.UnixTimeToDateTime(DateEnd).ToShortDateString(), true)
+            .AddField("\u200b", "\u200b", true)
+            .AddField("prize pool:", PrizePool, true)
+            .AddField("location:", Location.Name, true)
+            .AddField("\u200b", "\u200b", true);
+        
+        List<string> prizeList = new();
+        foreach (Prize prize in PrizeDistribution)
+        {
+            if(string.Join("\n", prizeList).Length > 600)
             {
-                foreach(JToken teamTok in teamsTok)
-                {
-                    teams.Add(new EventTeam(teamTok as JObject));
-                }
-                this.teams = teams;
+                prizeList.Add($"and {PrizeDistribution.Length - Array.IndexOf(PrizeDistribution, prize) - 1} more");
+                break;
             }
-            List<Prize> prizeDistribution = new();
-            if(jObject.TryGetValue("prizeDistribution", out JToken prizeDistributionTok))
+            List<string> prizes = new();
+            if(prize.PrizePrize != null)
+                prizes.Add($"wins: {prize.PrizePrize}");
+            
+            if(prize.QualifiesFor != null)
+                prizes.Add($"qualifies for: [{prize.QualifiesFor.Name}]({prize.QualifiesFor.Link})");
+            
+            if(prize.OtherPrize != null)
+                prizes.Add($"qualifies for: {prize.OtherPrize}");
+            if (prize.Team != null)
+                prizeList.Add($"{prize.Place} [{prize.Team.Name}]({prize.Team.Link}) {string.Join(" & ", prizes)}");
+        }
+        if(string.Join("\n", prizeList).Length > 0)
+            builder.AddField("results:", string.Join("\n", prizeList));
+
+        return builder.WithColor(Color.Gold)
+            .WithThumbnailUrl(Logo)
+            .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", Link)
+            .WithCurrentTimestamp()
+            .Build();
+    }
+        
+    public Embed ToFullEmbed(Result[] results)
+    {
+        EmbedBuilder builder = new();
+        builder.WithTitle($"{Name}")
+            .WithColor(Color.Gold)
+            .WithThumbnailUrl(Logo)
+            .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", Link)
+            .WithFooter(Tools.GetRandomFooter())
+            .WithCurrentTimestamp();
+        DateTime startDate = Tools.UnixTimeToDateTime(DateStart);
+        DateTime endDate = Tools.UnixTimeToDateTime(DateEnd);
+        string start = startDate > DateTime.Now ? "starting" : "started";
+        string end = endDate > DateTime.Now ? "ending" : "ended";
+        builder.AddField(start, startDate.ToShortDateString(), true)
+            .AddField(end, endDate.ToShortDateString(), true)
+            .AddField("\u200b", "\u200b", true)
+            .AddField("prize pool:", PrizePool, true)
+            .AddField("location:", Location.Name, true)
+            .AddField("\u200b", "\u200b", true);
+
+        List<string> teams = new();
+        foreach (EventTeam team in Teams)
+        {
+            if (string.Join("\n", teams).Length > 600)
             {
-                foreach(JToken prizeTok in prizeDistributionTok)
-                {
-                    prizeDistribution.Add(new Prize(prizeTok as JObject));
-                }
-                this.prizeDistribution = prizeDistribution;
+                teams.Add($"and {Teams.Length - Array.IndexOf(Teams, team)} more");
+                break;
             }
-            List<Event> relatedEvents = new();
-            if(jObject.TryGetValue("relatedEvents", out JToken relatedEventsTok))
+            teams.Add($"[{team.Name}]({team.Link})");
+        }
+        if (teams.Count != 0)
+            builder.AddField("teams:", string.Join("\n", teams));
+        
+        if (startDate < DateTime.Now && endDate > DateTime.Now)
+        {
+            // live
+            List<string> matchResultString = new();
+
+            foreach (Result result in results)
             {
-                foreach(JToken relatedEventTok in relatedEventsTok)
+                if (string.Join("\n", matchResultString).Length > 700)
                 {
-                    relatedEvents.Add(new Event(relatedEventTok as JObject));
+                    matchResultString.Add($"and {results.Length - Array.IndexOf(results, result) - 1} more");
+                    break;
                 }
-                this.relatedEvents = relatedEvents;
+                matchResultString.Add($"[{result.Team1.Name} vs. {result.Team2.Name}]({result.Link})");
             }
-            List<EventFormat> formats = new();
-            if(jObject.TryGetValue("formats", out JToken formatsTok))
+
+            builder.AddField("latest results:", string.Join("\n", matchResultString), true);
+        }
+        else if (startDate < DateTime.Now && endDate < DateTime.Now)
+        {
+            // past
+            List<string> prizeList = new();
+            foreach (Prize prize in PrizeDistribution)
             {
-                foreach(JToken formatTok in formatsTok)
+                if (string.Join("\n", prizeList).Length > 600)
                 {
-                    formats.Add(new EventFormat(formatTok as JObject));
+                    prizeList.Add(
+                        $"and {PrizeDistribution.Length - Array.IndexOf(PrizeDistribution, prize) - 1} more");
+                    break;
                 }
-                this.formats = formats;
+
+                List<string> prizes = new();
+                if (prize != null)
+                {
+                    prizes.Add($"wins: {prize.PrizePrize}");
+                    if (prize.QualifiesFor != null)
+                        prizes.Add($"qualifies for: [{prize.QualifiesFor.Name}]({prize.QualifiesFor.Link})");
+                    if (prize.OtherPrize != null)
+                        prizes.Add($"qualifies for: {prize.OtherPrize}");
+                    prizeList.Add(
+                        $"{prize.Place} [{prize.Team.Name}]({prize.Team.Link}) {string.Join(" & ", prizes)}");
+                }
             }
-            List<string> mapPool = new();
-            if(jObject.TryGetValue("mapPool", out JToken mapPoolTok))
+
+            if (prizeList.Count > 0)
             {
-                foreach(JToken map in mapPoolTok)
-                {
-                    mapPool.Add(map.ToString());
-                }
-                this.mapPool = mapPool;
-            }
-            List<EventHighlight> highlights = new();
-            if(jObject.TryGetValue("highlights", out JToken hightlightsTok))
-            {
-                foreach(JToken hightlightTok in hightlightsTok)
-                {
-                    highlights.Add(new EventHighlight(hightlightTok as JObject));
-                }
-                this.highlights = highlights;
-            }
-            List<News> news = new();
-            if(jObject.TryGetValue("news", out JToken newsTok))
-            {
-                foreach(JToken newTok in newsTok)
-                {
-                    news.Add(new News(newTok as JObject));
-                }
-                this.news = news;
+                builder.AddField("results:", string.Join("\n", prizeList));
             }
         }
-        public uint id { get; set; }
-        public string name { get; set; }
-        public string logo { get; set; }
-        public ulong dateStart { get; set; }
-        public ulong dateEnd { get; set; }
-        public string prizePool { get; set; }
-        public Location location { get; set; }
-        public ushort numberOfTeams { get; set; }
-        public bool allMatchesListed { get; set; }
-        public string link { get; set; }
-        public List<EventTeam> teams { get; set; }
-        public List<Prize> prizeDistribution { get; set; }
-        public List<Event> relatedEvents { get; set; }
-        public List<EventFormat> formats { get; set; }
-        public List<string> mapPool { get; set; }
-        public List<EventHighlight> highlights { get; set; } 
-        public List<News> news { get; set; }
+
+        return builder.Build();
     }
 }

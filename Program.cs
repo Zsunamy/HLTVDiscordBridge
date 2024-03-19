@@ -2,203 +2,243 @@
 using Discord.WebSocket;
 using HLTVDiscordBridge.Modules;
 using HLTVDiscordBridge.Shared;
-using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using System;
-using System.Diagnostics;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Timers;
+using Discord.Net;
+using HLTVDiscordBridge.Repository;
+using HLTVDiscordBridge.Requests;
 
-namespace HLTVDiscordBridge
+namespace HLTVDiscordBridge;
+
+internal class Program
 {
-    class Program
+    private static async Task Main()
     {
-        static void Main(string[] args)
+        await GetInstance().Start();
+        await Task.Delay(-1);
+    }
+
+    private static Program _instance;
+    public DiscordSocketClient Client { get; }
+
+    private readonly BotConfig _botConfig;
+    public static HttpClient DefaultHttpClient { get; } = new();
+    private Task _bgTask;
+    
+    //TODO after updating to v4 this needs to be deleted since it's required for the webhook migration.
+    public static MongoClient DbClient { get; } = new(BotConfig.GetBotConfig().DatabaseLink);
+    public static readonly JsonSerializerOptions SerializeOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+    
+    private Program()
+    {
+        Client = new DiscordSocketClient( new DiscordSocketConfig
         {
-            GetInstance().RunBotAsync().GetAwaiter().GetResult();
-        }
+            //GatewayIntents = (GatewayIntents)536930304
+            GatewayIntents = GatewayIntents.GuildMessages
+                             | GatewayIntents.GuildWebhooks
+                             | GatewayIntents.DirectMessageTyping
+                             | GatewayIntents.Guilds
+        });
+        _botConfig = BotConfig.GetBotConfig();
+            
+        Client.Log += Log;
+        Client.JoinedGuild += GuildJoined;
+        Client.LeftGuild += GuildLeft;
+        Client.ButtonExecuted += arg => Tools.RunCommandInBackground(arg, () => ButtonExecuted(arg));
+        Client.Ready += () => Tools.ExceptionHandler(Ready, LogSeverity.Critical, "Ready");
+        Client.SlashCommandExecuted += arg => Tools.RunCommandInBackground(arg, () => SlashCommands.SlashCommandHandler(arg));
+        Client.SelectMenuExecuted += arg => Tools.RunCommandInBackground(arg, () => SelectMenuExecuted(arg));
+    }
 
-        private static Program _instance;
-        private bool _bgTaskIsRunnning = false;
-        private DiscordSocketClient _client;
-        private IServiceProvider _services;
-        private ConfigClass _botconfig;
-        SlashCommands _commands;
+    public static Program GetInstance()
+    {
+        return _instance ??= new Program();
+    }
+        
+    private async Task Start()
+    {
+        await Client.LoginAsync(TokenType.Bot, _botConfig.BotToken);
+        await Client.StartAsync();
+        await Client.SetGameAsync("/help");
+    }
 
-        public static Program GetInstance()
+    private async Task Ready()
+    {
+        if (Environment.GetCommandLineArgs().Length > 1 && Environment.GetCommandLineArgs()[1] == "init")
         {
-            if (_instance == null)
-            {
-                _instance = new Program();
-            }
-
-            return _instance;
+            await SlashCommands.InitSlashCommands();
+            await Log(new LogMessage(LogSeverity.Info, nameof(Program), "successfully initialized all commands"));
         }
         
-        public async Task RunBotAsync()
+        await Config.ServerConfigStartUp();
+        _bgTask ??= BgTask();
+    }
+
+    private static async Task ButtonExecuted(SocketMessageComponent arg)
+    {
+        string matchLink = "";
+        foreach (Embed e in arg.Message.Embeds)
         {
-            DiscordSocketConfig _config = new() { GatewayIntents = GatewayIntents.AllUnprivileged & ~GatewayIntents.GuildScheduledEvents & ~GatewayIntents.GuildInvites };
-            _client = new DiscordSocketClient(_config);
-            _commands = new SlashCommands(_client);
-
-            _services = new ServiceCollection()
-                .AddSingleton(_client)
-                .BuildServiceProvider();
-
-            _botconfig = Config.LoadConfig();
-            //StatsUpdater.InitStats();
-
-            string botToken = _botconfig.BotToken;
-
-            _client.Log += Log;
-            _client.JoinedGuild += GuildJoined;
-            _client.LeftGuild += GuildLeft;
-            _client.ButtonExecuted += ButtonExecuted;
-            _client.Ready += Ready;
-            _client.SlashCommandExecuted += _commands.SlashCommandHandler;
-            _client.SelectMenuExecuted += SelectMenuExecuted;
-            
-
-            await _client.LoginAsync(TokenType.Bot, botToken);
-            await _client.StartAsync();
-            await _client.SetGameAsync("/help");
-            await Task.Delay(-1);
+            matchLink = ((EmbedAuthor)e.Author!).Url;
         }
 
-        private static Task SelectMenuExecuted(SocketMessageComponent arg)
-        {
-            var handler = Task.Run(async () =>
-            {
-                switch (arg.Data.CustomId)
-                {
-                    case "upcomingEventsMenu":
-                        await HltvEvents.SendEvent(arg);
-                        break;
-                    case "ongoingEventsMenu":
-                        await HltvEvents.SendEvent(arg);
-                        break;
-                }
-            });
-            return handler;
-        }
+        GetMatch request = new GetMatch { Id = Tools.GetIdFromUrl(matchLink) };
+        Match match = await request.SendRequest<Match>();
 
-        private async Task Ready()
+        if (arg.Data.CustomId == "overallstats_bo1")
         {
-            await Config.ServerconfigStartUp(_client);
-            if (!_bgTaskIsRunnning)
-            {
-                _bgTaskIsRunnning = true;
-                await BgTask();
-            } 
+            GetMatchMapStats requestMapStats = new GetMatchMapStats { Id = match.Maps[0].StatsId };
+            await arg.ModifyOriginalResponseAsync(msg =>
+                msg.Embed = requestMapStats.SendRequest<MatchMapStats>().Result.ToEmbed());
         }
-
-        private Task ButtonExecuted(SocketMessageComponent arg)
+        else
         {
-            var handler = Task.Run(async () =>
-            {
-                string matchLink = "";
-                Match match;
-                MatchMapStats mapStats;
-                MatchStats matchStats;
-                switch (arg.Data.CustomId)
-                {
-                    case "overallstats_bo1":
-                        await arg.DeferAsync();
-                        foreach (Embed e in arg.Message.Embeds)
-                        {
-                            matchLink = ((EmbedAuthor)e.Author).Url;
-                        }
-                        match = await HltvMatch.GetMatch(matchLink);
-                        mapStats = await HltvMatchMapStats.GetMatchMapStats(match.maps[0]);
-                        await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(mapStats));
-                        break;
-                    case "overallstats_def":
-                        await arg.DeferAsync();
-                        
-                        foreach (Embed e in arg.Message.Embeds)
-                        {
-                            matchLink = ((EmbedAuthor)e.Author).Url;
-                        }
-                        match = await HltvMatch.GetMatch(matchLink);
-                        matchStats = await HltvMatchStats.GetMatchStats(match);
-                        await arg.Channel.SendMessageAsync(embed: HltvMatchStats.GetPlayerStatsEmbed(matchStats));
-                        break;
-                }
-            });
-            return handler;
-        }
-
-        private Task GuildLeft(SocketGuild arg)
-        {
-            IMongoCollection<ServerConfig> collection = Config.GetCollection();
-            collection.DeleteOne(x => x.GuildID == arg.Id);
-            StatsUpdater.StatsTracker.Servercount = _client.Guilds.Count;
-            StatsUpdater.UpdateStats();
-            return Task.CompletedTask;
-        }
-
-        public async Task GuildJoined(SocketGuild guild)
-        {
-            StatsUpdater.StatsTracker.Servercount = _client.Guilds.Count;
-            StatsUpdater.UpdateStats();
-            await Config.GuildJoined(guild);
-        }
-
-        private Task BgTask()
-        {
-            return Task.Run(async() =>
-            {                
-                int lastUpdate = 0;
-                while (true)
-                {
-                    //top.gg API & bots.gg API
-                    if (DateTime.Now.Hour > lastUpdate && _client.CurrentUser.Id == 807182830752628766)
-                    {
-                            lastUpdate = DateTime.Now.Hour;
-                            HttpClient http = new();
-                            //top.gg
-                            http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.TopGGApiKey);
-                            HttpRequestMessage req = new(HttpMethod.Post, "https://top.gg/api/bots/807182830752628766/stats");
-                            req.Content = new StringContent($"{{ \"server_count\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
-                            await http.SendAsync(req);
-                            //bots.gg
-                            http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botconfig.BotsGGApiKey);
-                            req = new(HttpMethod.Post, "https://discord.bots.gg/api/v1/bots/807182830752628766/stats");
-                            req.Content = new StringContent($"{{ \"guildCount\": {_client.Guilds.Count} }}", Encoding.UTF8, "application/json");
-                            await http.SendAsync(req);
-                    }
-
-                    try
-                    {
-                        Stopwatch watch = new(); watch.Start();
-                        await HltvResults.SendNewResults(_client);
-                        WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched results ({watch.ElapsedMilliseconds}ms)");
-                        await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                        await HltvEvents.AktEvents(await Config.GetChannels(_client));
-                        WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched events ({watch.ElapsedMilliseconds}ms)");
-                        await Task.Delay(_botconfig.CheckResultsTimeInterval / 4); watch.Restart();
-                        await HltvNews.SendNewNews(await Config.GetChannels(_client));
-                        WriteLog($"{DateTime.Now.ToLongTimeString()} HLTV\t\t fetched news ({watch.ElapsedMilliseconds}ms)"); watch.Restart();
-                        // CacheCleaner.Cleaner(_client);
-                        await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
-                    } catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.ToString());
-                        await Task.Delay(_botconfig.CheckResultsTimeInterval / 4);
-                    }
-                }
-            });
-        }
-
-        public static void WriteLog(string arg)
-        {
-            Console.WriteLine(arg);
-        }
-        private static Task Log(LogMessage arg)
-        {
-            WriteLog(arg.ToString().Split("     ")[0] + "\t" + arg.ToString().Split("     ")[1]);
-            return Task.CompletedTask;
+            GetMatchStats requestMatchStats = new GetMatchStats { Id = match.StatsId };
+            await arg.ModifyOriginalResponseAsync(msg =>
+                msg.Embed = requestMatchStats.SendRequest<MatchStats>().Result.ToEmbed());
         }
     }
+    
+    private static async Task SelectMenuExecuted(SocketMessageComponent arg)
+    {
+        switch (arg.Data.CustomId) 
+        {
+            case "upcomingEventsMenu":
+                await HltvEvents.SendEvent(arg);
+                break;
+            case "ongoingEventsMenu":
+                await HltvEvents.SendEvent(arg);
+                break;
+        }
+    }
+    
+    public Task GuildJoined(SocketGuild guild)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Config.GuildJoined(guild);
+                StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
+            }
+            catch (Exception ex)
+            {
+                if (ex is HttpException)
+                {
+                    await Log(new LogMessage(LogSeverity.Warning, "GuildJoined", ex.Message, ex));
+                    await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
+                        .WithDescription(
+                            "It looks like the bot has insufficient permissions (probably webhooks) on this server" +
+                            ". Please use the invite-link and grant all requested permissions.").Build());
+                }
+                else
+                {
+                    await Log(new LogMessage(LogSeverity.Error, "GuildJoined", ex.Message, ex));
+                    await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
+                        .WithDescription(
+                            $"An {ex.Message} Exception occured while joining this server. Please report this bug!")
+                        .Build());
+                }
+                throw;
+            }
+        });
+        return Task.CompletedTask;
+    }
+
+    private Task GuildLeft(SocketGuild guild)
+    {
+        _ = Task.Run(async () =>
+        {
+            await Tools.ExceptionHandler(async () =>
+            {
+                await ServerConfigRepository.Delete(guild.Id);
+                StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
+            }, LogSeverity.Error, "GuildLeft");
+        });
+        
+        return Task.CompletedTask;
+    }
+
+    private async Task MiscellaneousBackground()
+    {
+        if (Client.CurrentUser.Id == _botConfig.ProductionBotId)
+        {
+            //top.gg
+            HttpRequestMessage reqTop = new(HttpMethod.Post, $"https://top.gg/api/bots/${Client.CurrentUser.Id}/stats");
+            reqTop.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.TopGgApiKey);
+            reqTop.Content = new StringContent($"{{ \"server_count\": {Client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+            await DefaultHttpClient.SendAsync(reqTop);
+            
+            //bots.gg
+            HttpRequestMessage reqBots = new (HttpMethod.Post, $"https://discord.bots.gg/api/v1/bots/${Client.Guilds.Count}/stats");
+            reqBots.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_botConfig.BotsGgApiKey);
+            reqBots.Content = new StringContent($"{{ \"guildCount\": {Client.Guilds.Count} }}", Encoding.UTF8, "application/json");
+            await DefaultHttpClient.SendAsync(reqBots);
+        }
+        
+        CacheCleaner.Clean();
+        StatsRepository.Update(StatsTracker.GetStats());
+        await HltvRanking.UpdateTeamRanking();
+    }
+
+    private async Task BgTask()
+    {
+        await Tools.ExceptionHandler(MiscellaneousBackground, LogSeverity.Warning, "Misc-Background", true);
+        
+        Timer updateGgStatsTimer = new(1000 * 60 * 60); // 1h interval
+        updateGgStatsTimer.Elapsed += async (_, _) =>
+        {
+            await Tools.ExceptionHandler(MiscellaneousBackground, LogSeverity.Warning, "Background-Task", true);
+        };
+        updateGgStatsTimer.Enabled = true;
+        
+        (Timer, Func<Task>)[] timers = {(new Timer(), HltvNews.SendNewNews), (new Timer(), HltvResults.SendNewResults),
+            (new Timer(), HltvEvents.SendNewStartedEvents), (new Timer(), HltvEvents.SendNewPastEvents), (new Timer(), HltvMatches.UpdateMatches)};
+        foreach ((Timer timer, Func<Task> function) in timers)
+        {
+            await Tools.ExceptionHandler(function, LogSeverity.Error, function.GetMethodInfo().Name, true);
+            timer.Interval = _botConfig.CheckResultsTimeInterval;
+            timer.Elapsed += async (_, _) =>
+                await Tools.ExceptionHandler(function, LogSeverity.Error, function.GetMethodInfo().Name, true);
+            
+            timer.Enabled = true;
+            await Task.Delay(_botConfig.CheckResultsTimeInterval / timers.Length);
+        }
+    }
+    
+    public static async Task Log(LogMessage message)
+    {
+        if (message.Severity == LogSeverity.Critical)
+            await Developer.NotifyCriticalError(message);
+        switch (message.Exception)
+        {
+            case HttpException httpException:
+                Console.WriteLine($"[Discord/{message.Severity}] {httpException.Message}"
+                                  + $" {httpException.Reason}.");
+                break;
+            case { } ex:
+                if (ex is ApiError)
+                {
+                    Console.WriteLine($"[HltvApi/{message.Severity}] {message.Source} caused: {ex.Message}");
+                }
+                Console.WriteLine($"[General/{message.Severity}] {message.Source} caused: {ex.Message}");
+                break;
+            default:
+                Console.WriteLine($"[General/{message.Severity}] {message}");
+                break;
+        }
+    }
+
 }

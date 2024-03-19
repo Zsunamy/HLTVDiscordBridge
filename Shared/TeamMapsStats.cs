@@ -1,42 +1,49 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
-namespace HLTVDiscordBridge.Shared
+namespace HLTVDiscordBridge.Shared;
+
+public class TeamMapsStats
 {
-    public class TeamMapsStats
+    [JsonPropertyName("de_dust2")]
+    public TeamMapStats DeDust2 { get; set; }
+    
+    [JsonPropertyName("de_mirage")]
+    public TeamMapStats DeMirage { get; set; }
+    
+    [JsonPropertyName("de_inferno")]
+    public TeamMapStats DeInferno { get; set; }
+    
+    [JsonPropertyName("de_nuke")]
+    public TeamMapStats DeNuke { get; set; }
+    
+    [JsonPropertyName("de_overpass")]
+    public TeamMapStats DeOverpass { get; set; }
+    
+    [JsonPropertyName("de_train")]
+    public TeamMapStats DeTrain { get; set; }
+    
+    [JsonPropertyName("de_cache")]
+    public TeamMapStats DeCache { get; set; }
+    
+    [JsonPropertyName("de_cbble")]
+    public TeamMapStats DeCbble { get; set; }
+    
+    [JsonPropertyName("de_ancient")]
+    public TeamMapStats DeAncient { get; set; }
+    
+    [JsonPropertyName("de_tuscan")]
+    public TeamMapStats DeTuscan { get; set; }
+    
+    [JsonPropertyName("de_anubis")]
+    public TeamMapStats DeAnubis { get; set; }
+
+    public IEnumerable<(string, TeamMapStats)> GetMostPlayedMaps()
     {
-        public TeamMapsStats(JObject jObject)
-        {
-            de_dust2 = getTeamMapStats(jObject, nameof(de_dust2));
-            de_mirage = getTeamMapStats(jObject, nameof(de_mirage));
-            de_inferno = getTeamMapStats(jObject, nameof(de_inferno));
-            de_nuke = getTeamMapStats(jObject, nameof (de_nuke));
-            de_overpass = getTeamMapStats(jObject, nameof(de_overpass));
-            de_train = getTeamMapStats(jObject, nameof(de_train));
-            de_cache = getTeamMapStats(jObject, nameof(de_cache));
-            de_cbble = getTeamMapStats(jObject, nameof(de_cbble));
-            de_ancient = getTeamMapStats(jObject, nameof(de_ancient));
-            de_tuscan = getTeamMapStats(jObject, nameof(de_tuscan));
-        }
-
-        public TeamMapStats de_dust2 { get; set; }
-        public TeamMapStats de_mirage { get; set; }
-        public TeamMapStats de_inferno { get; set; }
-        public TeamMapStats de_nuke { get; set; }
-        public TeamMapStats de_overpass { get; set; }
-        public TeamMapStats de_train { get; set; }
-        public TeamMapStats de_cache { get; set; }
-        public TeamMapStats de_cbble { get; set; }
-        public TeamMapStats de_ancient { get; set; }
-        public TeamMapStats de_tuscan { get; set; }
-
-        private TeamMapStats getTeamMapStats (JObject jObject, string tokenname)
-        {
-            return jObject.TryGetValue(tokenname, out JToken token) ? new TeamMapStats(token as JObject) : null;
-        }
+        return new[] { ("de_dust2", DeDust2), ("de_mirage", DeMirage), ("de_inferno", DeInferno),
+            ("de_nuke", DeNuke), ("de_overpass", DeOverpass), ("de_train", DeTrain), ("de_cache", DeCache), ("de_cbble", DeCbble),
+            ("de_ancient", DeAncient), ("de_tuscan", DeTuscan), ("de_anubis", DeAnubis)}.Where(elem => elem.Item2 != null)
+            .OrderByDescending(elem => elem.Item2.Wins);
     }
 }

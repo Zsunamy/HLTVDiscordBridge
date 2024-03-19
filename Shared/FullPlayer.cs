@@ -1,77 +1,89 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Discord;
+using HLTVDiscordBridge.Modules;
 
-namespace HLTVDiscordBridge.Shared
+namespace HLTVDiscordBridge.Shared;
+
+public class FullPlayer
 {
-    public class FullPlayer
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Ign { get; set; }
+    public string Image { get; set; }
+    public int? Age { get; set; }
+    public string Twitter { get; set; }
+    public string Twitch { get; set; }
+    public string Instagram { get; set; }
+    public Country Country { get; set; }
+    public FullPlayerTeam Team { get; set; }
+    public PlayerAchievement[] Achievements { get; set; }
+    public TeamMembership[] TeamMemberships { get; set; }
+    public Article[] News { get; set; }
+
+    public Embed ToEmbed(PlayerStats stats)
     {
-        public FullPlayer() { }
-        public FullPlayer(JObject jObject)
+        EmbedBuilder builder = new();
+        if (stats.Image != null)
         {
-            id = jObject.TryGetValue("id", out JToken idTok) ? uint.Parse(idTok.ToString()) : 0;
-            name = jObject.TryGetValue("name", out JToken nameTok) ? nameTok.ToString() : null;
-            ign = jObject.TryGetValue("ign", out JToken ignTok) ? ignTok.ToString() : null;
-            if (jObject.TryGetValue("image", out JToken imageTok))
+            builder.WithThumbnailUrl(stats.Image);
+        }
+        if (stats.Id != 0 && stats.Ign != null) 
+        {
+            builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", 
+                $"https://hltv.org/player/{stats.Id}/{stats.Ign}");
+        }
+        if (stats.Country.Code != null && stats.Ign != null)
+        {
+            builder.WithTitle(stats.Ign + $" :flag_{stats.Country.Code.ToLower()}:");
+        }
+        if (stats.Name != null)
+        {
+            builder.AddField("Name:", stats.Name, true);
+        }
+        if (stats.Age != null)
+        {
+            builder.AddField("Age:", stats.Age, true);
+        }
+        else
+        {
+            builder.AddField("\u200b", "\u200b");
+        }
+        if (stats.Team != null)
+        {
+            builder.AddField("Team:", $"[{stats.Team.Name}]({stats.Team.Link})", true);
+        }
+        else
+        {
+            builder.AddField("Team:", "none");
+        }
+        if (stats.OverviewStatistics != null) 
+        {
+            builder.AddField("Stats:", "Maps played:\nKills/Deaths:\nHeadshot %:\nADR:\nKills per round:\nAssists per round:\nDeaths per round:", true);
+            builder.AddField("\u200b", $"{stats.OverviewStatistics.MapsPlayed}\n" +
+                                       $"{stats.OverviewStatistics.Kills}/{stats.OverviewStatistics.Deaths} ({stats.OverviewStatistics.KdRatio})\n" +
+                                       $"{stats.OverviewStatistics.Headshots}\n{stats.OverviewStatistics.DamagePerRound}\n" + 
+                                       $"{stats.OverviewStatistics.KillsPerRound}\n" +
+                                       $"{stats.OverviewStatistics.AssistsPerRound}\n" +
+                                       $"{stats.OverviewStatistics.DeathsPerRound}", true);
+        }
+        builder.WithCurrentTimestamp();
+
+        if(Achievements.Length != 0)
+        {
+            List<string> achievements = new();
+            foreach (PlayerAchievement achievement in Achievements.TakeWhile(_ => string.Join("\n", achievements).Length <= 600))
             {
-                string imageLink = imageTok.ToString();
-                if (!imageLink.Contains("http"))
-                {
-                    image = "https://www.hltv.org" + imageLink;
-                }
-                else { image = imageLink; }
+                achievements.Add($"[{achievement.Event.Name}]({achievement.Event.Link}) finished: {achievement.Place}");
             }
-            age = jObject.TryGetValue("age", out JToken ageTok) ? ageTok.ToString() : null;
-            twitter = jObject.TryGetValue("twitter", out JToken twitterTok) ? twitterTok.ToString() : null;
-            twitch = jObject.TryGetValue("twitch", out JToken twitchTok) ? twitchTok.ToString() : null;
-            instagram = jObject.TryGetValue("instagram", out JToken instagramTok) ? instagramTok.ToString() : null;
-            country = jObject.TryGetValue("country", out JToken countryTok) ? new Country(countryTok as JObject) : null;
-            team = jObject.TryGetValue("team", out JToken teamTok) ? new Team(teamTok as JObject) : null;
-            List<Achievement> achievements = new();
-            if(jObject.TryGetValue("achievements", out JToken achievementsTok))
-            {
-                foreach (JToken achievementTok in achievementsTok)
-                {
-                    achievements.Add(new Achievement(achievementTok as JObject));
-                }
-                this.achievements = achievements;
-            }
-            List<TeamMembership> teamMemberships = new();
-            if (jObject.TryGetValue("teams", out JToken teamMembershipsTok))
-            {
-                foreach (JToken teamMembershipTok in teamMembershipsTok)
-                {
-                    teamMemberships.Add(new TeamMembership(teamMembershipTok as JObject));
-                }
-                this.teamMemberships = teamMemberships;
-            }
-            List<News> news = new();
-            if (jObject.TryGetValue("news", out JToken newsTok))
-            {
-                foreach (JToken newTok in newsTok)
-                {
-                    news.Add(new News(newTok as JObject));
-                }
-                this.news = news;
-            }
+            builder.AddField("Achievements:", string.Join("\n", achievements));
 
         }
-
-        public uint id { get; set; }
-        public string name { get; set; }
-        public string ign { get; set; }
-        public string image { get; set; }
-        public string age { get; set; }
-        public string twitter { get; set; }
-        public string twitch { get; set; }
-        public string instagram { get; set; }
-        public Country country { get; set; }
-        public Team team { get; set; }
-        public List<Achievement> achievements { get; set; }
-        public List<TeamMembership> teamMemberships { get; set; }
-        public List<News> news { get; set; }
+        else
+        {
+            builder.AddField("Achievements:", $"none");
+        }
+        builder.WithFooter(Tools.GetRandomFooter());
+        return builder.Build();
     }
 }

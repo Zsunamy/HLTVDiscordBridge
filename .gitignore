@@ -5,6 +5,7 @@ net5.0/
 config.xml
 GlobalSuppressions.cs
 Properties/
+puml/
 *.user
 .idea
 obj/

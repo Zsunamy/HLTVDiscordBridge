@@ -1,42 +1,71 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using HLTVDiscordBridge.Shared;
 
-namespace HLTVDiscordBridge.Modules
+namespace HLTVDiscordBridge.Modules;
+
+public static class SlashCommands
 {
-    public class SlashCommands
+    private static readonly DiscordSocketClient Client = Program.GetInstance().Client;
+
+    private static SlashCommandOptionBuilder AddTextChannels(SlashCommandOptionBuilder option)
     {
-        private static DiscordSocketClient _client = null;
-        public SlashCommands (DiscordSocketClient client)
+        ChannelType[] channelTypes =
         {
-            _client = client;
+            ChannelType.News, ChannelType.Forum, ChannelType.Group, ChannelType.Text, ChannelType.Store,
+            ChannelType.NewsThread, ChannelType.PrivateThread, ChannelType.PublicThread
+        };
+        foreach (ChannelType type in channelTypes)
+        {
+            option.AddChannelType(type);
         }
 
-        public async Task InitSlashCommands()
+        return option;
+    }
+
+    public static async Task InitSlashCommands()
+    {
+        ApplicationCommandProperties[] internalCommands =
         {
-            ulong guildId = 792139588743331841;
+            new SlashCommandBuilder()
+                .WithName("servercount")
+                .WithDescription("sends the servercount").Build(),
 
-            var guildSupportCommand = new SlashCommandBuilder()
+            new SlashCommandBuilder()
+                .WithName("update")
+                .WithDescription("sends an update to every server")
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("version")
+                    .WithDescription("version of the bot")
+                    .WithRequired(true)
+                    .WithType(ApplicationCommandOptionType.String)
+                )
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("text")
+                    .WithDescription("text you want to send (Markdown)")
+                    .WithRequired(true)
+                    .WithType(ApplicationCommandOptionType.String)
+                ).Build()
+        };
+
+        ApplicationCommandProperties[] commands =
+        {
+            new SlashCommandBuilder()
                 .WithName("support")
-                .WithDescription("Sends the support page.");
-            await _client.CreateGlobalApplicationCommandAsync(guildSupportCommand.Build());
+                .WithDescription("Sends the support page.").Build(),
 
-            var guildEventCommand = new SlashCommandBuilder()
-            .WithName("event")
-            .WithDescription("Gives you selected information about an event.")
-            .AddOption(new SlashCommandOptionBuilder()
-                .WithName("name")
-                .WithDescription("name of event")
-                .WithRequired(true)
-                .WithType(ApplicationCommandOptionType.String)
-            );
-            await _client.CreateGlobalApplicationCommandAsync(guildEventCommand.Build());
+            new SlashCommandBuilder()
+                .WithName("event")
+                .WithDescription("Gives you selected information about an event.")
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("name")
+                    .WithDescription("name of event")
+                    .WithRequired(true)
+                    .WithType(ApplicationCommandOptionType.String)
+                ).Build(),
 
-            var guildTeamCommand = new SlashCommandBuilder()
+            new SlashCommandBuilder()
                 .WithName("team")
                 .WithDescription("Gives you selected information about a team.")
                 .AddOption(new SlashCommandOptionBuilder()
@@ -44,21 +73,19 @@ namespace HLTVDiscordBridge.Modules
                     .WithDescription("name of team")
                     .WithRequired(true)
                     .WithType(ApplicationCommandOptionType.String)
-                    );
-            await _client.CreateGlobalApplicationCommandAsync(guildTeamCommand.Build());
+                ).Build(),
 
-            var guildPlayerCommand = new SlashCommandBuilder()
-            .WithName("player")
-            .WithDescription("Gives you selected information about a player.")
-            .AddOption(new SlashCommandOptionBuilder()
-                .WithName("name")
-                .WithDescription("name of player")
-                .WithRequired(true)
-                .WithType(ApplicationCommandOptionType.String)
-            );
-            await _client.CreateGlobalApplicationCommandAsync(guildPlayerCommand.Build());
+            new SlashCommandBuilder()
+                .WithName("player")
+                .WithDescription("Gives you selected information about a player.")
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("name")
+                    .WithDescription("name of player")
+                    .WithRequired(true)
+                    .WithType(ApplicationCommandOptionType.String)
+                ).Build(),
 
-            var guildHelpCommand = new SlashCommandBuilder()
+            new SlashCommandBuilder()
                 .WithName("help")
                 .WithDescription("Gives you help about our commands")
                 .AddOption(new SlashCommandOptionBuilder()
@@ -66,34 +93,20 @@ namespace HLTVDiscordBridge.Modules
                     .WithDescription("name of the command")
                     .WithRequired(false)
                     .AddChoice("general", "general")
-                    .AddChoice("init", "init")
                     .AddChoice("player", "player")
                     .AddChoice("set", "set")
                     .AddChoice("ranking", "ranking")
-                    .AddChoice("upcomingmatches", "upcomingmatches")
+                    .AddChoice("upcoming-matches", "upcoming-matches")
                     .AddChoice("event", "event")
                     .AddChoice("events", "events")
-                    .AddChoice("upcomingevents", "upcomingevents")
+                    .AddChoice("upcoming-events", "upcoming-events")
                     .AddChoice("live", "live")
                     .AddChoice("team", "team")
                     .AddChoice("support", "support")
                     .WithType(ApplicationCommandOptionType.String)
-                );
-            await _client.CreateGlobalApplicationCommandAsync(guildHelpCommand.Build());
+                ).Build(),
 
-            var guildInitCommand = new SlashCommandBuilder()
-                .WithName("init")
-                .WithDescription("Initializes the bot to the given Channel")
-                .WithDefaultMemberPermissions(GuildPermission.ManageGuild)
-                .AddOption(new SlashCommandOptionBuilder()
-                    .WithName("channel")
-                    .WithDescription("the channel the bot will send the messages")
-                    .WithRequired(true)
-                    .WithType(ApplicationCommandOptionType.Channel)
-                );
-            await _client.CreateGlobalApplicationCommandAsync(guildInitCommand.Build());
-
-            var guildSetCommand = new SlashCommandBuilder()
+            new SlashCommandBuilder()
                 .WithName("set")
                 .WithDescription("sets options within the bot")
                 .WithDefaultMemberPermissions(GuildPermission.ManageGuild)
@@ -108,41 +121,39 @@ namespace HLTVDiscordBridge.Modules
                         .WithType(ApplicationCommandOptionType.Integer)
                         .WithMinValue(0)
                         .WithMaxValue(5)
-                        )
                     )
-                .AddOption(new SlashCommandOptionBuilder()
-                    .WithName("results")
-                    .WithDescription("toggles the result messages")
-                    .WithType(ApplicationCommandOptionType.SubCommand)
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("enabled")
-                        .WithDescription("enables/disables result messages")
-                        .WithRequired(true)
-                        .WithType(ApplicationCommandOptionType.Boolean)
-                        )
-                    )
-                .AddOption(new SlashCommandOptionBuilder()
-                    .WithName("events")
-                    .WithDescription("toggles the event messages")
-                    .WithType(ApplicationCommandOptionType.SubCommand)
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("enabled")
-                        .WithDescription("enables/disables event messages")
-                        .WithRequired(true)
-                        .WithType(ApplicationCommandOptionType.Boolean)
-                        )
-                    )
+                )
                 .AddOption(new SlashCommandOptionBuilder()
                     .WithName("news")
-                    .WithDescription("toggles the news messages")
+                    .WithDescription("sets the channel for news notifications")
                     .WithType(ApplicationCommandOptionType.SubCommand)
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("enabled")
-                        .WithDescription("enables/disables news messages")
-                        .WithRequired(true)
-                        .WithType(ApplicationCommandOptionType.Boolean)
-                        )
-                    )
+                    .AddOption(AddTextChannels(new SlashCommandOptionBuilder()
+                        .WithName("channel")
+                        .WithDescription("select a channel for the news notifications")
+                        .WithType(ApplicationCommandOptionType.Channel)
+                    ))
+                )
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("results")
+                    .WithDescription("sets the channel for result notifications")
+                    .WithType(ApplicationCommandOptionType.SubCommand)
+                    .AddOption(AddTextChannels(new SlashCommandOptionBuilder()
+                        .WithName("channel")
+                        .WithDescription("select a channel for the result notifications")
+                        .WithType(ApplicationCommandOptionType.Channel)
+                    ))
+                )
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("events")
+                    .WithDescription("sets the channel for event notifications")
+                    .WithType(ApplicationCommandOptionType.SubCommand)
+                    .AddOption(AddTextChannels(new SlashCommandOptionBuilder()
+                        .WithName("channel")
+                        .WithDescription("select a channel for the event notifications")
+                        .WithType(ApplicationCommandOptionType.Channel)
+
+                    ))
+                )
                 .AddOption(new SlashCommandOptionBuilder()
                     .WithName("featuredeventsonly")
                     .WithDescription("restrict event messages to only featured events")
@@ -152,57 +163,47 @@ namespace HLTVDiscordBridge.Modules
                         .WithDescription("enables/disables restriction to only featured events")
                         .WithRequired(true)
                         .WithType(ApplicationCommandOptionType.Boolean)
-                        )
-                    );
-
-            await _client.CreateGlobalApplicationCommandAsync(guildSetCommand.Build());
-
-            var guildEventsCommand = new SlashCommandBuilder()
-                .WithName("events")
-                .WithDescription("Dropdown of all ongoing events");
-
-            await _client.CreateGlobalApplicationCommandAsync(guildEventsCommand.Build());
-
-            var guildUpcomingEventsCommand = new SlashCommandBuilder()
-                .WithName("upcomingevents")
-                .WithDescription("Dropdown of all upcoming events");
-
-            await _client.CreateGlobalApplicationCommandAsync(guildUpcomingEventsCommand.Build());
-
-            var guildUpdateCommand = new SlashCommandBuilder()
-                .WithName("update")
-                .WithDescription("sends an update to every server")
-                .AddOption(new SlashCommandOptionBuilder()
-                    .WithName("version")
-                    .WithDescription("version of the bot")
-                    .WithRequired(true)
-                    .WithType(ApplicationCommandOptionType.String)
                     )
+                )
                 .AddOption(new SlashCommandOptionBuilder()
-                    .WithName("text")
-                    .WithDescription("text you want to send (Markdown)")
-                    .WithRequired(true)
-                    .WithType(ApplicationCommandOptionType.String)
-                    );
-            await _client.Rest.CreateGuildCommand(guildUpdateCommand.Build(), guildId);
+                    .WithName("disable")
+                    .WithDescription("disables the selected notification")
+                    .WithType(ApplicationCommandOptionType.SubCommand)
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("notification")
+                        .WithDescription("select the notification to be disabled")
+                        .WithRequired(true)
+                        .WithType(ApplicationCommandOptionType.String)
+                        .AddChoice("news", "news")
+                        .AddChoice("results", "results")
+                        .AddChoice("events", "events")
+                    )
+                ).Build(),
 
-            var serverCountCommand = new SlashCommandBuilder()
-                .WithName("servercount")
-                .WithDescription("sends the servercount");
-            await _client.Rest.CreateGuildCommand(serverCountCommand.Build(), guildId);
+            new SlashCommandBuilder()
+                .WithName("events")
+                .WithDescription("Dropdown of all ongoing events").Build(),
 
-            var guildUpcomingMatchesCommand = new SlashCommandBuilder()
-                .WithName("upcomingmatches")
+            new SlashCommandBuilder()
+                .WithName("upcoming-events")
+                .WithDescription("Dropdown of all upcoming events").Build(),
+
+            new SlashCommandBuilder()
+                .WithName("upcoming-matches")
                 .WithDescription("gets upcoming matches")
                 .AddOption(new SlashCommandOptionBuilder()
-                    .WithName("teamdateevent")
-                    .WithDescription("team/date/event")
+                    .WithName("team")
+                    .WithDescription("filters for the provided team.")
                     .WithRequired(false)
                     .WithType(ApplicationCommandOptionType.String)
-                    );
-            await _client.CreateGlobalApplicationCommandAsync(guildUpcomingMatchesCommand.Build());
+                )
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("event")
+                    .WithDescription("filters for the provided event.")
+                    .WithRequired(false)
+                    .WithType(ApplicationCommandOptionType.String)).Build(),
 
-            var guildRankingCommand = new SlashCommandBuilder()
+            new SlashCommandBuilder()
                 .WithName("ranking")
                 .WithDescription("gets the ranking of a specified region/date")
                 .AddOption(new SlashCommandOptionBuilder()
@@ -210,73 +211,68 @@ namespace HLTVDiscordBridge.Modules
                     .WithDescription("region")
                     .WithRequired(false)
                     .WithType(ApplicationCommandOptionType.String)
-                    )
+                )
                 .AddOption(new SlashCommandOptionBuilder()
                     .WithName("date")
                     .WithDescription("date")
                     .WithRequired(false)
                     .WithType(ApplicationCommandOptionType.String)
-                    );
-            await _client.CreateGlobalApplicationCommandAsync(guildRankingCommand.Build());
+                ).Build(),
 
-            var liveCommand = new SlashCommandBuilder()
+            new SlashCommandBuilder()
                 .WithName("live")
-                .WithDescription("shows all live matches");
-            await _client.CreateGlobalApplicationCommandAsync(liveCommand.Build());
-        }
-        public async Task SlashCommandHandler(SocketSlashCommand arg)
-        {
-            if (_client == null) { throw new InvalidOperationException("client wasn't initialized"); }
-            
-            Task.Run(async () =>
-            {
-                switch (arg.CommandName)
-                {
-                    case "servercount":
-                        await arg.RespondAsync(_client.Guilds.Count.ToString());
-                        break;
-                    case "live":
-                        await HltvLiveMatches.SendLiveMatchesEmbed(arg);
-                        break;
-                    case "player":
-                        await HltvPlayer.SendPlayerCard(arg);
-                        break;
-                    case "event":
-                        await HltvEvents.SendEvent(arg);
-                        break;
-                    case "team":
-                        await HltvTeams.SendTeamCard(arg);
-                        break;
-                    case "support":
-                        await SupportCommand.DispSupport(arg);
-                        break;
-                    case "help":
-                        await Commands.SendHelpEmbed(arg);
-                        break;
-                    case "init":
-                        await Config.InitTextChannel(arg);
-                        break;
-                    case "set":
-                        await Config.ChangeServerConfig(arg);
-                        break;
-                    case "events":
-                        await HltvEvents.SendEvents(arg);
-                        break;
-                    case "upcomingevents":
-                        await HltvEvents.SendUpcomingEvents(arg);
-                        break;
-                    case "update":
-                        await Developer.Update(arg, _client);
-                        break;
-                    case "upcomingmatches":
-                        await HltvUpcomingMatches.SendUpcomingMatches(arg);
-                        break;
-                    case "ranking":
-                        await HltvRanking.SendRanking(arg);
-                        break;
+                .WithDescription("shows all live matches").Build(),
+        };
 
-                }
-            });
+        await Client.GetGuild(BotConfig.GetBotConfig().DeveloperServer).BulkOverwriteApplicationCommandAsync(internalCommands);
+        await Client.BulkOverwriteGlobalApplicationCommandsAsync(commands);
+    }
+
+    public static async Task SlashCommandHandler(SocketSlashCommand arg)
+    {
+        {
+            switch (arg.CommandName)
+            {
+                case "servercount":
+                    await arg.ModifyOriginalResponseAsync(msg => msg.Content = Client.Guilds.Count.ToString());
+                    break;
+                case "live":
+                    await HltvMatches.SendLiveMatches(arg);
+                    break;
+                case "player":
+                    await HltvPlayer.SendPlayerCard(arg);
+                    break;
+                case "event":
+                    await HltvEvents.SendEvent(arg);
+                    break;
+                case "team":
+                    await HltvTeams.SendTeamCard(arg);
+                    break;
+                case "support":
+                    await SupportCommand.Support(arg);
+                    break;
+                case "help":
+                    await Commands.SendHelpEmbed(arg);
+                    break;
+                case "set":
+                    await Config.ChangeServerConfig(arg);
+                    break;
+                case "events":
+                    await HltvEvents.SendEvents(arg);
+                    break;
+                case "upcoming-events":
+                    await HltvEvents.SendUpcomingEvents(arg);
+                    break;
+                case "update":
+                    await Developer.Update(arg);
+                    break;
+                case "upcoming-matches":
+                    await HltvMatches.SendUpcomingMatches(arg);
+                    break;
+                case "ranking":
+                    await HltvRanking.SendRanking(arg);
+                    break;
+            }
         }
     }
 }
