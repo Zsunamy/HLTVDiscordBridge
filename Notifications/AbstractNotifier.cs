@@ -49,7 +49,7 @@ public abstract class AbstractNotifier
     public async Task NotifyAll(Embed embed, MessageComponent component = null)
     {
         ServerConfig[] subBuffer = Subscribers;
-        IEnumerable<Task> status = subBuffer.Select(config => Task.Run(async () =>
+        foreach (ServerConfig config in subBuffer)
         {
             try
             {
@@ -66,11 +66,9 @@ public abstract class AbstractNotifier
                 IncStats(-1);
                 throw;
             }
-        }));
+        }
             
         StatsTracker.GetStats().MessagesSent += subBuffer.Length;
         IncStats(subBuffer.Length);
-
-        await Task.WhenAll(status);
     }
 }
