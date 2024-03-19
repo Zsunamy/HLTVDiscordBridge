@@ -35,39 +35,40 @@ public static class Developer
                              "[voting](https://top.gg/bot/807182830752628766/vote) for this bot on [top.gg](https://top.gg/bot/807182830752628766) to increase awareness.")
             .WithColor(Color.Green)
             .WithCurrentTimestamp().Build();
-        
-        List<Task> status = (await ServerConfigRepository.GetAll()).Select(config => Task.Run(async () =>
-            {
-                Webhook webhook = config.GetWebhooks().FirstOrDefault();
-                if (webhook == null)
-                {
-                    SocketTextChannel channel = null;
-                    try
-                    {
-                        channel = Program.GetInstance().Client.GetGuild(config.GuildId).DefaultChannel;
-                        await channel.SendMessageAsync(embed: embed);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (ex is Discord.Net.HttpException)
-                        {
-                            await Program.Log(new LogMessage(LogSeverity.Warning, nameof(Developer), $"not enough permission in channel {channel!.Name}", ex));
-                        }
-                        else
-                        {
-                            await Program.Log(new LogMessage(LogSeverity.Error, nameof(Developer), ex.Message, ex));
-                            throw;
-                        }
-                    }
-                }
-                else
-                {
-                    await webhook.ToDiscordWebhookClient().SendMessageAsync(embeds: new[] { embed });
-                }
-            })).ToList();
-        StatsTracker.GetStats().MessagesSent += status.ToList().Count;
-        await Task.WhenAll(status);
 
+        List<ServerConfig> configs = await ServerConfigRepository.GetAll();
+
+        foreach (ServerConfig config in configs)
+        {
+            Webhook webhook = config.GetWebhooks().FirstOrDefault();
+            if (webhook == null)
+            {
+                SocketTextChannel channel = null;
+                try
+                {
+                    channel = Program.GetInstance().Client.GetGuild(config.GuildId).DefaultChannel;
+                    await channel.SendMessageAsync(embed: embed);
+                }
+                catch (Exception ex)
+                {
+                    StatsTracker.GetStats().MessagesSent -= 1;
+                    if (ex is Discord.Net.HttpException)
+                    {
+                        await Program.Log(new LogMessage(LogSeverity.Warning, nameof(Developer),
+                            $"not enough permission in channel {channel!.Name}", ex));
+                    }
+                    else
+                    {
+                        await Program.Log(new LogMessage(LogSeverity.Error, nameof(Developer), ex.Message, ex));
+                        throw;
+                    }
+                }
+            }
+            else
+                await webhook.ToDiscordWebhookClient().SendMessageAsync(embeds: new[] { embed });
+        }
+
+        StatsTracker.GetStats().MessagesSent += configs.Count;
         await arg.ModifyOriginalResponseAsync(msg => msg.Content = "update sent!");
     }
 }
