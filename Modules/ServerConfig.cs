@@ -13,16 +13,12 @@ public class ServerConfig
 {
     [BsonId] public ObjectId Id { get; set; } = new();
     public ulong GuildId { get; set; }
-    public ulong NewsChannelID { get; set; }
     public Webhook News { get; set; }
     public Webhook Results { get; set; }
     public Webhook Events { get; set; }
     public int MinimumStars { get; set; }
     public bool OnlyFeaturedEvents { get; set; }
-    public bool NewsOutput { get; set; }
-    public bool ResultOutput { get; set; }
-    public bool EventOutput { get; set; }
-
+    
     public IEnumerable<Webhook> GetWebhooks()
     {
         return new[] { News, Results, Events }.Where(webhook => webhook != null);
@@ -44,10 +40,5 @@ public class ServerConfig
     public override bool Equals(object obj)
     {
         return obj is ServerConfig config && GuildId == config.GuildId;
-    }
-    
-    public override int GetHashCode()
-    {
-        return GuildId.GetHashCode();
     }
 }

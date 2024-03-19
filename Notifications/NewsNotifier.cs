@@ -1,7 +1,6 @@
 using System;
 using System.Linq.Expressions;
 using HLTVDiscordBridge.Modules;
-using HLTVDiscordBridge.Repository;
 using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge.Notifications;
@@ -17,6 +16,11 @@ public class NewsNotifier : AbstractNotifier
         return config.News;
     }
 
+    protected override bool GetMessageFilter(ServerConfig config, object data)
+    {
+        return true;
+    }
+
     protected override void SetWebhook(ServerConfig config, Webhook webhook)
     {
         config.News = webhook;
@@ -27,7 +31,7 @@ public class NewsNotifier : AbstractNotifier
         StatsTracker.GetStats().NewsSent += count;
     }
 
-    protected override Expression<Func<ServerConfig, bool>> GetFilter()
+    protected override Expression<Func<ServerConfig, bool>> GetConfigFilter()
     {
         return config => config.News != null;
     }

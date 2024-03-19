@@ -35,7 +35,7 @@ public static class HltvNews
         Stopwatch watch = new(); watch.Start();
         foreach (RssNews news in await GetNewNews())
         {
-            await NewsNotifier.Instance.NotifyAll(news.ToEmbed());
+            await NewsNotifier.Instance.NotifyAll(null, news.ToEmbed());
         }
         
         await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvNews),

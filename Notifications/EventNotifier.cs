@@ -1,7 +1,6 @@
 using System;
 using System.Linq.Expressions;
 using HLTVDiscordBridge.Modules;
-using HLTVDiscordBridge.Repository;
 using HLTVDiscordBridge.Shared;
 
 namespace HLTVDiscordBridge.Notifications;
@@ -16,6 +15,16 @@ public class EventNotifier : AbstractNotifier
         return config.Events;
     }
 
+    protected override bool GetMessageFilter(ServerConfig config, object data)
+    {
+        if (data is not bool featured)
+        {
+            throw new InvalidCastException("filter for featuredEvents must be a bool.");
+        }
+
+        return !config.OnlyFeaturedEvents || featured;
+    }
+
     protected override void SetWebhook(ServerConfig config, Webhook webhook)
     {
         config.Events = webhook;
@@ -26,7 +35,7 @@ public class EventNotifier : AbstractNotifier
         StatsTracker.GetStats().EventsSent += count;
     }
 
-    protected override Expression<Func<ServerConfig, bool>> GetFilter()
+    protected override Expression<Func<ServerConfig, bool>> GetConfigFilter()
     {
         return config => config.Events != null;
     }

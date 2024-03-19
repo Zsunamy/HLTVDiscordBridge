@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using HLTVDiscordBridge.Repository;
 using HLTVDiscordBridge.Shared;
-using MongoDB.Driver;
 
 namespace HLTVDiscordBridge.Modules;
 

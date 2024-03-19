@@ -40,8 +40,9 @@ public static class HltvResults
         foreach (Result result in await GetNewResults())
         {
             GetMatch request = new GetMatch{Id = result.Id};
-            (Embed embed, MessageComponent component) = result.ToEmbedAndComponent(await request.SendRequest<Match>());
-            await ResultNotifier.Instance.NotifyAll(embed, component);
+            Match data = await request.SendRequest<Match>();
+            (Embed embed, MessageComponent component) = result.ToEmbedAndComponent(data);
+            await ResultNotifier.Instance.NotifyAll(result.Stars, embed, component);
         }
 
         await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvResults),

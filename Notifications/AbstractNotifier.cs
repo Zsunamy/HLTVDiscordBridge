@@ -12,12 +12,13 @@ namespace HLTVDiscordBridge.Notifications;
 
 public abstract class AbstractNotifier
 {
-    private ServerConfig[] Subscribers => ServerConfigRepository.GetByFilter(GetFilter());
+    private ServerConfig[] Subscribers => ServerConfigRepository.GetByFilter(GetConfigFilter());
 
     protected abstract Webhook GetWebhook(ServerConfig config);
+    protected abstract bool GetMessageFilter(ServerConfig config, object data);
     protected abstract void SetWebhook(ServerConfig config, Webhook webhook);
     protected abstract void IncStats(int count);
-    protected abstract Expression<Func<ServerConfig, bool>> GetFilter();
+    protected abstract Expression<Func<ServerConfig, bool>> GetConfigFilter();
 
     public async Task Enroll(ServerConfig config, ITextChannel channel)
     {
@@ -46,10 +47,10 @@ public abstract class AbstractNotifier
         await ServerConfigRepository.Update(config);
     }
 
-    public async Task NotifyAll(Embed embed, MessageComponent component = null)
+    public async Task NotifyAll(object filterData, Embed embed, MessageComponent component = null)
     {
         ServerConfig[] subBuffer = Subscribers;
-        foreach (ServerConfig config in subBuffer)
+        foreach (ServerConfig config in subBuffer.Where(x => GetMessageFilter(x, filterData)))
         {
             try
             {
@@ -62,9 +63,9 @@ public abstract class AbstractNotifier
                     await Cancel(config);
                 }
 
+                await Program.Log(new LogMessage(LogSeverity.Error, ex.Source, ex.Message, ex));
                 StatsTracker.GetStats().MessagesSent -= 1;
                 IncStats(-1);
-                throw;
             }
         }
             

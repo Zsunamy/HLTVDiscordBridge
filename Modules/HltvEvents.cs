@@ -84,9 +84,10 @@ public static class HltvEvents
     public static async Task SendNewStartedEvents()
     {
         Stopwatch watch = new(); watch.Start();
-        foreach (GetEvent request in from startedEvent in await GetNewOngoingEvents() select new GetEvent{Id = startedEvent.Id})
+        foreach (EventPreview startedEvent in await GetNewOngoingEvents())
         {
-            await EventNotifier.Instance.NotifyAll((await request.SendRequest<FullEvent>()).ToStartedEmbed());
+            FullEvent fullEvent = await new GetEvent { Id = startedEvent.Id }.SendRequest<FullEvent>();
+            await EventNotifier.Instance.NotifyAll(startedEvent.Featured, fullEvent.ToStartedEmbed());
         }
         
         await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvEvents),
@@ -97,9 +98,10 @@ public static class HltvEvents
     {
         Stopwatch watch = new(); watch.Start();
         IEnumerable<EventPreview> events = await GetNewEvents(PastEventsPath, GetPastEvents);
-        foreach (GetEvent request in from startedEvent in events select new GetEvent{Id = startedEvent.Id})
+        foreach (EventPreview startedEvent in events)
         {
-            await EventNotifier.Instance.NotifyAll((await request.SendRequest<FullEvent>()).ToPastEmbed());
+            FullEvent fullEvent = await new GetEvent{Id = startedEvent.Id}.SendRequest<FullEvent>();
+            await EventNotifier.Instance.NotifyAll(startedEvent.Featured, fullEvent.ToPastEmbed());
         }
         
         await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvEvents),

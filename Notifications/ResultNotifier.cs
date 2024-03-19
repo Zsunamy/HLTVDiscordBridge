@@ -17,6 +17,15 @@ public class ResultNotifier : AbstractNotifier
         return config.Results;
     }
 
+    protected override bool GetMessageFilter(ServerConfig config, object data)
+    {
+        if (data is not int currentStars)
+        {
+            throw new InvalidCastException("Filter for minStars must be a integer.");
+        }
+        return config.MinimumStars < currentStars;
+    }
+
     protected override void SetWebhook(ServerConfig config, Webhook webhook)
     {
         config.Results = webhook;
@@ -27,7 +36,7 @@ public class ResultNotifier : AbstractNotifier
         StatsTracker.GetStats().ResultsSent += count;
     }
 
-    protected override Expression<Func<ServerConfig, bool>> GetFilter()
+    protected override Expression<Func<ServerConfig, bool>> GetConfigFilter()
     {
         return config => config.Results != null;
     }

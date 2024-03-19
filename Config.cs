@@ -138,9 +138,6 @@ public static class Config
             News = null,
             Events = null,
             Results = null,
-            EventOutput = true,
-            NewsOutput = true,
-            ResultOutput = true
         };
         try
         {

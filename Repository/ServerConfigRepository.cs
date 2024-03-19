@@ -8,7 +8,7 @@ using MongoDB.Driver;
 
 namespace HLTVDiscordBridge.Repository;
 
-public class ServerConfigRepository
+public static class ServerConfigRepository
 {
     private static readonly IMongoCollection<ServerConfig> Collection =
         Database.DatabaseObj.GetCollection<ServerConfig>("serverconfig");
