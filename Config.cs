@@ -37,6 +37,7 @@ public static class Config
 
                 UpdateDefinition<ServerConfig> update = Builders<ServerConfig>.Update.Combine(updates);
                 await GetCollection().UpdateOneAsync(x => x.NewsChannelID == config.NewsChannelID, update);
+                await Program.Log(new LogMessage(LogSeverity.Info, "created all Webhooks", "InitAllWebhooks"));
             }
             catch (Exception ex)
             {
