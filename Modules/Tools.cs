@@ -120,7 +120,7 @@ public static class Tools
             await arg.DeferAsync();
             try
             {
-                await ExceptionHandler(function, LogSeverity.Error, function.GetType().FullName);
+                await ExceptionHandler(function);
             }
             catch (Exception ex)
             {
@@ -136,7 +136,7 @@ public static class Tools
         return Task.CompletedTask;
     }
 
-    public static async Task ExceptionHandler(Func<Task> func, LogSeverity severity, string source, bool cont = false)
+    public static async Task ExceptionHandler(Func<Task> func, bool cont = false)
     {
         try
         {
@@ -144,7 +144,7 @@ public static class Tools
         }
         catch (Exception ex)
         {
-            await Program.Log(new LogMessage(severity, source, ex.Message +"\n" + ex.StackTrace, ex));
+            Logger.Log(new MyLogMessage(LogSeverity.Error, ex));
             if (!cont)
                 throw;
         }

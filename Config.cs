@@ -171,7 +171,7 @@ public static class Config
         {
             if (!await ServerConfigRepository.Exists(guild.Id))
             {
-                await Program.Log(new LogMessage(LogSeverity.Info, nameof(Config),
+                Logger.Log(new MyLogMessage(LogSeverity.Info, nameof(Config),
                     $"found guild {guild.Name} with no config. Creating default."));
                 await Program.GetInstance().GuildJoined(guild);
             }
@@ -181,15 +181,16 @@ public static class Config
 
         List<ServerConfig> toDelete = allConfigs.Where(config => client.GetGuild(config.GuildId) == null).ToList();
 
-        if (allConfigs.Count - toDelete.Count -1 != client.Guilds.Count)
-            await Program.Log(new LogMessage(LogSeverity.Warning,
-                "found incorrect amount of server configs to be deleted. This is probably because of a mal configured config.xml",
-                "ServerConfigStartUp"));
+        if (allConfigs.Count - toDelete.Count != client.Guilds.Count)
+            Logger.Log(new MyLogMessage(LogSeverity.Warning, nameof(Config), 
+                $"{allConfigs.Count} configs in database | {client.Guilds.Count} servers | {toDelete.Count} to delete | " +
+                $"there numbers contain errors!"
+                ));
         else
             foreach (ServerConfig config in toDelete)
             {
-                await Program.Log(new LogMessage(LogSeverity.Info, nameof(Config),
-                    "Found server configuration but bot is not on server; Deleting"));
+                Logger.Log(new MyLogMessage(LogSeverity.Info, nameof(Config),
+                    $"deleting database entry for server {config.Id}"));
                 await ServerConfigRepository.Delete(config.GuildId);
             }
     }

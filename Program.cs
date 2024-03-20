@@ -5,7 +5,6 @@ using HLTVDiscordBridge.Shared;
 using MongoDB.Driver;
 using System;
 using System.Net.Http;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -45,7 +44,6 @@ internal class Program
     {
         Client = new DiscordSocketClient( new DiscordSocketConfig
         {
-            //GatewayIntents = (GatewayIntents)536930304
             GatewayIntents = GatewayIntents.GuildMessages
                              | GatewayIntents.GuildWebhooks
                              | GatewayIntents.DirectMessageTyping
@@ -53,11 +51,11 @@ internal class Program
         });
         _botConfig = BotConfig.GetBotConfig();
             
-        Client.Log += Log;
+        Client.Log += Logger.DiscordLog;
         Client.JoinedGuild += GuildJoined;
         Client.LeftGuild += GuildLeft;
         Client.ButtonExecuted += arg => Tools.RunCommandInBackground(arg, () => ButtonExecuted(arg));
-        Client.Ready += () => Tools.ExceptionHandler(Ready, LogSeverity.Critical, "Ready");
+        Client.Ready += () => Tools.ExceptionHandler(Ready, true);
         Client.SlashCommandExecuted += arg => Tools.RunCommandInBackground(arg, () => SlashCommands.SlashCommandHandler(arg));
         Client.SelectMenuExecuted += arg => Tools.RunCommandInBackground(arg, () => SelectMenuExecuted(arg));
     }
@@ -79,7 +77,7 @@ internal class Program
         if (Environment.GetCommandLineArgs().Length > 1 && Environment.GetCommandLineArgs()[1] == "init")
         {
             await SlashCommands.InitSlashCommands();
-            await Log(new LogMessage(LogSeverity.Info, nameof(Program), "successfully initialized all commands"));
+            Logger.Log(new MyLogMessage(LogSeverity.Info, "Ready", "Initialized all commands."));
         }
         
         await Config.ServerConfigStartUp();
@@ -137,7 +135,7 @@ internal class Program
             {
                 if (ex is HttpException)
                 {
-                    await Log(new LogMessage(LogSeverity.Warning, "GuildJoined", ex.Message, ex));
+                    Logger.Log(new MyLogMessage(LogSeverity.Info, "GuildJoined", "Found server with insufficient permissions."));
                     await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
                         .WithDescription(
                             "It looks like the bot has insufficient permissions (probably webhooks) on this server" +
@@ -145,10 +143,10 @@ internal class Program
                 }
                 else
                 {
-                    await Log(new LogMessage(LogSeverity.Error, "GuildJoined", ex.Message, ex));
+                    Logger.Log(new MyLogMessage(LogSeverity.Error, ex));
                     await Config.SendMessageAfterServerJoin(guild, new EmbedBuilder()
                         .WithDescription(
-                            $"An {ex.Message} Exception occured while joining this server. Please report this bug!")
+                            $"An Exception occured while joining this server with the following message: {ex.Message}. Please report this bug!")
                         .Build());
                 }
                 throw;
@@ -165,7 +163,7 @@ internal class Program
             {
                 await ServerConfigRepository.Delete(guild.Id);
                 StatsTracker.GetStats().ServerCount = Client.Guilds.Count;
-            }, LogSeverity.Error, "GuildLeft");
+            });
         });
         
         return Task.CompletedTask;
@@ -195,12 +193,12 @@ internal class Program
 
     private async Task BgTask()
     {
-        await Tools.ExceptionHandler(MiscellaneousBackground, LogSeverity.Warning, "Misc-Background", true);
+        await Tools.ExceptionHandler(MiscellaneousBackground, true);
         
         Timer updateGgStatsTimer = new(1000 * 60 * 60); // 1h interval
         updateGgStatsTimer.Elapsed += async (_, _) =>
         {
-            await Tools.ExceptionHandler(MiscellaneousBackground, LogSeverity.Warning, "Background-Task", true);
+            await Tools.ExceptionHandler(MiscellaneousBackground, true);
         };
         updateGgStatsTimer.Enabled = true;
         
@@ -208,37 +206,13 @@ internal class Program
             (new Timer(), HltvEvents.SendNewStartedEvents), (new Timer(), HltvEvents.SendNewPastEvents), (new Timer(), HltvMatches.UpdateMatches)};
         foreach ((Timer timer, Func<Task> function) in timers)
         {
-            await Tools.ExceptionHandler(function, LogSeverity.Error, function.GetMethodInfo().Name, true);
+            await Tools.ExceptionHandler(function, true);
             timer.Interval = _botConfig.CheckResultsTimeInterval;
             timer.Elapsed += async (_, _) =>
-                await Tools.ExceptionHandler(function, LogSeverity.Error, function.GetMethodInfo().Name, true);
+                await Tools.ExceptionHandler(function, true);
             
             timer.Enabled = true;
             await Task.Delay(_botConfig.CheckResultsTimeInterval / timers.Length);
         }
     }
-    
-    public static async Task Log(LogMessage message)
-    {
-        if (message.Severity == LogSeverity.Critical)
-            await Developer.NotifyCriticalError(message);
-        switch (message.Exception)
-        {
-            case HttpException httpException:
-                Console.WriteLine($"[Discord/{message.Severity}] {httpException.Message}"
-                                  + $" {httpException.Reason}.");
-                break;
-            case { } ex:
-                if (ex is ApiError)
-                {
-                    Console.WriteLine($"[HltvApi/{message.Severity}] {message.Source} caused: {ex.Message}");
-                }
-                Console.WriteLine($"[General/{message.Severity}] {message.Source} caused: {ex.Message}");
-                break;
-            default:
-                Console.WriteLine($"[General/{message.Severity}] {message}");
-                break;
-        }
-    }
-
 }

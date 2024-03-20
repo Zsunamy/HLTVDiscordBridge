@@ -38,7 +38,7 @@ public static class HltvNews
             await NewsNotifier.Instance.NotifyAll(null, news.ToEmbed());
         }
         
-        await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvNews),
+        Logger.Log(new MyLogMessage(LogSeverity.Verbose, nameof(HltvNews),
             $"fetched news ({watch.ElapsedMilliseconds}ms)"));
     }
 }

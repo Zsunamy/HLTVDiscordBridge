@@ -90,7 +90,7 @@ public static class HltvEvents
             await EventNotifier.Instance.NotifyAll(startedEvent.Featured, fullEvent.ToStartedEmbed());
         }
         
-        await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvEvents),
+        Logger.Log(new MyLogMessage(LogSeverity.Verbose, nameof(HltvEvents),
             $"fetched started events ({watch.ElapsedMilliseconds}ms)"));
     }
 
@@ -104,7 +104,7 @@ public static class HltvEvents
             await EventNotifier.Instance.NotifyAll(startedEvent.Featured, fullEvent.ToPastEmbed());
         }
         
-        await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvEvents),
+        Logger.Log(new MyLogMessage(LogSeverity.Verbose, nameof(HltvEvents),
             $"fetched past events ({watch.ElapsedMilliseconds}ms)"));
     }
 

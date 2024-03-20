@@ -45,7 +45,7 @@ public static class HltvResults
             await ResultNotifier.Instance.NotifyAll(result.Stars, embed, component);
         }
 
-        await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvResults),
+        Logger.Log(new MyLogMessage(LogSeverity.Verbose, nameof(HltvResults),
             $"fetched results ({watch.ElapsedMilliseconds}ms)"));
     }
 }

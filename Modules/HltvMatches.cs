@@ -18,7 +18,7 @@ public static class HltvMatches
         Stopwatch watch = new(); watch.Start();
         GetMatches request = new();
         Tools.SaveToFile(Path, await request.SendRequest<MatchPreview[]>());
-        await Program.Log(new LogMessage(LogSeverity.Verbose, nameof(HltvMatches),
+        Logger.Log(new MyLogMessage(LogSeverity.Verbose, nameof(HltvMatches),
             $"fetched matches ({watch.ElapsedMilliseconds}ms)"));
     }
     

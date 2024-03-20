@@ -31,7 +31,7 @@ public abstract class ApiRequestBody<TChild> where TChild : ApiRequestBody<TChil
             throw new DeploymentException(resp);
         }
 
-        await Program.Log(new LogMessage(LogSeverity.Verbose, ((TChild)this).GetType().Name, "was successful"));
+        Logger.Log(new MyLogMessage(LogSeverity.Verbose, ((TChild)this).GetType().Name, "was successful"));
         StatsTracker.GetStats().ApiRequest =+ 1;
         return await resp.Content.ReadFromJsonAsync<T>(Program.SerializeOptions);
     }

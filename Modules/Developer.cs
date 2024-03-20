@@ -50,7 +50,7 @@ public static class Developer
                 catch (Exception ex)
                 {
                     StatsTracker.GetStats().MessagesSent -= 1;
-                    await Program.Log(new LogMessage(LogSeverity.Error, nameof(Developer), ex.Message, ex));
+                    Logger.Log(new MyLogMessage(LogSeverity.Error, ex));
                 }
             }
             else

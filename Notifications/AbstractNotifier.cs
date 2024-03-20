@@ -61,9 +61,11 @@ public abstract class AbstractNotifier
                 if (ex is InvalidOperationException or InvalidCastException)
                 {
                     await Cancel(config);
+                    Logger.Log(new MyLogMessage(LogSeverity.Info, "NotifyAll",
+                        $"found Webhook with invalid credentials. Cancelling notifications for server {config.GuildId}"));
                 }
 
-                await Program.Log(new LogMessage(LogSeverity.Error, ex.Source, ex.Message, ex));
+                Logger.Log(new MyLogMessage(LogSeverity.Error, ex));
                 StatsTracker.GetStats().MessagesSent -= 1;
                 IncStats(-1);
             }
