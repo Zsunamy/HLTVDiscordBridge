@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Net;
+using ExCSS;
 
 namespace HLTVDiscordBridge.Modules;
 
@@ -16,21 +17,22 @@ public static class Logger
 
     public static void Log(MyLogMessage log)
     {
+        string time = DateTime.Now.ToString("HH:mm:ss");
         TextWriter print = log.Severity is LogSeverity.Critical or LogSeverity.Error ? Console.Error : Console.Out;
         switch (log.Exception)
         {
             case HttpException hex:
-                print.WriteLine($"[Discord/{log.Severity}/{log.Source}] {hex.Message} | Reason: {hex.Reason}");
+                print.WriteLine($"[Discord/{log.Severity}/{log.Source}] {time} {hex.Message} | Reason: {hex.Reason}");
                 break;
             case ApiError aex:
-                print.WriteLine($"[HltvApi/{log.Severity}/{log.Source}] {aex.Error} | Id: {aex.Id}");
+                print.WriteLine($"[HltvApi/{log.Severity}/{log.Source}] {time} {aex.Error} | Id: {aex.Id}");
                 break;
             case DeploymentException dex:
-                print.WriteLine($"[HltvApi/{log.Severity}/{log.Source}] {dex.Message} | Stacktrace: {dex.StackTrace}");
+                print.WriteLine($"[HltvApi/{log.Severity}/{log.Source}] {time} {dex.Message} | Stacktrace: {dex.StackTrace}");
                 break;
 
             case null:
-                print.WriteLine($"[General/{log.Severity}/{log.Source}] {log.Message}");
+                print.WriteLine($"[General/{log.Severity}/{log.Source}] {time} {log.Message}");
                 break;
         }
     }
