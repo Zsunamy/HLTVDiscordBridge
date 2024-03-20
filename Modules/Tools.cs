@@ -144,7 +144,7 @@ public static class Tools
         }
         catch (Exception ex)
         {
-            await Program.Log(new LogMessage(severity, source, ex.Message, ex));
+            await Program.Log(new LogMessage(severity, source, ex.Message +"\n" + ex.StackTrace, ex));
             if (!cont)
                 throw;
         }
