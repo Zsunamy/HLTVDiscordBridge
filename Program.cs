@@ -202,7 +202,8 @@ internal class Program
         };
         updateGgStatsTimer.Enabled = true;
         
-        (Timer, Func<Task>)[] timers = {(new Timer(), HltvNews.SendNewNews), (new Timer(), HltvResults.SendNewResults),
+        
+        (Timer, Func<Task>)[] timers = {(new Timer(), HltvNews.SendNewNews),// (new Timer(), HltvResults.SendNewResults),
             (new Timer(), HltvEvents.SendNewStartedEvents), (new Timer(), HltvEvents.SendNewPastEvents), (new Timer(), HltvMatches.UpdateMatches)};
         foreach ((Timer timer, Func<Task> function) in timers)
         {
