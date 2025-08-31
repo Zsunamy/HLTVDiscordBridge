@@ -196,7 +196,7 @@ public static class HltvEvents
             embed = ex.ToEmbed();
         }
 
-        SelectMenuComponent menu = arg.Message.Components.First().Components.First() as SelectMenuComponent;
+        SelectMenuComponent menu = arg.Message.Components.First() as SelectMenuComponent;
         SelectMenuBuilder builder = menu!.ToBuilder();
 
         foreach (SelectMenuOptionBuilder option in builder.Options.Where(option => option.IsDefault == true))
