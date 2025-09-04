@@ -23,7 +23,7 @@ public class ResultNotifier : AbstractNotifier
         {
             throw new InvalidCastException("Filter for minStars must be a integer.");
         }
-        return config.MinimumStars < currentStars;
+        return config.MinimumStars <= currentStars;
     }
 
     protected override void SetWebhook(ServerConfig config, Webhook webhook)
