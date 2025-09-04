@@ -166,7 +166,7 @@ public static class Config
 
     public static async Task ServerConfigStartUp()
     {
-        DiscordSocketClient client = Program.GetInstance().Client;
+        DiscordShardedClient client = Program.GetInstance().Client;
         foreach (SocketGuild guild in client.Guilds)
         {
             if (!await ServerConfigRepository.Exists(guild.Id))

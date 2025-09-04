@@ -25,11 +25,12 @@ internal class Program
     }
 
     private static Program _instance;
-    public DiscordSocketClient Client { get; }
+    public DiscordShardedClient Client { get; }
 
     private readonly BotConfig _botConfig;
     public static HttpClient DefaultHttpClient { get; } = new();
     private Task _bgTask;
+    private int _shardsReady = 0;
     
     //TODO after updating to v4 this needs to be deleted since it's required for the webhook migration.
     public static MongoClient DbClient { get; } = new(BotConfig.GetBotConfig().DatabaseLink);
@@ -42,8 +43,9 @@ internal class Program
     
     private Program()
     {
-        Client = new DiscordSocketClient( new DiscordSocketConfig
+        Client = new DiscordShardedClient( new DiscordSocketConfig
         {
+            TotalShards = 2,
             GatewayIntents = GatewayIntents.GuildMessages
                              | GatewayIntents.GuildWebhooks
                              | GatewayIntents.DirectMessageTyping
@@ -55,7 +57,7 @@ internal class Program
         Client.JoinedGuild += GuildJoined;
         Client.LeftGuild += GuildLeft;
         Client.ButtonExecuted += arg => Tools.RunCommandInBackground(arg, () => ButtonExecuted(arg));
-        Client.Ready += () => Tools.ExceptionHandler(Ready, true);
+        Client.ShardReady += ShardReadyHandler;
         Client.SlashCommandExecuted += arg => Tools.RunCommandInBackground(arg, () => SlashCommands.SlashCommandHandler(arg));
         Client.SelectMenuExecuted += arg => Tools.RunCommandInBackground(arg, () => SelectMenuExecuted(arg));
     }
@@ -82,6 +84,15 @@ internal class Program
         
         await Config.ServerConfigStartUp();
         _bgTask ??= BgTask();
+    }
+
+    private async Task ShardReadyHandler(DiscordSocketClient shard)
+    {
+        _shardsReady++;
+        if (_shardsReady == Client.Shards.Count)
+        {
+            await Tools.ExceptionHandler(Ready, true);
+        }
     }
 
     private static async Task ButtonExecuted(SocketMessageComponent arg)
@@ -114,8 +125,6 @@ internal class Program
         switch (arg.Data.CustomId) 
         {
             case "upcomingEventsMenu":
-                await HltvEvents.SendEvent(arg);
-                break;
             case "ongoingEventsMenu":
                 await HltvEvents.SendEvent(arg);
                 break;
@@ -203,7 +212,7 @@ internal class Program
         updateGgStatsTimer.Enabled = true;
         
         
-        (Timer, Func<Task>)[] timers = {(new Timer(), HltvNews.SendNewNews),// (new Timer(), HltvResults.SendNewResults),
+        (Timer, Func<Task>)[] timers = {(new Timer(), HltvNews.SendNewNews), (new Timer(), HltvResults.SendNewResults),
             (new Timer(), HltvEvents.SendNewStartedEvents), (new Timer(), HltvEvents.SendNewPastEvents), (new Timer(), HltvMatches.UpdateMatches)};
         foreach ((Timer timer, Func<Task> function) in timers)
         {

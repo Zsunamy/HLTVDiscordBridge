@@ -7,7 +7,7 @@ namespace HLTVDiscordBridge.Modules;
 
 public static class SlashCommands
 {
-    private static readonly DiscordSocketClient Client = Program.GetInstance().Client;
+    private static readonly DiscordShardedClient Client = Program.GetInstance().Client;
 
     private static SlashCommandOptionBuilder AddTextChannels(SlashCommandOptionBuilder option)
     {
