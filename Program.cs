@@ -48,14 +48,11 @@ internal class Program
         
         Client = new DiscordShardedClient( new DiscordSocketConfig
         {
-            TotalShards = 2,
             GatewayIntents = GatewayIntents.GuildMessages
                              | GatewayIntents.GuildWebhooks
                              | GatewayIntents.DirectMessageTyping
                              | GatewayIntents.Guilds,
-            // Memory optimizations for Discord.Net
-            MessageCacheSize = 50, // Reduce from default 100
-            AlwaysDownloadUsers = false
+            MessageCacheSize = 50,
         });
         _botConfig = BotConfig.GetBotConfig();
             
