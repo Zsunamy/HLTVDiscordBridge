@@ -37,7 +37,7 @@ internal class Program
     public static readonly JsonSerializerOptions SerializeOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false, // Reduce memory usage by disabling indentation
+        WriteIndented = false,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
     
