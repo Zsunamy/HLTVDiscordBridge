@@ -8,9 +8,8 @@ services:
     container_name: hltv-discord-bridge
     restart: unless-stopped
     
-    # Run as root initially to handle file permissions, then switch to hltv user
-    # Alternative: use user: "1001:1001" and ensure host files have correct permissions
-    user: "0:0"  # Run as root to access mounted files
+    # Run as root to avoid permission issues with mounted files
+    user: "0:0"
     
     # Memory limits to prevent excessive usage
     deploy:
@@ -38,8 +37,8 @@ services:
     volumes:
       # Mount cache directory from host
       - ./cache:/app/cache
-      # Mount config.xml from host (read-only)
-      - ./config.xml:/app/config.xml:ro
+      # Mount config.xml from host (read-write for config updates)
+      - ./config.xml:/app/config.xml
       # Mount logs directory
       - ./logs:/app/logs
     
