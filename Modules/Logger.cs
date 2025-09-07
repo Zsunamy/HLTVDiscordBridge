@@ -19,10 +19,6 @@ public static class Logger
     {
         string time = DateTime.Now.ToString("HH:mm:ss");
         TextWriter print = log.Severity is LogSeverity.Critical or LogSeverity.Error ? Console.Error : Console.Out;
-        if (log.Source.Contains("Shard") && log.Message.Contains("Unknown Channel"))
-        {
-            return;
-        }
         switch (log.Exception)
         {
             case HttpException hex:
