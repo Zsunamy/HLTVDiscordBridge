@@ -33,7 +33,7 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 # Create cache and logs directories
-RUN mkdir -p /app/cache/playercards /app/cache/teamcards /app/logs && \
+RUN mkdir -p /app/cache/playercards /app/cache/teamcards /app/cache/events /app/logs && \
     chmod -R 755 /app
 
 # Set memory optimization environment variables

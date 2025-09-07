@@ -73,7 +73,7 @@ public static class Tools
     public static string SpliceText(string text, int lineLength)
     {
         int charCount = 0;
-        IEnumerable<string> lines = text.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries)
+        IEnumerable<string> lines = text.Split([" "], StringSplitOptions.RemoveEmptyEntries)
             .GroupBy(w => (charCount += w.Length + 1) / lineLength)
             .Select(g => string.Join(" ", g));
 
@@ -92,15 +92,13 @@ public static class Tools
         if (!File.Exists(path))
             File.Create(path!).Dispose();
         
-        // Use streaming JSON serialization to reduce memory usage
-        using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write);
+        using FileStream fileStream = new FileStream(path, FileMode.Create, FileAccess.Write);
         JsonSerializer.Serialize(fileStream, content, Program.SerializeOptions);
     }
     
     public static T ParseFromFile<T>(string path)
     {
-        // Use streaming JSON deserialization to reduce memory usage
-        using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
+        using FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
         return JsonSerializer.Deserialize<T>(fileStream, Program.SerializeOptions);
     }
     
@@ -110,9 +108,8 @@ public static class Tools
         {
             try
             {
-                // Use async file reading and streaming JSON parsing
-                await using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
-                using var document = await JsonDocument.ParseAsync(fileStream);
+                await using FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
+                using JsonDocument document = await JsonDocument.ParseAsync(fileStream);
                 return true;
             }
             catch (JsonException) 

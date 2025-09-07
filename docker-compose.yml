@@ -39,6 +39,7 @@ services:
       - ./config.xml:/app/config.xml
       # Mount logs directory
       - ./logs:/app/logs
+      - ./icon.png:/app/icon.png
     
     # Network configuration
     networks:
