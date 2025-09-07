@@ -1,0 +1,75 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+MEMORY_OPTIMIZATIONS.md
+*.md
+
+# Build outputs
+bin/
+obj/
+out/
+
+# Cache and temporary files
+cache/
+logs/
+*.log
+*.tmp
+*.temp
+
+# IDE and editor files
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker files (to avoid recursive copying)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Deployment scripts
+deploy-optimizations.sh
+*.sh
+
+# Test files
+*Test/
+*Tests/
+test/
+tests/
+
+# NuGet packages (will be restored during build)
+*.nupkg
+*.snupkg
+packages/
+
+# Environment and config files (handle separately)
+.env
+.env.*
+config.xml
+Config.xml
+appsettings.*.json
+
+# Keep templates for reference
+!*.template
+
+# Icon and images (unless needed at runtime)
+icon.png
+*.ico
+
+# License file
+LICENSE

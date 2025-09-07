@@ -87,15 +87,21 @@ public static class Tools
     
     public static void SaveToFile(string path, object content)
     {
+        Directory.CreateDirectory(Path.GetDirectoryName(path) ?? "./cache");
+        
         if (!File.Exists(path))
             File.Create(path!).Dispose();
         
-        File.WriteAllText(path, JsonSerializer.Serialize(content, Program.SerializeOptions));
+        // Use streaming JSON serialization to reduce memory usage
+        using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write);
+        JsonSerializer.Serialize(fileStream, content, Program.SerializeOptions);
     }
     
     public static T ParseFromFile<T>(string path)
     {
-        return JsonSerializer.Deserialize<T>(File.ReadAllText(path), Program.SerializeOptions);
+        // Use streaming JSON deserialization to reduce memory usage
+        using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
+        return JsonSerializer.Deserialize<T>(fileStream, Program.SerializeOptions);
     }
     
     public static async Task<bool> VerifyFile<T>(string path, Func<Task<T>> getNewData)
@@ -104,10 +110,15 @@ public static class Tools
         {
             try
             {
-                JsonDocument.Parse(await File.ReadAllTextAsync(path));
+                // Use async file reading and streaming JSON parsing
+                await using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
+                using var document = await JsonDocument.ParseAsync(fileStream);
                 return true;
             }
-            catch (JsonException) {}
+            catch (JsonException) 
+            { 
+                // File is corrupted, will be recreated
+            }
         }
         SaveToFile(path, await getNewData());
         return false;

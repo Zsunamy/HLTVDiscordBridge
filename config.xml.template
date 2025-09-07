@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HLTVDiscordBridge Configuration Template -->
+<!-- Copy this file to config.xml and fill in your actual values -->
+<BotConfig>
+  <!-- Discord Bot Configuration -->
+  <BotToken>your_discord_bot_token_here</BotToken>
+  <ProductionBotId>807182830752628766</ProductionBotId>
+  
+  <!-- API Configuration -->
+  <ApiLink>https://your-hltv-api-endpoint.com</ApiLink>
+  
+  <!-- Database Configuration -->
+  <DatabaseLink>mongodb://username:password@your-mongodb-host:27017/hltv-database</DatabaseLink>
+  
+  <!-- Bot List APIs (optional) -->
+  <TopGgApiKey>your_top_gg_api_key</TopGgApiKey>
+  <BotsGgApiKey>your_bots_gg_api_key</BotsGgApiKey>
+  
+  <!-- Performance Settings -->
+  <CheckResultsTimeInterval>300000</CheckResultsTimeInterval>
+  </MemoryOptimizations>
+</BotConfig>

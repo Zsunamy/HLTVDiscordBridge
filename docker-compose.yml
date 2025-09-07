@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  hltv-discord-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hltv-discord-bridge
+    restart: unless-stopped
+    
+    # Memory limits to prevent excessive usage
+    deploy:
+      resources:
+        limits:
+          memory: 1G        # Maximum memory usage
+          cpus: '1.0'       # Maximum CPU usage
+        reservations:
+          memory: 256M      # Reserved memory
+          cpus: '0.25'      # Reserved CPU
+    
+    # Environment variables (most config is in config.xml)
+    environment:
+      # .NET Memory Optimizations
+      - DOTNET_gcServer=1
+      - DOTNET_gcConcurrent=1
+      - DOTNET_GCLatencyLevel=1
+      - DOTNET_EnableWriteXorExecute=0
+      - DOTNET_ReadyToRun=1
+      - DOTNET_TieredPGO=1
+      - DOTNET_TC_QuickJitForLoops=1
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+    
+    # Mount volumes for persistent data and configuration
+    volumes:
+      # Mount cache directory from host
+      - ./cache:/app/cache
+      # Mount config.xml from host (read-only)
+      - ./config.xml:/app/config.xml:ro
+      # Mount logs directory
+      - ./logs:/app/logs
+    
+    # Network configuration
+    networks:
+      - hltv-network
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "ps", "aux", "|", "grep", "-v", "grep", "|", "grep", "HLTVDiscordBridge"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Optional: MongoDB service if running locally
+  # mongodb:
+  #   image: mongo:7.0-jammy
+  #   container_name: hltv-mongodb
+  #   restart: unless-stopped
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: admin
+  #     MONGO_INITDB_ROOT_PASSWORD: password
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   ports:
+  #     - "27017:27017"
+  #   networks:
+  #     - hltv-network
+
+  # Optional: Monitoring with Prometheus metrics
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: hltv-prometheus
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   networks:
+  #     - hltv-network
+
+# Networks
+networks:
+  hltv-network:
+    driver: bridge
+
+# Volumes
+volumes:
+  # mongodb_data:
+  logs_data:

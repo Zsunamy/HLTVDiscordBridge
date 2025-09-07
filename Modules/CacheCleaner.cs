@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using HLTVDiscordBridge.Modules;
+using Discord;
 
 namespace HLTVDiscordBridge.Modules;
 
@@ -7,26 +9,72 @@ public static class CacheCleaner
 {             
     public static void Clean()
     {
+        var deletedFiles = 0;
+        var deletedDirs = 0;
+        
         //delete player-cards after 7 days
-        Directory.CreateDirectory("./cache/playercards");
-        foreach (string dir in Directory.GetDirectories("./cache/playercards"))
+        deletedDirs += CleanDirectory("./cache/playercards", 7);
+        
+        //delete team-cards after 7 days  
+        deletedDirs += CleanDirectory("./cache/teamcards", 7);
+        
+        // Clean old JSON cache files (older than 1 day)
+        deletedFiles += CleanJsonFiles("./cache", 1);
+        
+        // Force garbage collection after cache cleaning
+        if (deletedFiles > 0 || deletedDirs > 0)
         {
-            if (Directory.GetCreationTime(dir).AddDays(7).Date == DateTime.Now.Date) 
+            Logger.Log(new MyLogMessage(LogSeverity.Verbose, "CacheCleaner", 
+                $"Cleaned {deletedFiles} files and {deletedDirs} directories"));
+            MemoryOptimizations.ForceGarbageCollection();
+        }
+    }
+    
+    private static int CleanDirectory(string path, int daysOld)
+    {
+        var deletedDirs = 0;
+        Directory.CreateDirectory(path);
+        
+        foreach (string dir in Directory.GetDirectories(path))
+        {
+            if (Directory.GetCreationTime(dir).AddDays(daysOld).Date <= DateTime.Now.Date) 
             { 
-                foreach (string file in Directory.GetFiles(dir)) { File.Delete(file); }
-                Directory.Delete(dir); 
+                try
+                {
+                    Directory.Delete(dir, true);
+                    deletedDirs++;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log(new MyLogMessage(LogSeverity.Warning, "CacheCleaner", 
+                        $"Failed to delete directory {dir}: {ex.Message}"));
+                }
             }                
         }
-
-        //delete team-cards after 7 days
-        Directory.CreateDirectory("./cache/teamcards");
-        foreach (string dir in Directory.GetDirectories("./cache/teamcards"))
+        return deletedDirs;
+    }
+    
+    private static int CleanJsonFiles(string path, int daysOld)
+    {
+        var deletedFiles = 0;
+        if (!Directory.Exists(path)) return 0;
+        
+        foreach (string file in Directory.GetFiles(path, "*.json"))
         {
-            if (Directory.GetCreationTime(dir).AddDays(7).Date == DateTime.Now.Date)
+            if (File.GetCreationTime(file).AddDays(daysOld).Date <= DateTime.Now.Date)
             {
-                foreach (string file in Directory.GetFiles(dir)) { File.Delete(file); }
-                Directory.Delete(dir);
+                try
+                {
+                    File.Delete(file);
+                    deletedFiles++;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log(new MyLogMessage(LogSeverity.Warning, "CacheCleaner", 
+                        $"Failed to delete file {file}: {ex.Message}"));
+                }
             }
         }
+        return deletedFiles;
     }
 }

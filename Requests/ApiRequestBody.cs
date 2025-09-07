@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using System.Text.Json;
 using Discord;
 using HLTVDiscordBridge.Modules;
 using HLTVDiscordBridge.Shared;
@@ -17,7 +18,11 @@ public abstract class ApiRequestBody<TChild> where TChild : ApiRequestBody<TChil
     public async Task<T> SendRequest<T>()
     {
         Uri uri = new($"{BotConfig.GetBotConfig().ApiLink}/api/{Endpoint}");
-        HttpResponseMessage resp = await Program.DefaultHttpClient.PostAsJsonAsync(uri, (TChild)this, Program.SerializeOptions);
+        
+        // Use memory-efficient JSON serialization
+        using var content = JsonContent.Create((TChild)this, options: Program.SerializeOptions);
+        using HttpResponseMessage resp = await Program.DefaultHttpClient.PostAsync(uri, content);
+        
         try
         {
             resp.EnsureSuccessStatusCode();
@@ -26,13 +31,16 @@ public abstract class ApiRequestBody<TChild> where TChild : ApiRequestBody<TChil
         {
             if (ex.StatusCode == HttpStatusCode.BadRequest)
             {
-                throw await resp.Content.ReadFromJsonAsync<ApiError>();
+                throw await resp.Content.ReadFromJsonAsync<ApiError>(Program.SerializeOptions);
             }
             throw new DeploymentException(resp);
         }
 
         Logger.Log(new MyLogMessage(LogSeverity.Verbose, ((TChild)this).GetType().Name, "was successful"));
-        StatsTracker.GetStats().ApiRequest =+ 1;
-        return await resp.Content.ReadFromJsonAsync<T>(Program.SerializeOptions);
+        StatsTracker.GetStats().ApiRequest += 1;
+        
+        // Use streaming deserialization to reduce memory pressure
+        await using var stream = await resp.Content.ReadAsStreamAsync();
+        return await JsonSerializer.DeserializeAsync<T>(stream, Program.SerializeOptions);
     }
 }

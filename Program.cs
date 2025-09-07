@@ -37,19 +37,26 @@ internal class Program
     public static readonly JsonSerializerOptions SerializeOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true,
+        WriteIndented = false, // Reduce memory usage by disabling indentation
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
     
     private Program()
     {
+        // Initialize memory optimizations
+        MemoryOptimizations.Initialize();
+        
         Client = new DiscordShardedClient( new DiscordSocketConfig
         {
             TotalShards = 2,
             GatewayIntents = GatewayIntents.GuildMessages
                              | GatewayIntents.GuildWebhooks
                              | GatewayIntents.DirectMessageTyping
-                             | GatewayIntents.Guilds
+                             | GatewayIntents.Guilds,
+            // Memory optimizations for Discord.Net
+            MessageCacheSize = 50, // Reduce from default 100
+            AlwaysDownloadUsers = false,
+            LogGatewayIntentWarnings = false
         });
         _botConfig = BotConfig.GetBotConfig();
             
@@ -198,6 +205,9 @@ internal class Program
         CacheCleaner.Clean();
         StatsRepository.Update(StatsTracker.GetStats());
         await HltvRanking.UpdateTeamRanking();
+        
+        // Force garbage collection after background tasks
+        MemoryOptimizations.ForceGarbageCollection();
     }
 
     private async Task BgTask()

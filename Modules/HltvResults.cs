@@ -37,15 +37,33 @@ public static class HltvResults
     public static async Task SendNewResults()
     {
         Stopwatch watch = new(); watch.Start();
-        foreach (Result result in await GetNewResults())
+        var newResults = await GetNewResults();
+        var processedCount = 0;
+        
+        foreach (Result result in newResults)
         {
-            GetMatch request = new GetMatch{Id = result.Id};
-            Match data = await request.SendRequest<Match>();
-            (Embed embed, MessageComponent component) = result.ToEmbedAndComponent(data);
-            await ResultNotifier.Instance.NotifyAll(result.Stars, embed, component);
+            try
+            {
+                GetMatch request = new GetMatch{Id = result.Id};
+                Match data = await request.SendRequest<Match>();
+                (Embed embed, MessageComponent component) = result.ToEmbedAndComponent(data);
+                await ResultNotifier.Instance.NotifyAll(result.Stars, embed, component);
+                processedCount++;
+                
+                // Force GC every 10 results to prevent memory buildup
+                if (processedCount % 10 == 0)
+                {
+                    GC.Collect(0, GCCollectionMode.Optimized);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(new MyLogMessage(LogSeverity.Error, nameof(HltvResults), 
+                    $"Failed to process result {result.Id}: {ex.Message}"));
+            }
         }
 
         Logger.Log(new MyLogMessage(LogSeverity.Verbose, nameof(HltvResults),
-            $"fetched results ({watch.ElapsedMilliseconds}ms)"));
+            $"Processed {processedCount} results ({watch.ElapsedMilliseconds}ms)"));
     }
 }
