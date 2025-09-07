@@ -42,7 +42,8 @@ COPY --from=build /app/publish .
 # Create cache directory with proper permissions
 # Note: config.xml will be mounted from host
 RUN mkdir -p /app/cache/playercards /app/cache/teamcards /app/logs && \
-    chown -R hltv:hltv /app
+    chown -R hltv:hltv /app && \
+    chmod -R 755 /app
 
 # Set memory optimization environment variables
 ENV DOTNET_gcServer=1 \

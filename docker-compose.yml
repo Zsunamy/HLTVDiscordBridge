@@ -8,6 +8,10 @@ services:
     container_name: hltv-discord-bridge
     restart: unless-stopped
     
+    # Run as root initially to handle file permissions, then switch to hltv user
+    # Alternative: use user: "1001:1001" and ensure host files have correct permissions
+    user: "0:0"  # Run as root to access mounted files
+    
     # Memory limits to prevent excessive usage
     deploy:
       resources:
