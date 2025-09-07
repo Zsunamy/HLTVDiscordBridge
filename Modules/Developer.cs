@@ -54,7 +54,7 @@ public static class Developer
                 }
             }
             else
-                await webhook.ToDiscordWebhookClient().SendMessageAsync(embeds: new[] { embed });
+                await webhook.ToDiscordWebhookClient().SendMessageAsync(embeds: [embed]);
         }
 
         StatsTracker.GetStats().MessagesSent += configs.Count;

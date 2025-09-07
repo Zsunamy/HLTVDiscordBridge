@@ -45,7 +45,7 @@ internal class Program
     {
         Client = new DiscordShardedClient( new DiscordSocketConfig
         {
-            TotalShards = 2,
+            TotalShards = 1,
             GatewayIntents = GatewayIntents.GuildMessages
                              | GatewayIntents.GuildWebhooks
                              | GatewayIntents.DirectMessageTyping
