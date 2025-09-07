@@ -1,6 +1,3 @@
-# HLTVDiscordBridge Dockerfile with Memory Optimizations
-# Multi-stage build to reduce final image size
-
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 
@@ -47,9 +44,6 @@ ENV DOTNET_gcServer=1 \
     DOTNET_ReadyToRun=1 \
     DOTNET_TieredPGO=1 \
     DOTNET_TC_QuickJitForLoops=1
-
-# Set culture to avoid locale issues
-ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
