@@ -67,9 +67,5 @@ appsettings.*.json
 # Keep templates for reference
 !*.template
 
-# Icon and images (unless needed at runtime)
-icon.png
-*.ico
-
 # License file
 LICENSE

@@ -15,11 +15,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G        # Maximum memory usage
-          cpus: '1.0'       # Maximum CPU usage
+          memory: 3G        # Maximum memory usage
         reservations:
           memory: 256M      # Reserved memory
-          cpus: '0.25'      # Reserved CPU
     
     # Environment variables (most config is in config.xml)
     environment:
