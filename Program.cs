@@ -55,8 +55,7 @@ internal class Program
                              | GatewayIntents.Guilds,
             // Memory optimizations for Discord.Net
             MessageCacheSize = 50, // Reduce from default 100
-            AlwaysDownloadUsers = false,
-            LogGatewayIntentWarnings = false
+            AlwaysDownloadUsers = false
         });
         _botConfig = BotConfig.GetBotConfig();
             
