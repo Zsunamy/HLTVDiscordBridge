@@ -26,7 +26,7 @@ services:
       - DOTNET_ReadyToRun=1
       - DOTNET_TieredPGO=1
       - DOTNET_TC_QuickJitForLoops=1
-      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
     
     # Mount volumes for persistent data and configuration
     volumes:
