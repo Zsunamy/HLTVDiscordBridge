@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-
-namespace HLTVDiscordBridge.Shared;
+﻿namespace HLTVDiscordBridge.Shared;
 
 public class MatchStatsPlayerTeams
 {
-    public List<MatchStatsPlayer> Team1PlayerStats { get; set; }
-    public List<MatchStatsPlayer> Team2PlayerStats { get; set; }
+    public MatchStatsPlayer[] Team1 { get; set; }
+    public MatchStatsPlayer[] Team2 { get; set; }
 }

@@ -39,7 +39,7 @@ public static class HltvEvents
     private static async Task<IEnumerable<EventPreview>> GetNewEvents(string path, Func<Task<EventPreview[]>> getEvents)
     {
         if (!await Tools.VerifyFile(path, getEvents))
-            return Array.Empty<EventPreview>();
+            return [];
 
         EventPreview[] oldEvents = Tools.ParseFromFile<EventPreview[]>(path);
         EventPreview[] newEvents = await getEvents();

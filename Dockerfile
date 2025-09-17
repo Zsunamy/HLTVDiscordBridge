@@ -45,14 +45,10 @@ ENV DOTNET_gcServer=1 \
     DOTNET_TieredPGO=1 \
     DOTNET_TC_QuickJitForLoops=1
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD ps aux | grep -v grep | grep HLTVDiscordBridge || exit 1
-
 # Set the entry point
 ENTRYPOINT ["dotnet", "HLTVDiscordBridge.dll"]
 
 # Add labels for metadata
 LABEL maintainer="HLTVDiscordBridge Team" \
-    description="HLTV Discord Bridge Bot with Memory Optimizations" \
-    version="2.0-optimized"
+    description="HLTV Discord Bridge Bot" \
+    version="4.1"

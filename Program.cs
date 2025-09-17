@@ -43,7 +43,6 @@ internal class Program
     
     private Program()
     {
-        // Initialize memory optimizations
         MemoryOptimizations.Initialize();
         
         Client = new DiscordShardedClient( new DiscordSocketConfig

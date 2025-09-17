@@ -16,29 +16,29 @@ public static class HltvResults
 
     private static async Task<Result[]> GetLatestResults()
     {
-        string startDate = Tools.GetHltvTimeFormat(DateTime.Now.AddDays(-2));
-        string endDate = Tools.GetHltvTimeFormat(DateTime.Now);
-        GetResults request = new GetResults{StartDate = startDate, EndDate = endDate};
+        GetResults request = new();
         return await request.SendRequest<Result[]>();
     }
 
     private static async Task<IEnumerable<Result>> GetNewResults()
     {
-        if (!await Tools.VerifyFile(Path, GetLatestResults))
+        if (!await Tools.VerifyFile(Path, async () => (await GetLatestResults()).ToDictionary(r => r.Id, r => r)))
             return new List<Result>();
 
-        Result[] latestResults = await GetLatestResults();
-        Result[] oldResults = Tools.ParseFromFile<Result[]>(Path);
+        Result[] latestResultsList = await GetLatestResults();
+        Dictionary<int, Result> latestResults = latestResultsList.ToDictionary(r => r.Id, r => r);
+        
+        Dictionary<int, Result> oldResults = Tools.ParseFromFile<Dictionary<int, Result>>(Path);
         Tools.SaveToFile(Path, latestResults);
 
-        return latestResults.Where(newR => Array.Find(oldResults, oldR => newR.Id == oldR.Id) == null);
+        return latestResults.Where(pair => !oldResults.ContainsKey(pair.Key)).Select(pair => pair.Value);
     }
 
     public static async Task SendNewResults()
     {
         Stopwatch watch = new(); watch.Start();
-        var newResults = await GetNewResults();
-        var processedCount = 0;
+        IEnumerable<Result> newResults = await GetNewResults();
+        int processedCount = 0;
         
         foreach (Result result in newResults)
         {

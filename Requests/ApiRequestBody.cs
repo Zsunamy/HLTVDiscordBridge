@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -20,7 +21,7 @@ public abstract class ApiRequestBody<TChild> where TChild : ApiRequestBody<TChil
         Uri uri = new($"{BotConfig.GetBotConfig().ApiLink}/api/{Endpoint}");
         
         // Use memory-efficient JSON serialization
-        using var content = JsonContent.Create((TChild)this, options: Program.SerializeOptions);
+        using JsonContent content = JsonContent.Create((TChild)this, options: Program.SerializeOptions);
         using HttpResponseMessage resp = await Program.DefaultHttpClient.PostAsync(uri, content);
         
         try
@@ -40,7 +41,7 @@ public abstract class ApiRequestBody<TChild> where TChild : ApiRequestBody<TChil
         StatsTracker.GetStats().ApiRequest += 1;
         
         // Use streaming deserialization to reduce memory pressure
-        await using var stream = await resp.Content.ReadAsStreamAsync();
+        await using Stream stream = await resp.Content.ReadAsStreamAsync();
         return await JsonSerializer.DeserializeAsync<T>(stream, Program.SerializeOptions);
     }
 }

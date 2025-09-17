@@ -88,7 +88,7 @@ public static class HltvTeams
                 // Team is cached
                 team =  Tools.ParseFromFile<FullTeam>($"{Path}/{name}/team.json");
                 stats = Tools.ParseFromFile<FullTeamStats>($"{Path}/{name}/stats.json");
-                resultsRequest.TeamIds = new[] { team.Id };
+                resultsRequest.TeamIds = [team.Id];
                 recentResults = await resultsRequest.SendRequest<Result[]>();
                 embed = team.ToEmbed(stats, recentResults);
             }
@@ -138,8 +138,15 @@ public static class HltvTeams
                 }
 
                 resp = await Program.DefaultHttpClient.GetAsync(new Uri(team.Logo));
-                resp.EnsureSuccessStatusCode();
-                SavePng(await resp.Content.ReadAsByteArrayAsync(), team, $"{Path}/{team.FormattedName}/logo.png");
+                if (!resp.IsSuccessStatusCode)
+                {
+                    File.Copy("../teamplaceholder.png", $"{Path}/{team.FormattedName}/logo.png", true);
+                }
+                else
+                {
+                    SavePng(await resp.Content.ReadAsByteArrayAsync(), team, $"{Path}/{team.FormattedName}/logo.png");
+                }
+                
                 Tools.SaveToFile($"{Path}/{team.FormattedName}/team.json", team);
 
                 embed = team.ToEmbed(stats, recentResults);

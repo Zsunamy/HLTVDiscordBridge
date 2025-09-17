@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using Discord;
 
@@ -8,15 +7,15 @@ namespace HLTVDiscordBridge.Shared;
 public class MatchMapStats
 {
     public int Id { get; set; }
-    public int? MatchId { get; set; }
+    public int MatchId { get; set; }
     public MapResult Result { get; set; }
     public string Map { get; set; }
     public long? Date { get; set; }
     public Team Team1 { get; set; }
     public Team Team2 { get; set; }
     public Event Event { get; set; }
-    public MatchMapStatsPlayer[] Team1Stats { get; set; }
-    public MatchMapStatsPlayer[] Team2Stats { get; set; }
+    public MapMatchStatsOverview Overview { get; set; }
+    public PlayerStatsMap PlayerStats { get; set; }
     public string Link { get; set; }
     
     public Embed ToEmbed()
@@ -28,7 +27,7 @@ public class MatchMapStats
         List<string> team1PlayerNames = new();
         List<string> team1Kad = new();
         List<string> team1Rating = new();
-        foreach (MatchMapStatsPlayer playerStats in Team1Stats)
+        foreach (MatchMapStatsPlayer playerStats in PlayerStats.Team1)
         {
             string playerLink = $"https://hltv.org/player/{playerStats.Player.Id}/{playerStats.Player.Name.ToLower().Replace(' ', '-')}";
             team1PlayerNames.Add($"[{playerStats.Player.Name}]({playerLink})");
@@ -39,10 +38,10 @@ public class MatchMapStats
         builder.AddField("K/A/D", string.Join("\n", team1Kad), true);
         builder.AddField("rating", string.Join("\n", team1Rating), true);
 
-        List<string> team2PlayerNames = new();
-        List<string> team2Kad = new();
-        List<string> team2Rating = new();
-        foreach (MatchMapStatsPlayer playerStats in Team2Stats)
+        List<string> team2PlayerNames = [];
+        List<string> team2Kad = [];
+        List<string> team2Rating = [];
+        foreach (MatchMapStatsPlayer playerStats in PlayerStats.Team2)
         {
             string playerLink = $"https://hltv.org/player/{playerStats.Player.Id}/{playerStats.Player.Name.ToLower().Replace(' ', '-')}";
             team2PlayerNames.Add($"[{playerStats.Player.Name}]({playerLink})");

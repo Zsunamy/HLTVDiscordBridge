@@ -81,7 +81,7 @@ public class FullTeam
 
         //recent Results
         string recentResultsString = "";
-        if (!recentResults.Any())
+        if (recentResults.Length == 0)
             recentResultsString = "n.A";
         else
         {
