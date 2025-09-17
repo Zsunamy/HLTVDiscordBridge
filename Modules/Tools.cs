@@ -91,14 +91,15 @@ public static class Tools
         
         if (!File.Exists(path))
             File.Create(path!).Dispose();
-        
-        using FileStream fileStream = new FileStream(path, FileMode.Create, FileAccess.Write);
+
+        using FileStream fileStream = new(path, FileMode.Create, FileAccess.Write);
         JsonSerializer.Serialize(fileStream, content, Program.SerializeOptions);
+
     }
     
     public static T ParseFromFile<T>(string path)
     {
-        using FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
+        using FileStream fileStream = new(path, FileMode.Open, FileAccess.Read);
         return JsonSerializer.Deserialize<T>(fileStream, Program.SerializeOptions);
     }
     

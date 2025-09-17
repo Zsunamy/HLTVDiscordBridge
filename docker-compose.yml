@@ -8,9 +8,6 @@ services:
     container_name: hltv-discord-bridge
     restart: unless-stopped
     
-    # Run as root to avoid permission issues with mounted files
-    user: "0:0"
-    
     # Memory limits to prevent excessive usage
     deploy:
       resources:
