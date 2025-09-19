@@ -23,7 +23,7 @@ public static class HltvResults
     private static async Task<IEnumerable<Result>> GetNewResults()
     {
         if (!await Tools.VerifyFile(Path, async () => (await GetLatestResults()).ToDictionary(r => r.Id, r => r)))
-            return new List<Result>();
+            return [];
 
         Result[] latestResultsList = await GetLatestResults();
         Dictionary<int, Result> latestResults = latestResultsList.ToDictionary(r => r.Id, r => r);

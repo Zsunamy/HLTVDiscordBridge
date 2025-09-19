@@ -123,13 +123,13 @@ public static class HltvTeams
                 if (Directory.Exists($"{Path}/{team.FormattedName}"))
                 {
                     stats = Tools.ParseFromFile<FullTeamStats>($"{Path}/{team.FormattedName}/stats.json");
-                    resultsRequest.TeamIds = new[] { team.Id };
+                    resultsRequest.TeamIds = [team.Id];
                     recentResults = await resultsRequest.SendRequest<Result[]>();
                 }
                 else
                 {
                     GetTeamStats statsRequest = new GetTeamStats { Id = team.Id };
-                    resultsRequest.TeamIds = new[] { team.Id };
+                    resultsRequest.TeamIds = [team.Id];
                     stats = await statsRequest.SendRequest<FullTeamStats>();
                     recentResults = await resultsRequest.SendRequest<Result[]>();
 
@@ -140,7 +140,7 @@ public static class HltvTeams
                 resp = await Program.DefaultHttpClient.GetAsync(new Uri(team.Logo));
                 if (!resp.IsSuccessStatusCode)
                 {
-                    File.Copy("../teamplaceholder.png", $"{Path}/{team.FormattedName}/logo.png", true);
+                    File.Copy("./teamplaceholder.png", $"{Path}/{team.FormattedName}/logo.png", true);
                 }
                 else
                 {
