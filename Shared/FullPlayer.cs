@@ -71,7 +71,7 @@ public class FullPlayer
 
         if(Achievements.Length != 0)
         {
-            List<string> achievements = new();
+            List<string> achievements = [];
             foreach (PlayerAchievement achievement in Achievements.TakeWhile(_ => string.Join("\n", achievements).Length <= 600))
             {
                 achievements.Add($"[{achievement.Event.Name}]({achievement.Event.Link}) finished: {achievement.Place}");

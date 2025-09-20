@@ -67,6 +67,7 @@ public static class HltvTeams
         Embed embed;
         bool isInDatabase = false;
         string name1 = name;
+        bool teamLogoIsSvg = false;
         FindFluentBase<TeamDocument, TeamDocument> query = (FindFluentBase<TeamDocument, TeamDocument>)GetTeamCollection().Find(
             elem => elem.Alias.Contains(name1) || elem.Name.ToLower() == name1);
         if (await query.AnyAsync())
@@ -96,16 +97,16 @@ public static class HltvTeams
             {
                 if (isInDatabase)
                 {
-                    GetTeam request = new GetTeam { Id = query.First().TeamId };
+                    GetTeam request = new() { Id = query.First().TeamId };
                     team = await request.SendRequest<FullTeam>();
                 }
                 else
                 {
-                    GetTeamByName request = new GetTeamByName { Name = name };
+                    GetTeamByName request = new() { Name = name };
                     team = await request.SendRequest<FullTeam>();
                     List<TeamDocument> alias =
                         (await GetTeamCollection().FindAsync(elem => elem.Name == team.Name)).ToList();
-                    // check if provided name is another nickname for the team and add them to the alias
+                    // check if the provided name is another nickname for the team and add them to the alias
                     if (alias.Count != 0 && !alias.First().Name.ToLower().Contains(name))
                     {
                         alias.First().Alias.Add(name);
@@ -119,7 +120,7 @@ public static class HltvTeams
                     }
                 }
 
-                // check again if player is cached because provided name could have been an unknown nickname
+                // check again if team is cached because provided name could have been an unknown nickname
                 if (Directory.Exists($"{Path}/{team.FormattedName}"))
                 {
                     stats = Tools.ParseFromFile<FullTeamStats>($"{Path}/{team.FormattedName}/stats.json");
@@ -128,7 +129,7 @@ public static class HltvTeams
                 }
                 else
                 {
-                    GetTeamStats statsRequest = new GetTeamStats { Id = team.Id };
+                    GetTeamStats statsRequest = new() { Id = team.Id };
                     resultsRequest.TeamIds = [team.Id];
                     stats = await statsRequest.SendRequest<FullTeamStats>();
                     recentResults = await resultsRequest.SendRequest<Result[]>();
@@ -137,19 +138,23 @@ public static class HltvTeams
                     Tools.SaveToFile($"{Path}/{team.FormattedName}/stats.json", stats);
                 }
 
-                resp = await Program.DefaultHttpClient.GetAsync(new Uri(team.Logo));
-                if (!resp.IsSuccessStatusCode)
+                Uri teamLink = new(team.Logo);
+                teamLogoIsSvg = teamLink.LocalPath.Split(".")[^1] == "svg";
+                if (teamLogoIsSvg)
                 {
-                    File.Copy("./teamplaceholder.png", $"{Path}/{team.FormattedName}/logo.png", true);
-                }
-                else
-                {
-                    SavePng(await resp.Content.ReadAsByteArrayAsync(), team, $"{Path}/{team.FormattedName}/logo.png");
+                    resp = await Program.DefaultHttpClient.GetAsync(teamLink);
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        File.Copy("./teamplaceholder.png", $"{Path}/{team.FormattedName}/logo.png", true);
+                    }
+                    else
+                    {
+                        SavePng(await resp.Content.ReadAsByteArrayAsync(), team, $"{Path}/{team.FormattedName}/logo.png");
+                    }
+                    Tools.SaveToFile($"{Path}/{team.FormattedName}/team.json", team);
                 }
                 
-                Tools.SaveToFile($"{Path}/{team.FormattedName}/team.json", team);
-
-                embed = team.ToEmbed(stats, recentResults);
+                embed = team.ToEmbed(stats, recentResults, !teamLogoIsSvg);
             }
         }
         
@@ -169,9 +174,9 @@ public static class HltvTeams
         await arg.ModifyOriginalResponseAsync(msg =>
         {
             msg.Embed = embed;
-            if (team != null)
+            if (teamLogoIsSvg)
             {
-                msg.Attachments = new FileAttachment[] {new ($"{Path}/{team.FormattedName}/logo.png")};
+                msg.Attachments = new FileAttachment[] {new ($"{Path}/{team!.FormattedName}/logo.png")};
             }
         });
     }

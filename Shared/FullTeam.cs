@@ -22,7 +22,7 @@ public class FullTeam
     [JsonIgnore]
     public string FormattedName => Name.ToLower().Replace(" ", "-");
 
-    public Embed ToEmbed(FullTeamStats stats, Result[] recentResults)
+    public Embed ToEmbed(FullTeamStats stats, Result[] recentResults, bool logoLink = false)
     {
         EmbedBuilder builder = new();
 
@@ -31,9 +31,16 @@ public class FullTeam
         //TeamLink
         builder.WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", Link);
 
-        //Thumbnail            
-        builder.WithThumbnailUrl($"attachment://logo.png");
-
+        //Thumbnail
+        if (logoLink)
+        {
+            builder.WithThumbnailUrl(Logo);
+        }
+        else
+        {
+            builder.WithThumbnailUrl($"attachment://logo.png");
+        }
+        
         //rank + development
         string rankDevString;
         if (RankingDevelopment == null || RankingDevelopment.Length < 2)

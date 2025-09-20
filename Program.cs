@@ -30,9 +30,7 @@ internal class Program
     private readonly BotConfig _botConfig;
     public static HttpClient DefaultHttpClient { get; } = new();
     private Task _bgTask;
-    private int _shardsReady = 0;
-    
-    //TODO after updating to v4 this needs to be deleted since it's required for the webhook migration.
+    private int _shardsReady;
     public static MongoClient DbClient { get; } = new(BotConfig.GetBotConfig().DatabaseLink);
     public static readonly JsonSerializerOptions SerializeOptions = new JsonSerializerOptions
     {
