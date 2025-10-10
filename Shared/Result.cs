@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using Discord;
@@ -10,7 +11,7 @@ public class Result
 {
     public int Id { get; set; }
     public int Stars { get; set; }
-    public ulong Date { get; set; }
+    public long Date { get; set; }
     public Team Team1 { get; set; }
     public Team Team2 { get; set; }
     public ResultEvent Event { get; set; }
@@ -34,7 +35,7 @@ public class Result
             .AddField("winner:", $"[{match.WinnerTeam.Name}]({match.WinnerTeam.Link})", true)
             .AddField("format:", $"{Tools.GetFormatFromAcronym(match.Format.Type)} ({match.Format.Location})", true)
             .WithAuthor("click here for more details", "https://www.hltv.org/img/static/TopLogoDark2x.png", match.Link)
-            .WithCurrentTimestamp();
+            .WithTimestamp(DateTimeOffset.FromUnixTimeMilliseconds(Date));
         string footerString = "";
         Emoji emo = new("⭐");
         for (int i = 1; i <= Stars; i++)
